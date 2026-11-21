@@ -13,7 +13,7 @@ const tabs = [
 export function MemberTabs() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Member" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper">
+    <nav aria-label="Member" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper lg:hidden">
       <ul className="mx-auto grid max-w-[560px] grid-cols-4">
         {tabs.map(({ href, label }) => {
           const active = href === "/me" ? pathname === href : pathname.startsWith(href);

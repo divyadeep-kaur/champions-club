@@ -46,7 +46,7 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
   const q = (extra: Record<string, string>) => `/me/book?${new URLSearchParams({ date, sport, ...extra })}`;
 
   return (
-    <main className={`grid content-start gap-4 p-5 ${selectedCourt ? "pb-48" : ""}`}>
+    <main className={`grid content-start gap-4 p-5 lg:px-0 lg:py-8 ${selectedCourt ? "pb-48 lg:pb-40" : ""}`}>
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-[28px] font-extrabold text-forest">Book a court</h1>
         <div role="group" aria-label="Sport" className="flex gap-1.5">
@@ -63,7 +63,7 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
         </div>
       </div>
 
-      <nav aria-label="Choose a day" className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+      <nav aria-label="Choose a day" className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 lg:mx-0 lg:px-0">
         {days.map((d, i) => {
           const on = isoDate(d) === date;
           return (
@@ -110,49 +110,51 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
         </p>
       )}
 
-      {courts.map((c) => {
-        const free = slots.filter((s) => {
-          const span = { start: s, end: sessionEnd(s) };
-          return !bookings.some((b) => b.courtId === c.id && overlaps(b, span)) && !mine.some((b) => overlaps(b, span));
-        });
-        const price = courtPrice(member.plan, c.walkInRate);
-        return (
-          <section key={c.id} className="grid gap-2.5 rounded-2xl border border-line bg-paper p-3.5">
-            <div className="flex justify-between gap-2">
-              <h2 className="text-[16px] font-bold">{c.name}</h2>
-              <span className="text-[13.5px] text-muted">{price === 0 ? "Included" : `${member.plan.name} ${inr(price)}`}</span>
-            </div>
-            {free.length === 0 ? (
-              <p className="text-[14px] text-muted">Fully booked.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {free.map((s) => {
-                  const on = selectedCourt?.id === c.id && sp.time === hhmm(s);
-                  if (expired || limitHit)
+      <div className="grid gap-4 lg:grid-cols-2">
+        {courts.map((c) => {
+          const free = slots.filter((s) => {
+            const span = { start: s, end: sessionEnd(s) };
+            return !bookings.some((b) => b.courtId === c.id && overlaps(b, span)) && !mine.some((b) => overlaps(b, span));
+          });
+          const price = courtPrice(member.plan, c.walkInRate);
+          return (
+            <section key={c.id} className="grid gap-2.5 rounded-2xl border border-line bg-paper p-3.5">
+              <div className="flex justify-between gap-2">
+                <h2 className="text-[16px] font-bold">{c.name}</h2>
+                <span className="text-[13.5px] text-muted">{price === 0 ? "Included" : `${member.plan.name} ${inr(price)}`}</span>
+              </div>
+              {free.length === 0 ? (
+                <p className="text-[14px] text-muted">Fully booked.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {free.map((s) => {
+                    const on = selectedCourt?.id === c.id && sp.time === hhmm(s);
+                    if (expired || limitHit)
+                      return (
+                        <span
+                          key={s.toISOString()}
+                          className="min-h-11 rounded-full border-[1.5px] border-line px-3 py-2 text-[14px] font-bold tabular-nums text-muted/60"
+                        >
+                          {fmtTime(s)}
+                        </span>
+                      );
                     return (
-                      <span
+                      <Link
                         key={s.toISOString()}
-                        className="min-h-11 rounded-full border-[1.5px] border-line px-3 py-2 text-[14px] font-bold tabular-nums text-muted/60"
+                        href={q({ court: String(c.id), time: hhmm(s) })}
+                        scroll={false}
+                        className={`min-h-11 rounded-full border-[1.5px] px-3 py-2 text-[14px] font-bold tabular-nums ${on ? "border-forest bg-forest text-cream" : "border-line text-ink hover:border-forest"}`}
                       >
                         {fmtTime(s)}
-                      </span>
+                      </Link>
                     );
-                  return (
-                    <Link
-                      key={s.toISOString()}
-                      href={q({ court: String(c.id), time: hhmm(s) })}
-                      scroll={false}
-                      className={`min-h-11 rounded-full border-[1.5px] px-3 py-2 text-[14px] font-bold tabular-nums ${on ? "border-forest bg-forest text-cream" : "border-line text-ink hover:border-forest"}`}
-                    >
-                      {fmtTime(s)}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        );
-      })}
+                  })}
+                </div>
+              )}
+            </section>
+          );
+        })}
+      </div>
 
       {selectedCourt && sp.time && !expired && !limitHit && (
         <ConfirmBooking

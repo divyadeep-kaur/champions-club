@@ -29,18 +29,27 @@ export default async function MemberShop() {
   ]);
 
   return (
-    <main className="grid content-start gap-3.5 pb-4">
-      <div className="relative h-[170px] overflow-hidden">
-        <Image src="/images/shop-rackets.jpg" alt="" aria-hidden="true" fill priority unoptimized sizes="560px" className="object-cover object-[50%_45%]" />
-        <div className="absolute inset-x-4 bottom-3.5 rounded-2xl border border-white/30 bg-forest-deep/50 px-4 py-3 text-white backdrop-blur-md">
+    <main className="grid content-start gap-3.5 pb-4 lg:gap-6 lg:py-8">
+      <div className="relative h-[170px] overflow-hidden lg:h-[240px] lg:rounded-3xl">
+        <Image
+          src="/images/shop-rackets.jpg"
+          alt=""
+          aria-hidden="true"
+          fill
+          priority
+          unoptimized
+          sizes="(min-width: 1024px) 1140px, 560px"
+          className="object-cover object-[50%_45%]"
+        />
+        <div className="absolute inset-x-4 bottom-3.5 lg:inset-x-6 lg:bottom-6 lg:max-w-[560px] rounded-2xl border border-white/30 bg-forest-deep/50 px-4 py-3 text-white backdrop-blur-md">
           <h1 className="text-[24px] font-extrabold">Pro shop</h1>
           <span className="text-[14px]">Order now, get it brought to you in the club or delivered home{plan ? ` · ${plan.shopDiscount}% off` : ""}</span>
         </div>
       </div>
 
       {orders.length > 0 && (
-        <section className="mx-4 grid gap-2">
-          <h2 className="text-[17px] font-bold text-forest">Your orders</h2>
+        <section className="mx-4 grid gap-2 lg:mx-0 lg:grid-cols-2 lg:gap-3">
+          <h2 className="text-[17px] font-bold text-forest lg:col-span-2 lg:text-[20px]">Your orders</h2>
           {orders.map((o) => (
             <div key={o.id} className="flex items-center justify-between gap-2 rounded-[14px] border border-line bg-paper px-3 py-2.5 text-[14px]">
               <div className="min-w-0">

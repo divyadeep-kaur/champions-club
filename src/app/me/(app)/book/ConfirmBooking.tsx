@@ -19,7 +19,7 @@ export function ConfirmBooking(props: {
 }) {
   const [state, action, pending] = useActionState<MeState, FormData>(memberBook, {});
   return (
-    <div className="fixed inset-x-0 bottom-[68px] z-20 mx-auto max-w-[560px] px-3">
+    <div className="fixed inset-x-0 bottom-[68px] z-20 mx-auto max-w-[560px] px-3 lg:bottom-6 lg:max-w-[680px]">
       <form action={action} className="grid gap-2.5 rounded-[20px] bg-forest-deep/[0.88] p-4 text-white backdrop-blur-xl">
         <input type="hidden" name="courtId" value={props.courtId} />
         <input type="hidden" name="date" value={props.date} />

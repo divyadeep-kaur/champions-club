@@ -57,8 +57,8 @@ export function ShopOrder({
       <input type="hidden" name="fulfilment" value={fulfilment} />
 
       {categories.map((cat) => (
-        <section key={cat} className="mx-4 grid gap-2">
-          <h2 className="mt-1 text-[17px] font-bold capitalize text-forest">{cat}</h2>
+        <section key={cat} className="mx-4 grid gap-2 lg:mx-0 lg:grid-cols-2 lg:gap-3 xl:grid-cols-3">
+          <h2 className="mt-1 text-[17px] font-bold capitalize text-forest lg:col-span-2 lg:text-[20px] xl:col-span-3">{cat}</h2>
           {products
             .filter((p) => p.category === cat)
             .map((p) => {
@@ -118,7 +118,11 @@ export function ShopOrder({
         </section>
       ))}
 
-      <section key={state.at ?? 0} className="mx-4 grid gap-3 rounded-[16px] border border-line bg-paper p-4" aria-labelledby="where">
+      <section
+        key={state.at ?? 0}
+        className="mx-4 grid gap-3 rounded-[16px] border border-line bg-paper p-4 lg:mx-0 lg:max-w-[720px] lg:p-6"
+        aria-labelledby="where"
+      >
         <h2 id="where" className="text-[17px] font-bold text-forest">
           {fulfilment === "club" ? "Where in the club should we bring it?" : "Delivery address"}
         </h2>
@@ -188,7 +192,7 @@ export function ShopOrder({
         )}
       </section>
 
-      <div className="sticky bottom-[68px] z-20 mx-3 grid gap-2.5 rounded-[20px] bg-forest-deep/90 px-4 py-3.5 text-white">
+      <div className="sticky bottom-[68px] z-20 mx-3 grid gap-2.5 rounded-[20px] bg-forest-deep/90 px-4 py-3.5 text-white lg:bottom-6 lg:mx-auto lg:w-full lg:max-w-[720px]">
         <div role="radiogroup" aria-label="How do you want it" className="grid grid-cols-2 gap-2">
           {(["club", "delivery"] as const).map((f) => (
             <button
