@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { cartTotals, stockError } from "@/lib/checkout";
 import { inr } from "@/lib/constants";
-import { membershipStatus } from "@/lib/members";
+import { benefitPlan } from "@/lib/membership";
 import { requireMember } from "@/lib/memberSession";
 
 export type ShopState = { error?: string; ok?: string; at?: number };
@@ -38,7 +38,7 @@ export async function placeOrder(_: ShopState, formData: FormData): Promise<Shop
         const res = await tx.product.updateMany({ where: { id: l.productId, stock: { gte: l.qty } }, data: { stock: { decrement: l.qty } } });
         if (res.count !== 1) throw new Error("Someone just bought the last one, please check your order");
       }
-      const plan = membershipStatus(member.endDate).status === "expired" ? null : member.plan;
+      const plan = benefitPlan(member);
       const priced = lines.map((l) => ({ ...l, unitPrice: products.find((p) => p.id === l.productId)!.price }));
       const t = cartTotals(priced, plan, "shop");
       return tx.order.create({

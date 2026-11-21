@@ -20,6 +20,9 @@ const at = (daysFromToday: number, hour: number, minute = 0) => {
 };
 
 async function main() {
+  await db.membershipChange.deleteMany();
+  await db.planAudit.deleteMany();
+  await db.clubSetting.deleteMany();
   await db.staffInvoice.deleteMany();
   await db.staffQuery.deleteMany();
   await db.payslip.deleteMany();
@@ -296,8 +299,26 @@ async function main() {
 
   for (const m of members) {
     const plan = planOf(m);
-    await db.payment.create({
-      data: { source: "membership", refId: m.id, amount: plan.monthlyFee, method: pick(["card", "upi", "online"]), createdAt: m.startDate },
+    const method = pick(["card", "upi", "online"]);
+    const paid = await db.payment.create({
+      data: { source: "membership", refId: m.id, amount: plan.monthlyFee, method, createdAt: m.startDate },
+    });
+    await db.membershipChange.create({
+      data: {
+        memberId: m.id,
+        kind: "joined",
+        toPlanId: plan.id,
+        newStart: m.startDate,
+        newEnd: m.endDate,
+        effectiveDate: m.startDate,
+        amount: plan.monthlyFee,
+        paymentStatus: "paid",
+        paymentId: paid.id,
+        method,
+        reason: "Signed up at the front desk",
+        staffId: desk.id,
+        createdAt: m.startDate,
+      },
     });
   }
 
@@ -361,7 +382,15 @@ async function main() {
           paidAt: paid(8),
           method: "bank",
         },
-        { category: "utilities", description: "Water and internet", vendor: "Municipal / Airtel", amount: 4200, dueDate: paid(12), paidAt: paid(11), method: "bank" },
+        {
+          category: "utilities",
+          description: "Water and internet",
+          vendor: "Municipal / Airtel",
+          amount: 4200,
+          dueDate: paid(12),
+          paidAt: paid(11),
+          method: "bank",
+        },
         {
           category: "stock",
           description: "Pro shop restock",
@@ -397,7 +426,15 @@ async function main() {
       const slip = payslip(t.monthlySalary);
       slips.push(slip);
       const exp = await db.expense.create({
-        data: { category: "salary", description: `Salary ${label} · ${t.name}`, vendor: t.name, amount: slip.net, dueDate: payDay, paidAt: payDay, method: "bank" },
+        data: {
+          category: "salary",
+          description: `Salary ${label} · ${t.name}`,
+          vendor: t.name,
+          amount: slip.net,
+          dueDate: payDay,
+          paidAt: payDay,
+          method: "bank",
+        },
       });
       const ps = await db.payslip.create({
         data: {

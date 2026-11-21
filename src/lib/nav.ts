@@ -2,7 +2,7 @@ import type { Role } from "./constants";
 
 export const staffNav: { href: string; label: string; icon: string; roles: Role[] }[] = [
   { href: "/staff", label: "Dashboard", icon: "dashboard", roles: ["owner", "desk", "bar"] },
-  { href: "/staff/members", label: "Members", icon: "members", roles: ["owner", "desk"] },
+  { href: "/staff/members", label: "Member Management", icon: "members", roles: ["owner", "desk"] },
   { href: "/staff/bookings", label: "Bookings", icon: "bookings", roles: ["owner", "desk"] },
   { href: "/staff/shop", label: "Shop", icon: "shop", roles: ["owner", "desk", "shop"] },
   { href: "/staff/bar", label: "Café & Bar", icon: "bar", roles: ["owner", "bar"] },
@@ -17,5 +17,12 @@ export const staffNav: { href: string; label: string; icon: string; roles: Role[
 
 export const navFor = (role: Role) => staffNav.filter((item) => item.roles.includes(role));
 
-export const ROLE_LABEL: Record<string, string> = { owner: "Owner", desk: "Reception", bar: "Café & bar", shop: "Pro shop", coach: "Coach", staff: "Support staff" };
+export const ROLE_LABEL: Record<string, string> = {
+  owner: "Owner",
+  desk: "Reception",
+  bar: "Café & bar",
+  shop: "Pro shop",
+  coach: "Coach",
+  staff: "Support staff",
+};
 export const homeFor = (role: string) => (role === "shop" ? "/staff/shop" : role === "coach" || role === "staff" ? "/staff/me" : "/staff");

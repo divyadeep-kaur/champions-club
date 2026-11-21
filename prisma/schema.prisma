@@ -28,6 +28,8 @@ model Staff {
   invoices      StaffInvoice[]
   queries       StaffQuery[]   @relation("QueryStaff")
   replies       StaffQuery[]   @relation("QueryReplier")
+  memberChanges MembershipChange[]
+  planAudits    PlanAudit[]
 }
 
 model Payslip {
@@ -100,6 +102,9 @@ model Plan {
   durationDays Int      @default(30)
   description  String
   members      Member[]
+  changesFrom  MembershipChange[] @relation("ChangeFrom")
+  changesTo    MembershipChange[] @relation("ChangeTo")
+  audits       PlanAudit[]
 }
 
 model Member {
@@ -114,12 +119,16 @@ model Member {
   startDate DateTime
   endDate   DateTime
   notes     String?
+  photo         String?
+  suspendedAt   DateTime?
+  suspendReason String?
   createdAt DateTime       @default(now())
   bookings  Booking[]
   players   SocialPlayer[]
   orders    Order[]
   tabs      Tab[]
   leads     Lead[]
+  changes   MembershipChange[]
 }
 
 model Court {
@@ -297,6 +306,7 @@ model Payment {
   method    String
   note      String?
   createdAt DateTime @default(now())
+  membershipChange MembershipChange?
 
   @@index([createdAt])
 }
@@ -352,4 +362,56 @@ model InvoiceLine {
   qty         Int
   unitPrice   Int
   gstRate     Int
+}
+
+// One row per membership event: joining, renewal, plan change, extension,
+// suspension or reactivation. Rows are only ever added, never edited away,
+// so the full history survives any number of changes.
+model MembershipChange {
+  id            Int       @id @default(autoincrement())
+  memberId      Int
+  member        Member    @relation(fields: [memberId], references: [id])
+  kind          String
+  fromPlanId    Int?
+  fromPlan      Plan?     @relation("ChangeFrom", fields: [fromPlanId], references: [id])
+  toPlanId      Int?
+  toPlan        Plan?     @relation("ChangeTo", fields: [toPlanId], references: [id])
+  prevStart     DateTime?
+  prevEnd       DateTime?
+  newStart      DateTime?
+  newEnd        DateTime?
+  effectiveDate DateTime
+  policy        String?
+  amount        Int       @default(0)
+  paymentStatus String    @default("none")
+  paymentId     Int?      @unique
+  payment       Payment?  @relation(fields: [paymentId], references: [id])
+  method        String?
+  reason        String
+  staffId       Int
+  staff         Staff     @relation(fields: [staffId], references: [id])
+  createdAt     DateTime  @default(now())
+
+  @@index([memberId, createdAt])
+  @@index([paymentStatus])
+}
+
+// A record of every edit to a plan's price or benefits.
+model PlanAudit {
+  id        Int      @id @default(autoincrement())
+  planId    Int
+  plan      Plan     @relation(fields: [planId], references: [id])
+  changes   String
+  staffId   Int
+  staff     Staff    @relation(fields: [staffId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([planId, createdAt])
+}
+
+// Club-wide settings the owner can change, such as the default mid-cycle plan change policy.
+model ClubSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { cartTotals, stockError } from "@/lib/checkout";
 import { inr } from "@/lib/constants";
-import { membershipStatus } from "@/lib/members";
+import { benefitPlan } from "@/lib/membership";
 import { requireStaff } from "@/lib/session";
 
 export type SaleState = { error?: string; ok?: string; at?: number };
@@ -43,7 +43,7 @@ export async function counterSale(_: SaleState, formData: FormData): Promise<Sal
     const result = await db.$transaction(async (tx) => {
       const member = code ? await tx.member.findUnique({ where: { code }, include: { plan: true } }) : null;
       if (code && !member) throw new Error(`No member with code ${code}`);
-      const plan = member && membershipStatus(member.endDate).status !== "expired" ? member.plan : null;
+      const plan = benefitPlan(member);
 
       const products = await tx.product.findMany({ where: { id: { in: lines.map((l) => l.productId) } } });
       const err = stockError(lines, products);

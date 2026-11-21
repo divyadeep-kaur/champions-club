@@ -19,7 +19,7 @@ export function slotStarts(day: Date) {
 export const overlaps = (a: Span, b: Span) => a.start < b.end && b.start < a.end;
 
 export function bookingError(
-  req: Span & { courtId: number; member: { id: number; endDate: Date } | null; now: Date },
+  req: Span & { courtId: number; member: { id: number; endDate: Date; suspendedAt?: Date | null } | null; now: Date },
   ctx: { existing: Existing[]; memberBookingsThatDay: number },
 ) {
   const { start, end } = req;
@@ -34,6 +34,7 @@ export function bookingError(
 
   if (req.member) {
     const dayStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    if (req.member.suspendedAt) return "This membership is suspended. Book them as a walk-in or reactivate it first";
     if (req.member.endDate < dayStart) return "This membership has expired. Renew it before booking";
     if (ctx.existing.some((b) => b.memberId === req.member!.id && overlaps(b, req))) return "This member is already on another court at that time";
     if (ctx.memberBookingsThatDay >= MAX_BOOKINGS_PER_DAY) return "Members can play at most twice a day";

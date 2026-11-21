@@ -62,8 +62,24 @@ export async function createMember(_: FormState, formData: FormData): Promise<Fo
         notes: data.notes || null,
       },
     });
-    await tx.payment.create({
+    const payment = await tx.payment.create({
       data: { source: "membership", refId: m.id, amount: fee, method: data.method, note: `New ${plan.name} membership${lead ? " (from enquiry)" : ""}` },
+    });
+    await tx.membershipChange.create({
+      data: {
+        memberId: m.id,
+        kind: "joined",
+        toPlanId: plan.id,
+        newStart: start,
+        newEnd: end,
+        effectiveDate: start,
+        amount: fee,
+        paymentStatus: "paid",
+        paymentId: payment.id,
+        method: data.method,
+        reason: lead ? "Signed up from an enquiry" : "Signed up at the front desk",
+        staffId: staff.id,
+      },
     });
     if (lead && lead.status !== "won") {
       await tx.lead.update({ where: { id: lead.id }, data: { status: "won", memberId: m.id } });
@@ -75,32 +91,4 @@ export async function createMember(_: FormState, formData: FormData): Promise<Fo
 
   revalidatePath("/staff/members");
   redirect(`/staff/members/${member.id}?welcome=1`);
-}
-
-const renewSchema = z.object({ memberId: z.coerce.number().int().positive(), planId: z.coerce.number().int().positive(), method });
-
-export async function renewMember(_: FormState, formData: FormData): Promise<FormState> {
-  await requireStaff(["owner"]);
-  const parsed = renewSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const { memberId, planId, method: payMethod } = parsed.data;
-
-  const [member, plan] = await Promise.all([db.member.findUnique({ where: { id: memberId } }), db.plan.findUnique({ where: { id: planId } })]);
-  if (!member || !plan) return { error: "Member or plan not found" };
-
-  const ageError = juniorAgeError(plan.name, member.birthDate);
-  if (ageError) return { error: ageError };
-
-  const today = new Date();
-  const { start, end } = renewalPeriod(member.endDate, today, plan.durationDays);
-  const expired = member.endDate < today;
-
-  await db.$transaction([
-    db.member.update({ where: { id: member.id }, data: { planId: plan.id, endDate: end, ...(expired ? { startDate: start } : {}) } }),
-    db.payment.create({ data: { source: "membership", refId: member.id, amount: plan.monthlyFee, method: payMethod, note: `Renewed ${plan.name}` } }),
-  ]);
-
-  revalidatePath(`/staff/members/${member.id}`);
-  revalidatePath("/staff/members");
-  return {};
 }

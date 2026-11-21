@@ -3,220 +3,198 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { addDays, fmtDate, startOfDay } from "@/lib/dates";
-import { membershipStatus, normalizePhone } from "@/lib/members";
+import { normalizePhone } from "@/lib/members";
+import { memberState, stateLabel } from "@/lib/membership";
 import { requireStaff } from "@/lib/session";
-import { btnOutline, btnPrimary, fieldCls, labelCls } from "@/components/staff/ui";
+import { btnOutline, fieldCls } from "@/components/staff/ui";
+import { StateBadge } from "./StateBadge";
 
 export const dynamic = "force-dynamic";
 
-type Search = { q?: string; status?: string; plan?: string; selected?: string };
+type Search = { q?: string; plan?: string; status?: string; joinedFrom?: string; joinedTo?: string; endsFrom?: string; endsTo?: string };
+const isDate = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const range = (from?: string, to?: string) =>
+  isDate(from) || isDate(to)
+    ? { ...(isDate(from) ? { gte: new Date(`${from}T00:00:00`) } : {}), ...(isDate(to) ? { lte: new Date(`${to}T23:59:59`) } : {}) }
+    : undefined;
 
-const short = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-
-export default async function MembersPage({ searchParams }: { searchParams: Promise<Search> }) {
-  const session = await requireStaff(["owner", "desk"]);
-  const canEdit = session.role === "owner";
-  const { q = "", status = "all", plan = "all", selected } = await searchParams;
+export default async function MembersDirectory({ searchParams }: { searchParams: Promise<Search> }) {
+  await requireStaff(["owner", "desk"]);
+  const sp = await searchParams;
   const today = startOfDay();
-  const weekOut = addDays(today, 8);
-
-  const term = q.trim();
+  const week = addDays(today, 8);
+  const term = sp.q?.trim() ?? "";
   const phone = normalizePhone(term);
+  const status = sp.status ?? "all";
+
   const where: Prisma.MemberWhereInput = {
     AND: [
       term
         ? {
-            OR: [{ name: { contains: term } }, { code: { contains: term.toUpperCase() } }, { phone: { contains: phone ?? (term.replace(/\D/g, "") || term) } }],
+            OR: [
+              { name: { contains: term } },
+              { code: { contains: term.toUpperCase() } },
+              { phone: { contains: phone ?? (term.replace(/\D/g, "") || term) } },
+              { email: { contains: term.toLowerCase() } },
+            ],
           }
         : {},
+      sp.plan ? { plan: { name: sp.plan } } : {},
       status === "active"
-        ? { endDate: { gte: weekOut } }
+        ? { endDate: { gte: today }, suspendedAt: null }
         : status === "ending"
-          ? { endDate: { gte: today, lt: weekOut } }
+          ? { endDate: { gte: today, lt: week }, suspendedAt: null }
           : status === "expired"
-            ? { endDate: { lt: today } }
-            : {},
-      plan !== "all" ? { plan: { name: plan } } : {},
+            ? { endDate: { lt: today }, suspendedAt: null }
+            : status === "suspended"
+              ? { suspendedAt: { not: null } }
+              : {},
+      range(sp.joinedFrom, sp.joinedTo) ? { createdAt: range(sp.joinedFrom, sp.joinedTo) } : {},
+      range(sp.endsFrom, sp.endsTo) ? { endDate: range(sp.endsFrom, sp.endsTo) } : {},
     ],
   };
 
-  const [members, plans] = await Promise.all([
+  const [all, members, plans, pending] = await Promise.all([
+    db.member.findMany({ select: { endDate: true, suspendedAt: true, plan: { select: { name: true } } } }),
     db.member.findMany({ where, include: { plan: true }, orderBy: { name: "asc" } }),
     db.plan.findMany({ orderBy: { monthlyFee: "desc" } }),
+    db.membershipChange.aggregate({ where: { paymentStatus: "pending" }, _count: true, _sum: { amount: true } }),
   ]);
-  const pickedId = Number(selected) || members[0]?.id;
-  const picked = pickedId
-    ? await db.member.findUnique({
-        where: { id: pickedId },
-        include: {
-          plan: true,
-          bookings: { include: { court: true }, orderBy: { start: "desc" }, take: 4 },
-          orders: { include: { items: { include: { product: true } } }, orderBy: { createdAt: "desc" }, take: 3 },
-          tabs: { where: { status: "paid" }, orderBy: { openedAt: "desc" }, take: 3 },
-        },
-      })
-    : null;
-  const payments = picked ? await db.payment.findMany({ where: { source: "membership", refId: picked.id }, orderBy: { createdAt: "desc" }, take: 2 }) : [];
 
-  const history = picked
-    ? [
-        ...picked.bookings.map((b) => ({
-          when: b.start,
-          what: `${b.court.name}${b.status === "cancelled" ? " (cancelled)" : ""}`,
-          amount: b.price ? inr(b.price) : "—",
-        })),
-        ...picked.orders.map((o) => ({ when: o.createdAt, what: o.items.map((i) => i.product.name).join(", "), amount: inr(o.total) })),
-        ...picked.tabs.map((t) => ({ when: t.openedAt, what: "Café & bar tab", amount: inr(t.total) })),
-        ...payments.map((p) => ({ when: p.createdAt, what: p.note ?? "Membership", amount: inr(p.amount) })),
-      ]
-        .sort((a, b) => b.when.getTime() - a.when.getTime())
-        .slice(0, 7)
-    : [];
-
-  const qs = (extra: Record<string, string>) =>
-    `/staff/members?${new URLSearchParams({ ...(term ? { q: term } : {}), ...(status !== "all" ? { status } : {}), ...(plan !== "all" ? { plan } : {}), ...extra })}`;
+  const states = all.map((m) => ({ ...memberState(m, today), plan: m.plan.name }));
+  const current = states.filter((s) => s.state === "active" || s.state === "ending");
+  const count = (fn: (s: (typeof states)[number]) => boolean) => states.filter(fn).length;
+  const stats: [string, string, string?, string?][] = [
+    ["Registered members", String(all.length)],
+    ["Active", String(current.length), undefined, "?status=active"],
+    [
+      "Expired",
+      String(count((s) => s.state === "expired")),
+      count((s) => s.state === "suspended") ? `${count((s) => s.state === "suspended")} suspended` : undefined,
+      "?status=expired",
+    ],
+    ["Expiring in 7 days", String(count((s) => s.state === "ending")), undefined, "/expiry?window=7"],
+    ...plans.map((p): [string, string, string, string] => [
+      `${p.name} members`,
+      String(current.filter((s) => s.plan === p.name).length),
+      "active",
+      `?plan=${encodeURIComponent(p.name)}&status=active`,
+    ]),
+    ["Pending payments", String(pending._count), pending._count ? inr(pending._sum.amount ?? 0) : "None owed", "/expiry?pending=1"],
+  ];
+  const filtered = Object.values(sp).some(Boolean);
 
   return (
-    <div className="flex flex-wrap content-start gap-6">
-      <div className="grid min-w-0 flex-[999_1_560px] content-start gap-[18px]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Members</h1>
-          {canEdit ? (
-            <Link href="/staff/members/new" className={btnPrimary}>
-              Sign up a member
-            </Link>
-          ) : (
-            <span className="border border-line bg-paper px-3 py-2 text-[14px] text-muted">View only · the owner adds and renews members</span>
-          )}
-        </div>
-
-        <form className="flex flex-wrap items-end gap-2.5">
-          <label className={`${labelCls} flex-[1_1_280px]`}>
-            Search by name, phone or member code
-            <input type="search" name="q" defaultValue={term} className={fieldCls} />
-          </label>
-          <label className={labelCls}>
-            Plan
-            <select name="plan" defaultValue={plan} className={fieldCls}>
-              <option value="all">All plans</option>
-              {plans.map((p) => (
-                <option key={p.id} value={p.name}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={labelCls}>
-            Status
-            <select name="status" defaultValue={status} className={fieldCls}>
-              <option value="all">All</option>
-              <option value="active">Active</option>
-              <option value="ending">Ending soon</option>
-              <option value="expired">Expired</option>
-            </select>
-          </label>
-          <button type="submit" className={btnOutline}>
-            Filter
-          </button>
-        </form>
-
-        <div className="overflow-x-auto border border-line bg-paper">
-          <table className="w-full min-w-[680px] text-[14.5px]">
-            <thead>
-              <tr className="text-left text-muted">
-                {["Member", "Code", "Phone", "Plan", "Ends", "Status"].map((h) => (
-                  <th key={h} scope="col" className="px-3.5 py-3 font-semibold">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((m) => {
-                const s = membershipStatus(m.endDate, today);
-                const on = m.id === picked?.id;
-                return (
-                  <tr key={m.id} className={`relative border-t border-line ${on ? "bg-[#e3efc7]" : "hover:bg-cream"}`}>
-                    <td className="px-3.5 py-3 font-semibold">
-                      <Link
-                        href={qs({ selected: String(m.id) })}
-                        scroll={false}
-                        aria-current={on ? "true" : undefined}
-                        className="after:absolute after:inset-0"
-                      >
-                        {m.name}
-                      </Link>
-                    </td>
-                    <td className="px-3.5 py-3 tabular-nums">{m.code}</td>
-                    <td className="px-3.5 py-3 tabular-nums">{m.phone}</td>
-                    <td className="px-3.5 py-3">{m.plan.name}</td>
-                    <td className="px-3.5 py-3">{short(m.endDate)}</td>
-                    <td
-                      className={`px-3.5 py-3 font-semibold ${s.status === "active" ? "text-[#4d7a12]" : s.status === "ending" ? "text-[#a8411f]" : "text-muted"}`}
-                    >
-                      {s.status === "active" ? "Active" : s.status === "ending" ? (s.daysLeft === 0 ? "Ends today" : `Ends in ${s.daysLeft}d`) : "Expired"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {members.length === 0 && (
-            <p className="px-4 py-10 text-center text-muted">
-              No member matches.{" "}
-              {canEdit && (
-                <Link href="/staff/members/new" className="font-semibold text-forest underline underline-offset-4">
-                  Sign them up
+    <div className="grid content-start gap-5">
+      <dl className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
+        {stats.map(([label, value, hint, href]) => (
+          <div key={label} className="bg-paper p-4">
+            <dt className="text-[13.5px] text-muted">{label}</dt>
+            <dd className={`mt-1 font-serif text-[26px] leading-tight ${label === "Pending payments" && value !== "0" ? "text-clay" : "text-forest"}`}>
+              {href ? (
+                <Link href={href.startsWith("?") ? `/staff/members${href}` : `/staff/members${href}`} className="hover:underline">
+                  {value}
                 </Link>
+              ) : (
+                value
               )}
-            </p>
-          )}
-        </div>
-      </div>
+            </dd>
+            {hint && <dd className="text-[13px] text-muted">{hint}</dd>}
+          </div>
+        ))}
+      </dl>
 
-      {picked && (
-        <aside className="grid min-w-0 flex-[1_1_320px] content-start gap-4 border border-line bg-paper p-6">
-          <div>
-            <h2 className="font-serif text-[26px] text-forest">{picked.name}</h2>
-            <p className="mt-1 text-[14.5px] text-muted">
-              {picked.code} · {picked.phone}
-            </p>
-          </div>
-          <div className="grid gap-1.5 bg-forest p-4 text-[14.5px] text-cream">
-            <div className="flex justify-between">
-              <strong className="text-[18px]">{picked.plan.name}</strong>
-              <span>
-                {membershipStatus(picked.endDate, today).status === "expired" ? "Ended" : "Ends"} {short(picked.endDate)}
-              </span>
-            </div>
-            <div className="opacity-85">
-              Courts {picked.plan.courtRate === 0 ? "free" : `${inr(picked.plan.courtRate)}/hr`} · Shop {picked.plan.shopDiscount}% · Bar{" "}
-              {picked.plan.barDiscount}%
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Link href={`/staff/members/${picked.id}${canEdit ? "#renew" : ""}`} className={btnOutline}>
-              {canEdit ? "Renew" : "Open profile"}
+      <form method="get" className="grid gap-3 border border-line bg-paper p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="grid gap-1 text-[13px] font-semibold text-muted lg:col-span-2">
+          Search
+          <input type="search" name="q" defaultValue={term} placeholder="Name, member ID, phone or email" className={fieldCls} />
+        </label>
+        <label className="grid gap-1 text-[13px] font-semibold text-muted">
+          Plan
+          <select name="plan" defaultValue={sp.plan ?? ""} className={fieldCls}>
+            <option value="">All plans</option>
+            {plans.map((p) => (
+              <option key={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1 text-[13px] font-semibold text-muted">
+          Status
+          <select name="status" defaultValue={status} className={fieldCls}>
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="ending">Expiring in 7 days</option>
+            <option value="expired">Expired</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </label>
+        <fieldset className="grid grid-cols-2 gap-2 sm:col-span-1 lg:col-span-2">
+          <legend className="mb-1 text-[13px] font-semibold text-muted">Registered between</legend>
+          <input type="date" name="joinedFrom" defaultValue={sp.joinedFrom} aria-label="Registered from" className={fieldCls} />
+          <input type="date" name="joinedTo" defaultValue={sp.joinedTo} aria-label="Registered until" className={fieldCls} />
+        </fieldset>
+        <fieldset className="grid grid-cols-2 gap-2 sm:col-span-1 lg:col-span-2">
+          <legend className="mb-1 text-[13px] font-semibold text-muted">Expires between</legend>
+          <input type="date" name="endsFrom" defaultValue={sp.endsFrom} aria-label="Expires from" className={fieldCls} />
+          <input type="date" name="endsTo" defaultValue={sp.endsTo} aria-label="Expires until" className={fieldCls} />
+        </fieldset>
+        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
+          <button type="submit" className="min-h-11 bg-forest px-5 font-semibold text-cream hover:bg-forest-deep">
+            Apply filters
+          </button>
+          {filtered && (
+            <Link href="/staff/members" className={btnOutline}>
+              Clear
             </Link>
-            <Link href={`/staff/bookings?member=${picked.id}`} className={btnOutline}>
-              Book a court
-            </Link>
+          )}
+          <span className="ml-auto self-center text-[14px] text-muted">
+            {members.length} {members.length === 1 ? "member" : "members"}
+          </span>
+        </div>
+      </form>
+
+      <div className="overflow-x-auto border border-line bg-paper">
+        <table className="w-full min-w-[860px] text-left text-[14.5px]">
+          <caption className="sr-only">Member directory</caption>
+          <thead className="text-[13.5px] text-muted">
+            <tr>
+              {["Member", "Member ID", "Phone", "Plan", "Registered", "Expires", "Status"].map((h) => (
+                <th key={h} scope="col" className="px-3.5 py-3 font-semibold">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="[&>tr]:border-t [&>tr]:border-line">
+            {members.map((m) => {
+              const s = memberState(m, today);
+              return (
+                <tr key={m.id} className="relative hover:bg-[#f6f1e6]">
+                  <td className="px-3.5 py-3 font-semibold">
+                    <Link href={`/staff/members/${m.id}`} className="after:absolute after:inset-0 hover:text-forest">
+                      {m.name}
+                    </Link>
+                  </td>
+                  <td className="px-3.5 py-3 tabular-nums">{m.code}</td>
+                  <td className="px-3.5 py-3 tabular-nums">{m.phone}</td>
+                  <td className="px-3.5 py-3">{m.plan.name}</td>
+                  <td className="whitespace-nowrap px-3.5 py-3">{fmtDate(m.createdAt)}</td>
+                  <td className="whitespace-nowrap px-3.5 py-3">{fmtDate(m.endDate)}</td>
+                  <td className="px-3.5 py-3">
+                    <StateBadge state={s.state}>{stateLabel(s.state, s.daysLeft)}</StateBadge>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {members.length === 0 && (
+          <div className="px-4 py-12 text-center">
+            <p className="font-semibold">No members match</p>
+            <p className="mt-1 text-[14px] text-muted">{all.length ? "Try clearing a filter." : "Sign up your first member to get started."}</p>
           </div>
-          <Link href={`/staff/members/${picked.id}`} className="text-[14.5px] font-bold text-forest">
-            Open full profile and renewals →
-          </Link>
-          <h3 className="mt-1 text-[16px] font-semibold">History</h3>
-          {history.length === 0 && <p className="text-[14px] text-muted">Nothing yet.</p>}
-          {history.map((h, i) => (
-            <div key={i} className="grid grid-cols-[70px_minmax(0,1fr)_auto] gap-2.5 border-t border-[#ece5d6] py-2 text-[14px]">
-              <span className="text-muted">{short(h.when)}</span>
-              <span className="truncate">{h.what}</span>
-              <span className="font-semibold tabular-nums">{h.amount}</span>
-            </div>
-          ))}
-          <p className="text-[12.5px] text-muted">Member since {fmtDate(picked.createdAt)}</p>
-        </aside>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Member, Plan, Prisma } from "@prisma/client";
 import { bookingError, sessionEnd } from "./bookings";
 import { courtPrice } from "./pricing";
+import { benefitPlan } from "./membership";
 
 type Tx = Prisma.TransactionClient;
 
@@ -40,13 +41,19 @@ export async function placeBooking(
     select: { courtId: true, memberId: true, start: true, end: true },
   });
   const error = bookingError(
-    { courtId: court.id, start: req.start, end, now: new Date(), member: req.member ? { id: req.member.id, endDate: req.member.endDate } : null },
+    {
+      courtId: court.id,
+      start: req.start,
+      end,
+      now: new Date(),
+      member: req.member ? { id: req.member.id, endDate: req.member.endDate, suspendedAt: req.member.suspendedAt } : null,
+    },
     { existing, memberBookingsThatDay: req.member ? await memberDayCount(tx, req.member.id, req.start) : 0 },
   );
   if (error) throw new Error(error);
 
   const social = req.type === "social";
-  const price = social || req.type === "trial" ? 0 : courtPrice(req.member?.plan ?? null, court.walkInRate);
+  const price = social || req.type === "trial" ? 0 : courtPrice(benefitPlan(req.member), court.walkInRate);
   const booking = await tx.booking.create({
     data: {
       courtId: court.id,
