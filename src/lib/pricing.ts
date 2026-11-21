@@ -2,7 +2,7 @@ export type PlanPricing = { courtRate: number; shopDiscount: number; barDiscount
 
 export const applyDiscount = (amount: number, percent: number) => amount - Math.round((amount * percent) / 100);
 
-export const courtPrice = (plan: PlanPricing | null, walkInRate: number) => (plan ? plan.courtRate : walkInRate);
+export const courtPrice = (plan: Pick<PlanPricing, "courtRate"> | null, walkInRate: number) => (plan ? plan.courtRate : walkInRate);
 
 export const shopPrice = (plan: PlanPricing | null, amount: number) => applyDiscount(amount, plan?.shopDiscount ?? 0);
 
