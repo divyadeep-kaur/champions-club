@@ -32,13 +32,13 @@ const icons: Record<string, LucideIcon> = {
   leads: UserPlus,
 };
 
-type Item = { href: string; label: string; icon: string };
+type Item = { href: string; label: string; icon: string; badge?: number };
 
 function Links({ items, onNavigate }: { items: Item[]; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <ul className="space-y-1">
-      {items.map(({ href, label, icon }) => {
+      {items.map(({ href, label, icon, badge }) => {
         const Icon = icons[icon];
         const active = href === "/staff" ? pathname === href : pathname.startsWith(href);
         return (
@@ -53,6 +53,11 @@ function Links({ items, onNavigate }: { items: Item[]; onNavigate?: () => void }
             >
               <Icon className="size-[18px] lg:hidden" strokeWidth={1.9} />
               {label}
+              {badge ? (
+                <span className={`ml-auto rounded-full px-2 py-0.5 text-[12px] font-bold tabular-nums ${active ? "bg-forest-deep text-ball" : "bg-clay text-white"}`} aria-label={`${badge} new`}>
+                  {badge}
+                </span>
+              ) : null}
             </Link>
           </li>
         );

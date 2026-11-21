@@ -41,7 +41,9 @@ export function TrialForm({
           ) : null}
           . The desk will call you on your mobile within a day to confirm.
         </p>
-        <p className="bg-[#e3efc7] px-3.5 py-3 text-[15px] text-[#2f4a0a]">Your request is with the front desk.</p>
+        <p className="bg-[#e3efc7] px-3.5 py-3 text-[15px] text-[#2f4a0a]">
+          {state.done.court ? <>We’ve held <strong>{state.done.court}</strong> for your free trial. The desk will call to confirm.</> : "Your request is with the front desk."}
+        </p>
         <Link href="/courts" className="font-bold text-forest">
           See this week’s courts →
         </Link>

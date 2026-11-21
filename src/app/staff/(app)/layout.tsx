@@ -1,4 +1,5 @@
 import { StaffNav } from "@/components/staff/StaffNav";
+import { db } from "@/lib/db";
 import { navFor } from "@/lib/nav";
 import { requireStaff } from "@/lib/session";
 import { logout } from "../login/actions";
@@ -7,7 +8,9 @@ export const metadata = { title: "Staff · The Champions Club" };
 
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   const session = await requireStaff();
-  const items = navFor(session.role).map(({ href, label, icon }) => ({ href, label, icon }));
+  const nav = navFor(session.role);
+  const newLeads = nav.some((i) => i.href === "/staff/leads") ? await db.lead.count({ where: { status: { in: ["new", "trial"] }, createdAt: { gte: new Date(Date.now() - 7 * 86_400_000) } } }) : 0;
+  const items = nav.map(({ href, label, icon }) => ({ href, label, icon, badge: href === "/staff/leads" ? newLeads : undefined }));
 
   return (
     <div className="min-h-screen bg-cream lg:flex print:bg-white">

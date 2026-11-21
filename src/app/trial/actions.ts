@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { normalizePhone } from "@/lib/members";
+import { placeBooking } from "@/lib/bookingService";
 
-export type TrialState = { error?: string; done?: { name: string; when?: string }; fields?: Record<string, string> };
+export type TrialState = { error?: string; done?: { name: string; when?: string; court?: string }; fields?: Record<string, string> };
 
 const schema = z.object({
   name: z.string().trim().min(2, "Enter your name").max(80),
@@ -39,11 +40,35 @@ export async function submitTrial(_: TrialState, formData: FormData): Promise<Tr
   const court = f.courtId ? await db.court.findUnique({ where: { id: Number(f.courtId) || 0 } }) : null;
   const details = [court && `Court: ${court.name}`, f.plan && `Plan: ${f.plan}`, f.message].filter(Boolean).join(" · ");
 
-  await db.lead.create({
-    data: { name: f.name, phone, email: f.email || null, interest: f.interest, preferredAt, message: details || null, status: "new" },
+  const when = preferredAt?.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
+
+  const heldCourt = await db.$transaction(async (tx) => {
+    const lead = await tx.lead.create({
+      data: { name: f.name, phone, email: f.email || null, interest: f.interest, preferredAt, message: details || null, status: "new" },
+    });
+    await tx.leadActivity.create({ data: { leadId: lead.id, kind: "note", text: `Enquiry from the website${when ? ` for ${when}` : ""}` } });
+    if (f.interest !== "trial" || !preferredAt) return null;
+
+    const courts = await tx.court.findMany({ orderBy: [{ sport: "desc" }, { name: "asc" }] });
+    const order = court ? [court, ...courts.filter((c) => c.id !== court.id)] : courts;
+    for (const c of order) {
+      try {
+        const { booking } = await placeBooking(tx, { courtId: c.id, start: preferredAt, member: null, guestName: `Trial: ${f.name}`, guestPhone: phone, type: "trial", method: "later" });
+        await tx.lead.update({ where: { id: lead.id }, data: { status: "trial", bookingId: booking.id } });
+        await tx.leadActivity.create({ data: { leadId: lead.id, kind: "trial", text: `Trial booked from the website: ${c.name}, ${when}` } });
+        return c.name;
+      } catch {
+        continue;
+      }
+    }
+    await tx.leadActivity.create({ data: { leadId: lead.id, kind: "note", text: "No court was free at the requested time. Call to offer another slot." } });
+    return null;
   });
+
   revalidatePath("/staff/leads");
+  revalidatePath("/staff/bookings");
   revalidatePath("/staff");
+  revalidatePath("/courts");
 
   return {
     done: {
@@ -51,6 +76,7 @@ export async function submitTrial(_: TrialState, formData: FormData): Promise<Tr
       when: preferredAt
         ? preferredAt.toLocaleString("en-IN", { weekday: "long", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })
         : undefined,
+      court: heldCourt ?? undefined,
     },
   };
 }
