@@ -46,7 +46,7 @@ export function ClubVideo() {
   const btn = "grid size-11 place-items-center rounded-full border border-white/40 bg-forest-deep/45 text-white backdrop-blur-md hover:bg-forest-deep/70";
 
   return (
-    <section aria-label="Club video" className="mx-auto max-w-[1280px] px-4 pt-20 sm:px-8 sm:pt-24">
+    <section id="club-video" aria-label="Club video" className="mx-auto max-w-[1280px] scroll-mt-20 px-4 pt-20 sm:px-8 sm:pt-24">
       <div className="relative overflow-hidden rounded-3xl bg-forest-deep">
         <video ref={ref} className="block aspect-[2/1] w-full object-cover" src="/videos/club-tour.mp4" poster="/videos/club-tour-poster.jpg" muted loop playsInline preload="metadata" aria-label="A short film about running the club: bookings, gear, analytics and keeping players coming back" />
         <div className="absolute bottom-4 right-4 flex gap-2">
