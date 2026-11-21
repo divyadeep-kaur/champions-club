@@ -6,6 +6,7 @@ import { Navbar } from "@/components/landing/Navbar";
 import { ClubVideo } from "@/components/landing/ClubVideo";
 import { Footer } from "@/components/landing/Footer";
 import { Coaches } from "@/components/landing/Coaches";
+import { Athletes } from "@/components/landing/Athletes";
 import { Contact, Faq, FeatureQuote, Features, HomeHero, OneClub, PerksStrip, Reviews, Sports } from "@/components/landing/Home";
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,7 @@ export default async function Home() {
         ]}
       />
       <Contact />
+      <Athletes />
       <Footer />
     </main>
   );

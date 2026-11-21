@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Figtree } from "next/font/google";
+import { Caveat, Fraunces, Figtree } from "next/font/google";
 import "./globals.css";
 
 const display = Fraunces({
@@ -14,6 +14,12 @@ const body = Figtree({
   subsets: ["latin"],
 });
 
+const script = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  weight: ["500", "700"],
+});
+
 export const metadata: Metadata = {
   title: "The Champions Club",
   description: "Tennis and cricket courts, memberships, a gear shop and a café. Find an open court and book a trial.",
@@ -22,7 +28,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${body.variable} antialiased`}>{children}</body>
+      <body className={`${display.variable} ${body.variable} ${script.variable} antialiased`}>{children}</body>
     </html>
   );
 }
