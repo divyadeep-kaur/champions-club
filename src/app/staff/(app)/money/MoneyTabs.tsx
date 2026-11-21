@@ -8,6 +8,7 @@ const tabs = [
   { href: "/staff/money/bills", label: "Bills" },
   { href: "/staff/money/payroll", label: "Payroll" },
   { href: "/staff/money/invoices", label: "Invoices" },
+  { href: "/staff/money/staff-invoices", label: "Staff invoices" },
   { href: "/staff/money/gst", label: "GST" },
 ];
 

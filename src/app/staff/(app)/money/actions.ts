@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { monthLabel, monthRange, nextInvoiceNumber } from "@/lib/money";
+import { monthKey, monthLabel, monthRange, nextInvoiceNumber } from "@/lib/money";
+import { payslip, statutoryDue } from "@/lib/payroll";
+import { issueStaffInvoice } from "@/lib/staffInvoices";
 import { requireStaff } from "@/lib/session";
 
 export type MoneyState = { error?: string; ok?: string; at?: number };
@@ -12,7 +14,7 @@ export type MoneyState = { error?: string; ok?: string; at?: number };
 const refresh = () => revalidatePath("/staff/money", "layout");
 
 const expenseSchema = z.object({
-  category: z.enum(["stock", "salary", "rent", "utilities", "other"]),
+  category: z.enum(["stock", "salary", "statutory", "claims", "rent", "utilities", "other"]),
   description: z.string().trim().min(2, "Describe the bill").max(120),
   vendor: z.string().trim().max(80).optional(),
   amount: z.coerce.number().int("Whole rupees only").min(1, "Enter the amount").max(10_000_000),
@@ -45,6 +47,16 @@ export async function payExpense(formData: FormData) {
   const method = String(formData.get("method") ?? "bank");
   await db.expense.updateMany({ where: { id, paidAt: null }, data: { paidAt: new Date(), method } });
   refresh();
+  revalidatePath("/staff/me");
+}
+
+export async function payAllSalaries(formData: FormData) {
+  await requireStaff(["owner"]);
+  const slips = await db.payslip.findMany({ where: { month: String(formData.get("month") ?? "") }, select: { expenseId: true } });
+  const ids = slips.map((x) => x.expenseId).filter((x): x is number => !!x);
+  await db.expense.updateMany({ where: { id: { in: ids }, paidAt: null }, data: { paidAt: new Date(), method: "bank" } });
+  refresh();
+  revalidatePath("/staff/me");
 }
 
 export async function setSalary(formData: FormData) {
@@ -58,16 +70,73 @@ export async function setSalary(formData: FormData) {
 export async function runPayroll(formData: FormData) {
   await requireStaff(["owner"]);
   const month = String(formData.get("month") ?? "");
-  const { from } = monthRange(month);
+  const { from, to } = monthRange(month);
+  const key = monthKey(from);
   const label = monthLabel(from);
   const due = new Date(from.getFullYear(), from.getMonth() + 1, 0, 12);
-  const staff = await db.staff.findMany({ where: { monthlySalary: { gt: 0 } } });
+  const [staff, leaves] = await Promise.all([
+    db.staff.findMany({ where: { monthlySalary: { gt: 0 }, active: true, joinedAt: { lt: to }, payslips: { none: { month: key } } } }),
+    db.leaveRequest.findMany({ where: { status: "approved", from: { lt: to }, to: { gte: from } } }),
+  ]);
   for (const s of staff) {
-    const description = `Salary ${label} · ${s.name}`;
-    const exists = await db.expense.findFirst({ where: { category: "salary", description } });
-    if (!exists) await db.expense.create({ data: { category: "salary", description, vendor: s.name, amount: s.monthlySalary, dueDate: due } });
+    const advances = await db.staffQuery.findMany({ where: { staffId: s.id, topic: "advance", status: "approved", recoveredMonth: null, createdAt: { lt: to } } });
+    const slip = payslip(
+      s.monthlySalary,
+      advances.reduce((n, a) => n + (a.amount ?? 0), 0),
+    );
+    const leaveDays = leaves
+      .filter((l) => l.staffId === s.id)
+      .reduce((n, l) => n + Math.round((Math.min(l.to.getTime(), to.getTime() - 1) - Math.max(l.from.getTime(), from.getTime())) / 86_400_000) + 1, 0);
+    await db.$transaction(async (tx) => {
+      const expense =
+        slip.net > 0
+          ? await tx.expense.create({ data: { category: "salary", description: `Salary ${label} · ${s.name}`, vendor: s.name, amount: slip.net, dueDate: due } })
+          : null;
+      const created = await tx.payslip.create({
+        data: {
+          staffId: s.id,
+          month: key,
+          gross: slip.gross,
+          basic: slip.basic,
+          hra: slip.hra,
+          allowance: slip.allowance,
+          pf: slip.pf,
+          esi: slip.esi,
+          pt: slip.pt,
+          advance: slip.advance,
+          net: slip.net,
+          employerPf: slip.employerPf,
+          employerEsi: slip.employerEsi,
+          leaveDays: Math.max(0, leaveDays),
+          expenseId: expense?.id,
+        },
+      });
+      await issueStaffInvoice(tx, {
+        staffId: s.id,
+        kind: "salary",
+        month: key,
+        payslipId: created.id,
+        expenseId: expense?.id,
+        amount: slip.net,
+        description: `Salary for ${label}: gross ${slip.gross}, deductions ${slip.deductions}`,
+      });
+      if (advances.length) await tx.staffQuery.updateMany({ where: { id: { in: advances.map((a) => a.id) } }, data: { recoveredMonth: label } });
+    });
+  }
+
+  const slips = await db.payslip.findMany({ where: { month: key } });
+  const stat = statutoryDue(slips);
+  const description = `PF, ESI and PT ${label}`;
+  const existing = await db.expense.findFirst({ where: { category: "statutory", description } });
+  if (!existing && stat.total > 0) {
+    await db.expense.create({
+      data: { category: "statutory", description, vendor: "EPFO / ESIC / Punjab PT", amount: stat.total, dueDate: new Date(from.getFullYear(), from.getMonth() + 1, 15, 12) },
+    });
+  } else if (existing && !existing.paidAt) {
+    await db.expense.update({ where: { id: existing.id }, data: { amount: stat.total } });
   }
   refresh();
+  revalidatePath("/staff/me");
 }
 
 const lineSchema = z.object({
