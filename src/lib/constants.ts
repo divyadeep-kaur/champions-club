@@ -10,7 +10,7 @@ export const FULFILMENT = ["counter", "pickup", "delivery"] as const;
 export const ORDER_STATUS = ["pending", "ready", "completed", "cancelled"] as const;
 
 export const TAB_STATUS = ["open", "paid", "void"] as const;
-export const LEAD_STATUS = ["new", "contacted", "quoted", "won", "lost"] as const;
+export const LEAD_STATUS = ["new", "contacted", "trial", "quoted", "won", "lost"] as const;
 export const LEAD_INTEREST = ["trial", "membership", "other"] as const;
 
 export const PAYMENT_SOURCES = ["membership", "court", "shop", "bar"] as const;
