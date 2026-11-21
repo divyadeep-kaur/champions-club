@@ -11,7 +11,7 @@ import { normalizePhone } from "@/lib/members";
 import { CLUB_SPOTS, INDIAN_STATES, formatAddress, isPincode, shippingFor } from "@/lib/delivery";
 import { getShippingRule } from "@/lib/deliveryService";
 
-export type ShopState = { error?: string; ok?: string; at?: number };
+export type ShopState = { error?: string; ok?: string; at?: number; fields?: Record<string, string> };
 
 const schema = z.object({
   items: z.string(),
@@ -45,7 +45,17 @@ async function deliveryDetails(f: z.infer<typeof schema>, memberPhone: string) {
   return { data: { clubSpot: null, address, deliveryPhone: phone, pincode: f.pincode.trim() } };
 }
 
-export async function placeOrder(_: ShopState, formData: FormData): Promise<ShopState> {
+export async function placeOrder(prev: ShopState, formData: FormData): Promise<ShopState> {
+  const result = await place(formData);
+  // On an error, send back what was typed so the address doesn't have to be entered again.
+  if (result.error) {
+    const fields = Object.fromEntries([...formData.entries()].filter(([k, v]) => typeof v === "string" && k !== "items")) as Record<string, string>;
+    return { ...result, fields, at: Date.now() };
+  }
+  return result;
+}
+
+async function place(formData: FormData): Promise<ShopState> {
   const member = await requireMember();
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };

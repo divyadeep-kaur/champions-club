@@ -31,6 +31,7 @@ export function ShopOrder({
   const [cart, setCart] = useState<Record<number, number>>({});
   const [fulfilment, setFulfilment] = useState<"club" | "delivery">("club");
   const [state, action, pending] = useActionState<ShopState, FormData>(placeOrder, {});
+  const f = state.error ? (state.fields ?? {}) : {};
 
   useEffect(() => {
     if (state.ok) setCart({});
@@ -117,14 +118,14 @@ export function ShopOrder({
         </section>
       ))}
 
-      <section className="mx-4 grid gap-3 rounded-[16px] border border-line bg-paper p-4" aria-labelledby="where">
+      <section key={state.at ?? 0} className="mx-4 grid gap-3 rounded-[16px] border border-line bg-paper p-4" aria-labelledby="where">
         <h2 id="where" className="text-[17px] font-bold text-forest">
           {fulfilment === "club" ? "Where in the club should we bring it?" : "Delivery address"}
         </h2>
         {fulfilment === "club" ? (
           <label className={lbl}>
             I’m at
-            <select name="clubSpot" defaultValue="" required className={field}>
+            <select name="clubSpot" defaultValue={f.clubSpot ?? ""} required className={field}>
               <option value="" disabled>
                 Choose a court or place
               </option>
@@ -138,29 +139,38 @@ export function ShopOrder({
           <>
             <label className={lbl}>
               House / flat no. and building
-              <input name="line1" autoComplete="address-line1" required minLength={5} className={field} />
+              <input name="line1" defaultValue={f.line1} autoComplete="address-line1" required minLength={5} className={field} />
             </label>
             <label className={lbl}>
               Street and area
-              <input name="line2" autoComplete="address-line2" required className={field} />
+              <input name="line2" defaultValue={f.line2} autoComplete="address-line2" required className={field} />
             </label>
             <label className={lbl}>
               Landmark (optional)
-              <input name="landmark" className={field} />
+              <input name="landmark" defaultValue={f.landmark} className={field} />
             </label>
             <div className="grid grid-cols-2 gap-2.5">
               <label className={lbl}>
                 City
-                <input name="city" autoComplete="address-level2" required className={field} />
+                <input name="city" defaultValue={f.city} autoComplete="address-level2" required className={field} />
               </label>
               <label className={lbl}>
                 PIN code
-                <input name="pincode" inputMode="numeric" autoComplete="postal-code" pattern="[1-9][0-9]{5}" maxLength={6} required className={field} />
+                <input
+                  name="pincode"
+                  defaultValue={f.pincode}
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  pattern="[1-9][0-9]{5}"
+                  maxLength={6}
+                  required
+                  className={field}
+                />
               </label>
             </div>
             <label className={lbl}>
               State
-              <select name="state" defaultValue="Punjab" className={field}>
+              <select name="state" defaultValue={f.state ?? "Punjab"} className={field}>
                 {INDIAN_STATES.map((st) => (
                   <option key={st}>{st}</option>
                 ))}
@@ -168,7 +178,7 @@ export function ShopOrder({
             </label>
             <label className={lbl}>
               Phone for the delivery
-              <input name="phone" inputMode="tel" autoComplete="tel" defaultValue={memberPhone} required className={field} />
+              <input name="phone" inputMode="tel" autoComplete="tel" defaultValue={f.phone ?? memberPhone} required className={field} />
             </label>
             <p className="text-[12.5px] text-muted">
               Shipping {inr(shipping.fee)}
