@@ -2,9 +2,11 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { startOfMonth } from "@/lib/dates";
-import { STAGES } from "@/lib/leads";
+import { requestDetails, STAGES, trialDecision } from "@/lib/leads";
 import { requireStaff } from "@/lib/session";
 import { btnPrimary } from "@/components/staff/ui";
+import { AutoRefresh } from "../kitchen/AutoRefresh";
+import { TrialRequests, type TrialRequest } from "./TrialRequests";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,14 @@ const columnColor: Record<string, string> = { new: "#c4572f", contacted: "#8a6d3
 const action: Record<string, string> = { new: "Call back", contacted: "Book a trial", trial: "Send a quote", quoted: "Convert to member", won: "View member" };
 const short = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 const time = (d: Date) => d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+const long = (d: Date) => d.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
+const ago = (d: Date) => {
+  const m = Math.max(0, Math.round((Date.now() - d.getTime()) / 60_000));
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  if (m < 1440) return `${Math.round(m / 60)} h ago`;
+  return short(d);
+};
 
 export default async function LeadsPage() {
   await requireStaff(["owner", "desk"]);
@@ -19,7 +29,7 @@ export default async function LeadsPage() {
   const [leads, lost, joinedThisMonth] = await Promise.all([
     db.lead.findMany({
       where: { OR: [{ status: { notIn: ["won", "lost"] } }, { status: "won", createdAt: { gte: monthStart } }] },
-      include: { activities: { orderBy: { createdAt: "desc" }, take: 1 }, booking: { include: { court: true } }, member: true },
+      include: { activities: { orderBy: { createdAt: "desc" } }, booking: { include: { court: true } }, member: true },
       orderBy: { createdAt: "desc" },
     }),
     db.lead.findMany({ where: { status: "lost" }, include: { activities: { where: { kind: "status" }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" }, take: 5 }),
@@ -27,6 +37,14 @@ export default async function LeadsPage() {
   ]);
 
   const open = leads.filter((l) => l.status !== "won");
+  const waiting = new Set(leads.filter((l) => trialDecision(l, l.activities.map((a) => a.kind)) === "pending").map((l) => l.id));
+  const requests: TrialRequest[] = leads
+    .filter((l) => waiting.has(l.id))
+    .map((l) => {
+      const d = requestDetails(l.message);
+      const held = l.booking && l.booking.status === "booked" ? `${l.booking.court.name}, ${long(l.booking.start)}` : null;
+      return { id: l.id, name: l.name, phone: l.phone, email: l.email, interest: l.interest, wants: l.preferredAt ? long(l.preferredAt) : null, court: d.court ?? null, held, plan: d.plan ?? l.plan, note: d.note ?? null, received: long(l.createdAt), ago: ago(l.createdAt) };
+    });
   const quotesOut = leads.filter((l) => l.status === "quoted").reduce((s, l) => s + (l.quoteAmount ?? 0), 0);
 
   const meta = (l: (typeof leads)[number]) => {
@@ -42,12 +60,15 @@ export default async function LeadsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Leads</h1>
-          <p className="mt-1.5 text-muted">Enquiries from the website’s trial page land here. Open a lead for its timeline, trial booking and quote.</p>
+          <p className="mt-1.5 text-muted">Free trial requests from the website wait here for approval. Open any lead for its timeline, trial booking and quote.</p>
         </div>
         <Link href="/trial" target="_blank" className={btnPrimary}>
           Add walk-in enquiry
         </Link>
       </div>
+
+      <AutoRefresh seconds={8} />
+      <TrialRequests requests={requests} />
 
       <div className="overflow-x-auto pb-2">
         <div className="grid min-w-[1180px] grid-cols-5 items-start gap-4">
@@ -68,6 +89,7 @@ export default async function LeadsPage() {
                     </div>
                     <div className="line-clamp-2 text-[14px] leading-[1.45] text-[#3c4a43]">{c.activities[0]?.text ?? c.message ?? "No message"}</div>
                     <div className="text-[13px] text-muted">{meta(c)}</div>
+                    {waiting.has(c.id) && <span className="w-fit bg-[#f6e3c4] px-2 py-0.5 text-[12px] font-bold text-[#7a4b0c]">Waiting for approval</span>}
                     <Link
                       href={c.status === "won" && c.member ? `/staff/members/${c.member.id}` : c.status === "quoted" ? `/staff/members/new?lead=${c.id}` : `/staff/leads/${c.id}`}
                       className="block border-[1.5px] border-forest p-2.5 text-[14px] font-semibold text-forest hover:bg-forest/5"

@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { submitTrial, type TrialState } from "./actions";
+import { useActionState, useEffect, useState } from "react";
+import { CheckCircle2, Clock3, Loader2, XCircle } from "lucide-react";
+import { submitTrial, trialStatus, type TrialState, type TrialStatus } from "./actions";
 
 const field = "min-h-11 rounded-[10px] border border-[#b5aa98] bg-white p-3 font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 const label = "grid gap-1.5 text-[14px] font-bold";
@@ -41,9 +41,11 @@ export function TrialForm({
           ) : null}
           . The desk will call you on your mobile within a day to confirm.
         </p>
-        <p className="bg-[#e3efc7] px-3.5 py-3 text-[15px] text-[#2f4a0a]">
-          {state.done.court ? <>We’ve held <strong>{state.done.court}</strong> for your free trial. The desk will call to confirm.</> : "Your request is with the front desk."}
-        </p>
+        {state.done.trial && state.done.id && state.done.phone ? (
+          <LiveStatus id={state.done.id} phone={state.done.phone} held={state.done.court} />
+        ) : (
+          <p className="bg-[#e3efc7] px-3.5 py-3 text-[15px] text-[#2f4a0a]">Your request is with the front desk.</p>
+        )}
         <Link href="/courts" className="font-bold text-forest">
           See this week’s courts →
         </Link>
@@ -60,7 +62,6 @@ export function TrialForm({
       <input type="hidden" name="courtId" value={defaults.courtId ?? ""} />
       <input type="hidden" name="plan" value={defaults.plan ?? ""} />
       <input type="hidden" name="interest" value={interest} />
-      <input type="hidden" name="email" value="" />
       <label className="sr-only" aria-hidden="true">
         Website
         <input name="website" tabIndex={-1} autoComplete="off" />
@@ -91,6 +92,10 @@ export function TrialForm({
         Mobile number
         <input name="phone" defaultValue={f.phone} inputMode="tel" autoComplete="tel" placeholder="98765 43210" className={field} />
       </label>
+      <label className={label}>
+        Email (optional)
+        <input name="email" type="email" defaultValue={f.email} autoComplete="email" placeholder="you@example.com" className={field} />
+      </label>
       {interest === "trial" && (
         <div className="grid grid-cols-2 gap-3">
           <label className={label}>
@@ -117,5 +122,54 @@ export function TrialForm({
       </p>
       <p className="-mt-3 text-[13.5px] text-muted">We only use your number to call you about this request.</p>
     </form>
+  );
+}
+
+// Shows the club's answer as soon as the desk approves or declines,
+// by asking the server every few seconds while this screen is open.
+function LiveStatus({ id, phone, held }: { id: number; phone: string; held?: string }) {
+  const [status, setStatus] = useState<TrialStatus>({ decision: "pending", court: held });
+
+  useEffect(() => {
+    if (status.decision !== "pending") return;
+    let alive = true;
+    const check = () =>
+      trialStatus(id, phone)
+        .then((s) => alive && s.decision && setStatus(s))
+        .catch(() => {});
+    const timer = setInterval(check, 5000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [id, phone, status.decision]);
+
+  if (status.decision === "approved") {
+    return (
+      <p role="status" className="flex items-start gap-2.5 bg-[#e3efc7] px-3.5 py-3 text-[15px] text-[#2f4a0a]">
+        <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+        <span>
+          <strong>Approved!</strong> Your free trial is confirmed{status.court ? <> on <strong>{status.court}</strong></> : null}
+          {status.when ? <>, {status.when}</> : null}. See you at the club.
+        </span>
+      </p>
+    );
+  }
+  if (status.decision === "declined") {
+    return (
+      <p role="status" className="flex items-start gap-2.5 bg-clay-soft px-3.5 py-3 text-[15px] text-clay">
+        <XCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+        <span>The club couldn’t take this trial slot. The desk will call you to find another time.</span>
+      </p>
+    );
+  }
+  return (
+    <p role="status" className="flex items-start gap-2.5 bg-[#fbf1df] px-3.5 py-3 text-[15px] text-[#7a4b0c]">
+      <Clock3 className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+      <span>
+        <strong>Waiting for approval.</strong>{" "}
+        {held ? <>We’re holding <strong>{held}</strong> for you while the desk checks it.</> : "The desk will pick a court for you."} This updates by itself.
+      </span>
+    </p>
   );
 }

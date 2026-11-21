@@ -1,20 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarCheck, Check, MessageSquare, Phone, ReceiptIndianRupee, Flag } from "lucide-react";
+import { ArrowLeft, BadgeCheck, CalendarCheck, Check, CircleX, MessageSquare, Phone, ReceiptIndianRupee, Flag } from "lucide-react";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { fmtDate, fmtTime, hhmm, isoDate } from "@/lib/dates";
 import { slotStarts } from "@/lib/bookings";
 import { nextSlot } from "@/lib/availability";
-import { STAGES, stageIndex } from "@/lib/leads";
+import { requestDetails, STAGES, stageIndex, trialDecision } from "@/lib/leads";
 import { requireStaff } from "@/lib/session";
 import { LeadActions } from "../LeadActions";
 import { LeadBadge } from "../LeadBadge";
+import { TrialDecisionCard } from "./TrialDecisionCard";
 
 export const dynamic = "force-dynamic";
 
-const icons = { note: MessageSquare, status: Flag, trial: CalendarCheck, quote: ReceiptIndianRupee, joined: Check } as const;
-const dot = { note: "bg-[#8a6d3b]", status: "bg-clay", trial: "bg-[#4d7a12]", quote: "bg-[#2f6bff]", joined: "bg-forest" } as const;
+const icons = { note: MessageSquare, status: Flag, trial: CalendarCheck, quote: ReceiptIndianRupee, joined: Check, approved: BadgeCheck, declined: CircleX } as const;
+const dot = { note: "bg-[#8a6d3b]", status: "bg-clay", trial: "bg-[#4d7a12]", quote: "bg-[#2f6bff]", joined: "bg-forest", approved: "bg-forest", declined: "bg-clay" } as const;
 
 export default async function LeadPage({ params }: { params: Promise<{ id: string }> }) {
   await requireStaff(["owner", "desk"]);
@@ -33,6 +34,19 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   const courtFromMessage = courts.find((c) => lead.message?.includes(c.name));
   const suggested = lead.preferredAt && lead.preferredAt > new Date() ? lead.preferredAt : nextSlot(new Date());
   const idx = stageIndex(lead.status);
+  const decision = trialDecision(lead, lead.activities.map((a) => a.kind));
+  const asked = requestDetails(lead.message);
+  const heldActive = lead.booking?.status === "booked";
+  const request: [string, string][] = [
+    ["Interested in", lead.interest === "trial" ? "Free trial" : lead.interest === "membership" ? "Membership" : "Other"],
+    ["Mobile", lead.phone],
+    ["Email", lead.email ?? "Not given"],
+    ["Preferred day and time", lead.preferredAt ? `${fmtDate(lead.preferredAt)}, ${fmtTime(lead.preferredAt)}` : "Any time"],
+    ["Court asked for", asked.court ?? "Any court"],
+    ["Plan looked at", asked.plan ?? "Not picked"],
+    ["Message", asked.note ?? "No message"],
+    ["Request sent", `${fmtDate(lead.createdAt)}, ${fmtTime(lead.createdAt)}`],
+  ];
   const timeline = [
     { id: 0, kind: "note" as const, text: `Enquiry from the website${lead.message ? `: “${lead.message}”` : ""}`, staffName: null, createdAt: lead.createdAt },
     ...lead.activities.map((a) => ({ ...a, kind: (a.kind in icons ? a.kind : "note") as keyof typeof icons })),
@@ -87,6 +101,22 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
+          {decision === "pending" && <TrialDecisionCard leadId={lead.id} canApprove={heldActive} />}
+          {decision === "approved" && <p className="border border-[#c9dfa0] bg-[#eef6dc] px-4 py-3 text-[15px] font-semibold text-[#3d5a12]">Trial request approved.</p>}
+          {decision === "declined" && <p className="border border-clay/30 bg-clay-soft px-4 py-3 text-[15px] font-semibold text-clay">Trial request declined.</p>}
+
+          <section className="border border-line bg-paper p-[22px]">
+            <h2 className="text-[18px] font-semibold">What they filled in</h2>
+            <dl className="mt-3 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              {request.map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-[12.5px] font-semibold uppercase tracking-[0.06em] text-muted">{k}</dt>
+                  <dd className="mt-0.5 text-[15px] text-ink">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
           {lead.member && (
             <p className="border border-[#c9dfa0] bg-[#eef6dc] px-4 py-3 text-[15px] text-[#3d5a12]">
               Joined as{" "}

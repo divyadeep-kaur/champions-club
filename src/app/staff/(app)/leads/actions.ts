@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { placeBooking } from "@/lib/bookingService";
 import { inr } from "@/lib/constants";
-import { canMove, stageLabel } from "@/lib/leads";
+import { canMove, DECISION_KINDS, stageLabel, trialDecision } from "@/lib/leads";
 import { requireStaff } from "@/lib/session";
 
 export type LeadState = { error?: string; ok?: string };
@@ -21,6 +21,50 @@ async function loadLead(formData: FormData) {
   const lead = await db.lead.findUnique({ where: { id } });
   if (!lead) throw new Error("Lead not found");
   return lead;
+}
+
+type Tx = Pick<typeof db, "leadActivity">;
+
+async function isWaiting(tx: Tx, lead: { id: number; interest: string; status: string }) {
+  const decided = await tx.leadActivity.count({ where: { leadId: lead.id, kind: { in: DECISION_KINDS } } });
+  return trialDecision(lead, decided ? ["approved"] : []) === "pending";
+}
+
+const whenText = (d: Date) => d.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
+
+export async function approveTrial(_: LeadState, formData: FormData): Promise<LeadState> {
+  const staff = await requireStaff(["owner", "desk"]);
+  try {
+    const lead = await loadLead(formData);
+    const booking = lead.bookingId ? await db.booking.findUnique({ where: { id: lead.bookingId }, include: { court: true } }) : null;
+    if (!(await isWaiting(db, lead))) return { error: "This request has already been answered" };
+    if (!booking || booking.status !== "booked") return { error: "No court is held yet. Open the request and book a slot to approve it." };
+    await db.leadActivity.create({ data: { leadId: lead.id, kind: "approved", text: `Trial request approved: ${booking.court.name}, ${whenText(booking.start)}`, staffName: staff.name } });
+    refresh(lead.id);
+    revalidatePath("/trial");
+    return { ok: "Approved. The guest sees it on their screen." };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not approve" };
+  }
+}
+
+export async function declineTrial(_: LeadState, formData: FormData): Promise<LeadState> {
+  const staff = await requireStaff(["owner", "desk"]);
+  const reason = String(formData.get("reason") ?? "").trim();
+  try {
+    const lead = await loadLead(formData);
+    if (!(await isWaiting(db, lead))) return { error: "This request has already been answered" };
+    await db.$transaction([
+      ...(lead.bookingId ? [db.booking.updateMany({ where: { id: lead.bookingId, status: "booked" }, data: { status: "cancelled" } })] : []),
+      db.lead.update({ where: { id: lead.id }, data: { status: "lost" } }),
+      db.leadActivity.create({ data: { leadId: lead.id, kind: "declined", text: `Trial request declined${reason ? `: ${reason}` : ""}`, staffName: staff.name } }),
+    ]);
+    refresh(lead.id);
+    revalidatePath("/staff/bookings");
+    return { ok: "Declined and the court was freed" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not decline" };
+  }
 }
 
 export async function logContact(_: LeadState, formData: FormData): Promise<LeadState> {
@@ -63,6 +107,7 @@ export async function bookTrial(_: LeadState, formData: FormData): Promise<LeadS
       await tx.lead.update({ where: { id: lead.id }, data: { bookingId: booking.id, ...(canMove(lead.status, "trial") ? { status: "trial" } : {}) } });
       const when = start.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
       await tx.leadActivity.create({ data: { leadId: lead.id, kind: "trial", text: `${lead.bookingId ? "Moved trial to" : "Trial booked:"} ${court.name}, ${when}`, staffName: staff.name } });
+      if (await isWaiting(tx, lead)) await tx.leadActivity.create({ data: { leadId: lead.id, kind: "approved", text: `Trial request approved: ${court.name}, ${when}`, staffName: staff.name } });
     });
     refresh(lead.id);
     revalidatePath("/staff/bookings");
