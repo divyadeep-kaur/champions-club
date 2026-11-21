@@ -97,15 +97,25 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                       <td className="px-3.5 py-3">
                         <span className={`px-2 py-0.5 text-[13px] font-semibold ${s.cls}`}>{s.label}</span>
                       </td>
-                      <td className="px-3.5 py-3 font-semibold tabular-nums">{inr(o.total)}</td>
+                      <td className="px-3.5 py-3 font-semibold tabular-nums">
+                        {inr(o.total)}
+                        <span className="block text-[12.5px] font-normal text-muted">{o.paymentMethod ? `Paid · ${o.paymentMethod.toUpperCase()}` : "Pay on collection"}</span>
+                      </td>
                       <td className="px-3.5 py-3">
                         <div className="flex justify-end gap-2">
                           {(o.status === "pending" || o.status === "ready") && (
                             <>
-                              <form action={advanceOrder}>
+                              <form action={advanceOrder} className="flex gap-1">
                                 <input type="hidden" name="orderId" value={o.id} />
+                                {o.status === "ready" && !o.paymentMethod && (
+                                  <select name="method" aria-label="Paid by" defaultValue="upi" className="min-h-9 border border-[#b5aa98] bg-white px-1.5 text-[13.5px]">
+                                    <option value="upi">UPI</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                  </select>
+                                )}
                                 <button type="submit" className="min-h-9 border-[1.5px] border-forest px-3 text-[13.5px] font-semibold text-forest hover:bg-forest/5">
-                                  {o.status === "pending" ? "Mark packed" : o.fulfilment === "delivery" ? "Delivered" : "Collected"}
+                                  {o.status === "pending" ? "Mark packed" : `${o.fulfilment === "delivery" ? "Delivered" : "Collected"}${o.paymentMethod ? "" : " & paid"}`}
                                 </button>
                               </form>
                               <form action={cancelOrder}>

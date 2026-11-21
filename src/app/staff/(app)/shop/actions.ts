@@ -84,9 +84,18 @@ const next: Record<string, string> = { pending: "ready", ready: "completed" };
 
 export async function advanceOrder(formData: FormData) {
   await requireStaff(["owner", "desk"]);
-  const order = await db.order.findUnique({ where: { id: Number(formData.get("orderId")) } });
+  const order = await db.order.findUnique({ where: { id: Number(formData.get("orderId")) }, include: { items: { include: { product: true } } } });
   if (!order || !next[order.status]) return;
-  await db.order.update({ where: { id: order.id }, data: { status: next[order.status] } });
+  const finishing = next[order.status] === "completed";
+  const method = String(formData.get("method") ?? "");
+  const needsPayment = finishing && !order.paymentMethod;
+  if (needsPayment && !["cash", "card", "upi"].includes(method)) return;
+  await db.$transaction([
+    db.order.update({ where: { id: order.id }, data: { status: next[order.status], ...(needsPayment ? { paymentMethod: method } : {}) } }),
+    ...(needsPayment
+      ? [db.payment.create({ data: { source: "shop", refId: order.id, amount: order.total, method, note: `Online order #${order.id}: ${order.items.map((i) => i.product.name).join(", ")}` } })]
+      : []),
+  ]);
   refresh();
 }
 
