@@ -14,12 +14,18 @@ function isCard(el: Element) {
     : CARD.test(el.getAttribute("class") ?? "") && el.children.length > 0 && el.getBoundingClientRect().height > 60;
 }
 
+// React marks each element it has taken over (hydrated) with an internal "__reactFiber" key.
+// Sections that stream in later are plain HTML until then, and changing their classes
+// early makes React report a hydration mismatch. Those are left for the next scan.
+const hydrated = (el: Element) => Object.keys(el).some((k) => k.startsWith("__reactFiber$"));
+
 function candidates(root: Element) {
   const out: HTMLElement[] = [];
   const walk = (el: Element) => {
     for (const child of Array.from(el.children)) {
       if (child.matches(SKIP) || child.closest(SKIP)) continue;
       if (child.classList.contains("cc-reveal") || child.hasAttribute("data-cc-done")) continue;
+      if (!hydrated(child)) continue;
       if (child.matches(BLOCKS) || isCard(child)) {
         out.push(child as HTMLElement);
         continue;
@@ -73,10 +79,13 @@ export function ScrollReveal() {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(check);
     };
-    const safety = setInterval(check, 1000);
+    const safety = setInterval(() => {
+      scan();
+      check();
+    }, 1000);
     window.addEventListener("scroll", backup, { passive: true });
 
-    const scan = () => {
+    function scan() {
       for (const root of Array.from(document.querySelectorAll("main, footer"))) {
         for (const el of candidates(root)) {
           const r = el.getBoundingClientRect();
@@ -89,7 +98,7 @@ export function ScrollReveal() {
           io.observe(el);
         }
       }
-    };
+    }
 
     const first = requestAnimationFrame(scan);
     let timer: ReturnType<typeof setTimeout> | undefined;
