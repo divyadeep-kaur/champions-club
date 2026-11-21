@@ -11,6 +11,8 @@ const photos: Record<string, ProductPhoto> = {
   "APP-002": { src: "/images/products/performance-shorts.jpg", fit: "contain" },
   "APP-003": { src: "/images/products/club-cap.jpg", fit: "contain" },
   "ACC-003": { src: "/images/products/wristbands.jpg", fit: "contain" },
+  "ACC-001": { src: "/images/products/overgrip.jpg", fit: "contain" },
+  "ACC-002": { src: "/images/products/racket-restring.jpg", fit: "cover" },
   "APP-001": {
     src: "/images/products/polo-navy.jpg",
     fit: "contain",
