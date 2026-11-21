@@ -80,7 +80,7 @@ export default async function MembersDirectory({ searchParams }: { searchParams:
       "active",
       `?plan=${encodeURIComponent(p.name)}&status=active`,
     ]),
-    ["Pending payments", String(pending._count), pending._count ? inr(pending._sum.amount ?? 0) : "None owed", "/expiry?pending=1"],
+    ["Pending payments", String(pending._count), pending._count ? inr(pending._sum.amount ?? 0) : "None owed", "/dues"],
   ];
   const filtered = Object.values(sp).some(Boolean);
 
