@@ -24,4 +24,6 @@ const photos: Record<string, ProductPhoto> = {
   },
 };
 
-export const productPhoto = (sku: string): ProductPhoto | null => photos[sku] ?? null;
+// An uploaded photo wins; otherwise the built-in photo for the original products.
+export const productPhoto = (p: { sku: string; photo?: string | null }): ProductPhoto | null =>
+  p.photo ? { src: p.photo, fit: "contain" } : (photos[p.sku] ?? null);

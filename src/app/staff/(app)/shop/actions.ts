@@ -5,7 +5,8 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { cartTotals, stockError } from "@/lib/checkout";
 import { inr } from "@/lib/constants";
-import { benefitPlan } from "@/lib/membership";
+import { benefitPlan, photoError } from "@/lib/membership";
+import { nextSku } from "@/lib/inventory";
 import { requireStaff } from "@/lib/session";
 
 export type SaleState = { error?: string; ok?: string; at?: number };
@@ -142,4 +143,83 @@ export async function restock(formData: FormData) {
   const qty = Math.min(200, Math.max(1, Number(formData.get("qty")) || 0));
   await db.product.update({ where: { id }, data: { stock: { increment: qty } } });
   refresh();
+}
+
+export type InventoryState = { error?: string; ok?: string; at?: number; fields?: Record<string, string> };
+
+const restockSchema = z.object({
+  productId: z.coerce.number().int().positive(),
+  qty: z.coerce.number({ message: "Enter how many arrived" }).int("Whole items only").min(1, "Add at least one").max(1000, "That's more than 1,000 at once"),
+  cost: z.union([z.literal(""), z.coerce.number().int("Whole rupees only").min(1).max(10_000_000)]).optional(),
+  supplier: z.string().trim().max(80).optional(),
+});
+
+// Adds new stock. If a cost is given it is also recorded in Money as a paid stock purchase.
+export async function restockProduct(_: InventoryState, formData: FormData): Promise<InventoryState> {
+  const staff = await requireStaff(["owner", "desk", "shop"]);
+  const parsed = restockSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { productId, qty, cost, supplier } = parsed.data;
+  const product = await db.product.findUnique({ where: { id: productId } });
+  if (!product) return { error: "Product not found" };
+  await db.$transaction([
+    db.product.update({ where: { id: productId }, data: { stock: { increment: qty } } }),
+    ...(cost
+      ? [
+          db.expense.create({
+            data: {
+              category: "stock",
+              description: `Restock: ${qty} × ${product.name} (${product.sku})`,
+              vendor: supplier || null,
+              amount: cost,
+              dueDate: new Date(),
+              paidAt: new Date(),
+              method: "bank",
+            },
+          }),
+        ]
+      : []),
+  ]);
+  refresh();
+  revalidatePath("/staff/money", "layout");
+  return { ok: `+${qty} ${product.name}. Now ${product.stock + qty} in stock${cost ? `, ${inr(cost)} added to Money` : ""}.`, at: Date.now() };
+}
+
+const productSchema = z.object({
+  name: z.string().trim().min(2, "Enter the product name").max(80),
+  category: z.string().trim().max(30).optional().default(""),
+  newCategory: z.string().trim().max(30).optional().default(""),
+  price: z.coerce.number({ message: "Enter the price" }).int("Whole rupees only").min(1, "Enter the price").max(1_000_000),
+  stock: z.coerce.number({ message: "Enter the opening stock" }).int("Whole items only").min(0).max(10_000),
+  lowStockAt: z.coerce.number().int().min(0).max(1000).default(5),
+});
+
+// Adds a new product to the shop with an automatic product code.
+export async function addProduct(_: InventoryState, formData: FormData): Promise<InventoryState> {
+  await requireStaff(["owner", "desk", "shop"]);
+  const fields = Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")) as Record<string, string>;
+  const parsed = productSchema.safeParse(fields);
+  if (!parsed.success) return { error: parsed.error.issues[0].message, fields };
+  const f = parsed.data;
+  const category = (f.newCategory || f.category).toLowerCase();
+  if (category.length < 2) return { error: "Pick a category or type a new one", fields };
+  const existing = await db.product.findMany({ select: { sku: true, name: true } });
+  if (existing.some((p) => p.name.toLowerCase() === f.name.toLowerCase()))
+    return { error: "A product with that name already exists. Restock it instead.", fields };
+
+  let photo: string | null = null;
+  const file = formData.get("photo");
+  if (file instanceof File && file.size > 0) {
+    const problem = photoError(file);
+    if (problem) return { error: problem, fields };
+    photo = `data:${file.type};base64,${Buffer.from(await file.arrayBuffer()).toString("base64")}`;
+  }
+
+  const sku = nextSku(
+    category,
+    existing.map((p) => p.sku),
+  );
+  await db.product.create({ data: { sku, name: f.name, category, price: f.price, stock: f.stock, lowStockAt: f.lowStockAt, photo } });
+  refresh();
+  return { ok: `${f.name} added as ${sku}`, at: Date.now() };
 }

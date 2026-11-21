@@ -63,7 +63,7 @@ export default async function MemberShop() {
           price: p.price,
           stock: p.stock,
           memberPrice: shopPrice(plan, p.price),
-          photo: productPhoto(p.sku),
+          photo: productPhoto(p),
         }))}
         plan={plan ? { name: plan.name, shopDiscount: plan.shopDiscount, courtRate: plan.courtRate, barDiscount: plan.barDiscount } : null}
       />

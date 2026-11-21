@@ -182,6 +182,8 @@ model Product {
   price      Int
   stock      Int
   lowStockAt Int         @default(5)
+  photo      String?
+  createdAt  DateTime    @default(now())
   items      OrderItem[]
 }
 

@@ -5,6 +5,7 @@ import { requireStaff } from "@/lib/session";
 import { productPhoto } from "@/lib/productPhotos";
 import { benefitPlan } from "@/lib/membership";
 import { CounterSale } from "./CounterSale";
+import { Inventory } from "./Inventory";
 import { advanceOrder, cancelOrder, restock } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,8 @@ const statusText: Record<string, { label: string; cls: string }> = {
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   await requireStaff(["owner", "desk", "shop"]);
-  const view = (await searchParams).view === "online" ? "online" : "counter";
+  const asked = (await searchParams).view;
+  const view = asked === "online" || asked === "inventory" ? asked : "counter";
 
   const [products, held, members, orders] = await Promise.all([
     db.product.findMany({ orderBy: [{ category: "asc" }, { name: "asc" }] }),
@@ -37,12 +39,13 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
           {[
             ["counter", "Counter"],
             ["online", `Online orders${toPack ? ` (${toPack})` : ""}`],
+            ["inventory", `Inventory${low.length ? ` (${low.length} low)` : ""}`],
           ].map(([k, l]) => (
             <Link
               key={k}
               role="tab"
               aria-selected={view === k}
-              href={k === "counter" ? "/staff/shop" : "/staff/shop?view=online"}
+              href={k === "counter" ? "/staff/shop" : `/staff/shop?view=${k}`}
               className={`flex min-h-11 items-center px-[18px] font-semibold ${view === k ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}
             >
               {l}
@@ -56,6 +59,11 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
           <span>
             <strong>Low stock:</strong> {low.map((p) => `${p.name} (${p.stock})`).join(", ")}
           </span>
+          {view !== "inventory" && (
+            <Link href="/staff/shop?view=inventory" className="font-semibold underline underline-offset-4">
+              Restock in Inventory
+            </Link>
+          )}
           {low.slice(0, 3).map((p) => (
             <form key={p.id} action={restock} className="flex items-center gap-1">
               <input type="hidden" name="productId" value={p.id} />
@@ -68,7 +76,21 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         </div>
       )}
 
-      {view === "counter" ? (
+      {view === "inventory" ? (
+        <Inventory
+          items={products.map((p) => ({
+            id: p.id,
+            sku: p.sku,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            stock: p.stock,
+            lowStockAt: p.lowStockAt,
+            held: held.find((h) => h.productId === p.id)?._sum.qty ?? 0,
+            photo: productPhoto(p),
+          }))}
+        />
+      ) : view === "counter" ? (
         <CounterSale
           products={products.map((p) => ({
             id: p.id,
@@ -78,7 +100,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
             stock: p.stock,
             lowStockAt: p.lowStockAt,
             held: held.find((h) => h.productId === p.id)?._sum.qty ?? 0,
-            photo: productPhoto(p.sku),
+            photo: productPhoto(p),
           }))}
           members={members.map((m) => ({
             code: m.code,
