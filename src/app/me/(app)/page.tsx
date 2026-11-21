@@ -5,6 +5,8 @@ import { inr } from "@/lib/constants";
 import { membershipStatus } from "@/lib/members";
 import { requireMember } from "@/lib/memberSession";
 import { memberCancel, memberLogout } from "../actions";
+import { addDays, startOfDay } from "@/lib/dates";
+import { AttendanceCalendar } from "./AttendanceCalendar";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,13 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
     db.socialPlayer.findMany({ where: { memberId: member.id, booking: { status: "booked", end: { gt: now } } }, include: { booking: { include: { court: true } } } }),
     db.tab.findFirst({ where: { memberId: member.id, status: "open" }, include: { items: true, table: true } }),
   ]);
+
+  const since = addDays(startOfDay(now), -16 * 7);
+  const [playedCourts, playedSocials] = await Promise.all([
+    db.booking.findMany({ where: { memberId: member.id, status: "booked", start: { gte: since, lte: now } }, select: { start: true } }),
+    db.socialPlayer.findMany({ where: { memberId: member.id, status: "confirmed", booking: { status: "booked", start: { gte: since, lte: now } } }, select: { booking: { select: { start: true } } } }),
+  ]);
+  const played = [...playedCourts.map((b) => b.start), ...playedSocials.map((p) => p.booking.start)];
 
   const st = membershipStatus(member.endDate, now);
   const badge = st.status === "expired" ? { t: "Expired", c: "bg-clay-soft text-[#7a2f14]" } : st.status === "ending" ? { t: "Ending soon", c: "bg-[#f6e7b8] text-[#5f4605]" } : { t: "Active", c: "bg-ball/90 text-forest-deep" };
@@ -86,6 +95,8 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
           Booked! Pay at the front desk when you arrive.
         </p>
       )}
+
+      <AttendanceCalendar played={played} now={now} />
 
       <section className="grid gap-2.5">
         <div className="flex items-baseline justify-between">
