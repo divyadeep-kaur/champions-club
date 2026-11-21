@@ -6,6 +6,7 @@ import { ContactForm } from "./ContactForm";
 import { TodaysCourts } from "./TodaysCourts";
 
 const serif = "font-serif italic font-medium";
+const scribble = `${serif} cc-scribble`;
 const h2 = "text-center text-[clamp(36px,4.5vw,56px)] font-extrabold leading-[1.05] tracking-[-0.03em] text-forest";
 const eyebrow = "text-[13px] font-extrabold uppercase tracking-[0.12em] text-clay";
 const featureH = "mt-3 text-[38px] font-extrabold leading-[1.1] tracking-[-0.03em] text-forest sm:text-[44px]";
@@ -31,7 +32,7 @@ export function HomeHero({ courts }: { courts: { rows: CourtRow[]; isToday: bool
     <section className="mx-auto max-w-[1280px] px-4 pt-14 text-center sm:px-8 sm:pt-20">
       <p className="inline-block rounded-full border border-forest px-3.5 py-1.5 text-[13.5px] font-bold text-forest">Introducing The Champions Club</p>
       <h1 className="mx-auto mt-6 max-w-[980px] text-[clamp(44px,7vw,88px)] font-extrabold leading-none tracking-[-0.035em] text-forest">
-        Your sports club, <span className={serif}>all in one place</span>
+        Your sports club, <span className={scribble}>all in one place</span>
       </h1>
       <p className="mx-auto mt-6 max-w-[640px] text-[18px] leading-[1.55] text-[#3c4a43] sm:text-[20px]">
         Courts, memberships, a pro shop and a café, run from one desk. Find a free slot, pick a plan and come play.
@@ -150,10 +151,18 @@ export function Sports({ text }: { text: Record<string, string> }) {
           <Link
             key={s.name}
             href={s.href}
-            className="flex flex-col overflow-hidden rounded-2xl border border-line bg-paper text-ink transition-shadow hover:shadow-[0_16px_40px_-20px_rgba(11,42,29,0.4)]"
+            className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-paper text-ink transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-forest/30 hover:shadow-[0_22px_50px_-24px_rgba(11,42,29,0.45)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
           >
             <div className="relative h-[240px] overflow-hidden">
-              <Image src={s.img} alt={s.alt} width={s.w} height={s.h} unoptimized className={`block h-full w-full object-cover ${s.pos}`} />
+              <Image
+                src={s.img}
+                alt={s.alt}
+                width={s.w}
+                height={s.h}
+                unoptimized
+                className={`block h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${s.pos}`}
+              />
+              <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-forest-deep/45 via-transparent to-transparent" />
               <span
                 className={`absolute bottom-3.5 left-3.5 rounded-xl bg-forest-deep/35 px-4 py-2 text-[22px] font-extrabold text-white ${glass} border-white/35`}
               >
@@ -162,7 +171,9 @@ export function Sports({ text }: { text: Record<string, string> }) {
             </div>
             <div className="grid gap-2.5 p-[18px]">
               <span className="text-[15.5px] leading-normal text-[#3c4a43]">{text[s.name]}</span>
-              <span className="font-bold text-forest">Learn more →</span>
+              <span className="font-bold text-forest">
+                Learn more <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </span>
             </div>
           </Link>
         ))}
@@ -198,7 +209,7 @@ export function OneClub() {
     <section className="border-y border-line bg-paper">
       <div className="mx-auto max-w-[1280px] px-4 py-20 sm:px-8 sm:py-24">
         <h2 className={h2}>
-          One club, <span className={serif}>connect it all</span>
+          One club, <span className={scribble}>connect it all</span>
         </h2>
         <div className="mt-12 grid gap-6 lg:grid-cols-2">
           {panels.map((p) => (
@@ -311,7 +322,7 @@ export function Features({
                 <Link
                   key={p.id}
                   href={`/trial?${new URLSearchParams({ interest: "membership", plan: p.name })}`}
-                  className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-2xl border border-line p-[22px] transition-transform hover:-translate-y-0.5 ${dark ? "bg-forest text-cream" : "bg-paper text-forest"}`}
+                  className={`relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-2xl border p-[22px] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_-24px_rgba(11,42,29,0.5)] ${dark ? "cc-sheen border-ball/40 bg-forest text-cream" : "border-line bg-paper text-forest"}`}
                 >
                   <div>
                     <span className="text-[22px] font-extrabold">{p.name}</span>{" "}
@@ -359,7 +370,10 @@ export function Features({
             const meta = productImg[p.sku];
             const low = p.stock <= p.lowStockAt;
             return (
-              <div key={p.sku} className="rounded-2xl border border-line bg-paper p-3.5">
+              <div
+                key={p.sku}
+                className="group rounded-2xl border border-line bg-paper p-3.5 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_-26px_rgba(11,42,29,0.45)]"
+              >
                 <div className={`relative h-[140px] overflow-hidden rounded-[10px] sm:h-[170px] ${meta?.white ? "bg-white" : ""}`}>
                   {meta && (
                     <Image
@@ -368,7 +382,7 @@ export function Features({
                       width={meta.w}
                       height={meta.h}
                       unoptimized
-                      className={`block h-full w-full ${meta.pos === "object-contain" ? "object-contain" : `object-cover ${meta.pos}`}`}
+                      className={`block h-full w-full transition-transform duration-700 ease-out group-hover:scale-105 ${meta.pos === "object-contain" ? "object-contain" : `object-cover ${meta.pos}`}`}
                     />
                   )}
                   <span
@@ -490,8 +504,19 @@ export function Reviews() {
         <p className="mt-3 text-center text-[14px] text-muted">Sample reviews for the demo</p>
         <div className="mt-12 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-5">
           {reviews.map((r) => (
-            <figure key={r.name} className="grid content-between gap-[18px] rounded-2xl border border-line bg-cream p-6">
-              <blockquote className="text-[16.5px] leading-[1.55]">“{r.text}”</blockquote>
+            <figure
+              key={r.name}
+              className="relative grid content-between gap-[18px] overflow-hidden rounded-2xl border border-line bg-cream p-6 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_-26px_rgba(11,42,29,0.45)]"
+            >
+              <span aria-hidden className="pointer-events-none absolute -top-6 right-3 font-serif text-[120px] leading-none text-forest/[0.07]">
+                “
+              </span>
+              <div className="grid gap-3">
+                <span className="text-[15px] tracking-[0.18em] text-[#c79a3a]" aria-label="5 out of 5">
+                  ★★★★★
+                </span>
+                <blockquote className="text-[16.5px] leading-[1.55]">“{r.text}”</blockquote>
+              </div>
               <figcaption className="flex items-center gap-3">
                 <span className={`grid size-11 place-items-center rounded-full font-extrabold text-paper ${r.bg}`}>{r.initial}</span>
                 <span className="text-[14.5px]">
@@ -513,9 +538,18 @@ export function Faq({ items }: { items: { q: string; a: string }[] }) {
     <section id="faq" className="mx-auto max-w-[900px] scroll-mt-20 px-4 py-20 sm:px-8 sm:py-24">
       <h2 className={`${h2} mb-8 text-[clamp(36px,4.5vw,52px)]`}>Frequently asked questions</h2>
       {items.map((f) => (
-        <details key={f.q} className="group border-t border-line py-[22px]">
-          <summary className="cursor-pointer text-[19px] font-bold text-forest">{f.q}</summary>
-          <p className="mt-3 text-[17px] leading-relaxed text-muted">{f.a}</p>
+        <details key={f.q} className="group border-t border-line last:border-b">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg py-[22px] text-[19px] font-bold text-forest marker:hidden hover:text-forest-deep [&::-webkit-details-marker]:hidden">
+            {f.q}
+            <span
+              aria-hidden
+              className="relative grid size-9 shrink-0 place-items-center rounded-full border border-line bg-paper transition-colors duration-300 group-open:border-forest group-open:bg-forest"
+            >
+              <span className="absolute h-0.5 w-3.5 rounded bg-forest transition-colors group-open:bg-cream" />
+              <span className="absolute h-3.5 w-0.5 rounded bg-forest transition-transform duration-300 group-open:scale-y-0" />
+            </span>
+          </summary>
+          <p className="-mt-2 pr-12 pb-[22px] text-[17px] leading-relaxed text-muted">{f.a}</p>
         </details>
       ))}
     </section>
