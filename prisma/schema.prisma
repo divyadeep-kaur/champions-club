@@ -46,6 +46,7 @@ model Member {
   players   SocialPlayer[]
   orders    Order[]
   tabs      Tab[]
+  leads     Lead[]
 }
 
 model Court {
@@ -72,6 +73,7 @@ model Booking {
   status     String         @default("booked")
   createdAt  DateTime       @default(now())
   players    SocialPlayer[]
+  leads      Lead[]
 
   @@index([courtId, start])
 }
@@ -192,8 +194,24 @@ model Lead {
   preferredAt DateTime?
   status      String    @default("new")
   quoteAmount Int?
+  plan        String?
   notes       String?
-  createdAt   DateTime  @default(now())
+  memberId    Int?
+  member      Member?        @relation(fields: [memberId], references: [id])
+  bookingId   Int?
+  booking     Booking?       @relation(fields: [bookingId], references: [id])
+  createdAt   DateTime       @default(now())
+  activities  LeadActivity[]
+}
+
+model LeadActivity {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  kind      String
+  text      String
+  staffName String?
+  createdAt DateTime @default(now())
 }
 
 model Payment {
