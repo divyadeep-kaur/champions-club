@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/jwt";
 import { MEMBER_COOKIE, verifyMember } from "@/lib/memberAuth";
+import { homeFor } from "@/lib/nav";
 
 function guard(req: NextRequest, signedIn: boolean, loginPath: string, homePath: string) {
   const onLogin = req.nextUrl.pathname === loginPath;
@@ -20,7 +21,8 @@ export async function middleware(req: NextRequest) {
     return guard(req, !!member, "/me/login", "/me");
   }
   const staff = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
-  return guard(req, !!staff, "/staff/login", "/staff");
+  if (staff && req.nextUrl.pathname === "/staff/login" && req.nextUrl.searchParams.get("as") === "admin" && staff.role !== "owner") return NextResponse.next();
+  return guard(req, !!staff, "/staff/login", staff ? homeFor(staff.role) : "/staff");
 }
 
 export const config = { matcher: ["/staff/:path*", "/me/:path*"] };
