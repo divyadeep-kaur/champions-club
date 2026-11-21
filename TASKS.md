@@ -28,7 +28,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 ## In progress
 
 - Jashan: step-by-step member court booking: sport, court, then time (`src/app/me/(app)/book`)
-- Divyadeep: member app menu back to a left olive sidebar on desktop, asked by Divyadeep (`src/app/me/(app)/layout.tsx`, `MemberTopBar.tsx`)
 
 ## Next up
 
@@ -36,6 +35,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Member app menu moved to a left olive sidebar on desktop, phones keep bottom tabs (Divyadeep)
 - Kitchen: cooking stage, prep list, today's numbers, sold out switches, café team on shift (Divyadeep)
 - Trial form: plan picker for membership, Other option removed (Divyadeep)
 - Member app desktop layout and photo café menu (Jashan)
