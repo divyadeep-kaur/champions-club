@@ -1,75 +1,42 @@
 import Image from "next/image";
 import Link from "next/link";
 
-type Coach = { name: string; role: string; quote: string; img: string; w: number; h: number; pos: string };
-
-const small: Coach[] = [
-  { name: "Gurpreet Sandhu", role: "Head tennis coach", quote: "Footwork first. The power comes later.", img: "/images/coaches/tennis-head.jpg", w: 720, h: 900, pos: "object-[50%_18%]" },
-  { name: "Imran Qureshi", role: "Junior programme lead", quote: "Every junior gets a plan, not just a net session.", img: "/images/coaches/cricket-nets.jpg", w: 720, h: 900, pos: "object-[62%_18%]" },
-  { name: "Rohit Verma", role: "Friday social host", quote: "Friday nights are for meeting people, not keeping score.", img: "/images/coaches/social.jpg", w: 720, h: 900, pos: "object-[50%_15%]" },
+const coaches = [
+  { name: "Arvid Lund", role: "Head tennis coach", sport: "Tennis", bio: "Technique and match play for adults, from first serve to league level.", img: "/images/coaches/tennis-head.jpg", pos: "object-[50%_20%]" },
+  { name: "Sara Haddad", role: "Tennis coach", sport: "Tennis", bio: "Beginner clinics and ladies' mornings. Patient, practical and fun.", img: "/images/coaches/tennis-women.jpg", pos: "object-[60%_30%]" },
+  { name: "Rohan Mehra", role: "Head cricket coach", sport: "Cricket", bio: "Batting in the nets, shot selection and game plans for club cricketers.", img: "/images/coaches/cricket-head.jpg", pos: "object-[50%_15%]" },
+  { name: "Imran Qureshi", role: "Junior cricket coach", sport: "Cricket", bio: "Runs the under-18 coaching days: bowling actions, fielding and fitness.", img: "/images/coaches/cricket-nets.jpg", pos: "object-[60%_20%]" },
+  { name: "Diego Ramos", role: "Social play host", sport: "Social play", bio: "Hosts Friday social nights and matches new players with the right partners.", img: "/images/coaches/social.jpg", pos: "object-[50%_20%]" },
 ];
-
-const big: Coach[] = [
-  { name: "Harjot Gill", role: "Head cricket coach", quote: "We film every net session so you can see what we see.", img: "/images/coaches/cricket-head.jpg", w: 720, h: 900, pos: "object-[50%_12%]" },
-  { name: "Simran Kaur", role: "Trial session coach", quote: "Most beginners leave their first hour asking for a second.", img: "/images/coaches/tennis-women.jpg", w: 720, h: 900, pos: "object-[60%_28%]" },
-];
-
-const fade = "[mask-image:linear-gradient(to_right,transparent_0%,black_45%)]";
 
 export function Coaches() {
   return (
-    <section id="coaches" aria-labelledby="coaches-title" className="scroll-mt-20 bg-forest-deep text-cream">
-      <div className="mx-auto max-w-[1280px] px-4 py-20 sm:px-8 sm:py-24">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <h2 id="coaches-title" className="max-w-[760px] text-[clamp(28px,3.2vw,40px)] font-extrabold leading-[1.15] tracking-[-0.02em]">
-            Learn from coaches who are <span className="font-serif font-medium italic text-ball">on court every day</span>
-          </h2>
-          <Link href="/trial" className="rounded-full bg-ball px-5 py-3 text-[15px] font-bold text-forest-deep hover:bg-[#b6dd45]">
-            Book a session with a coach
-          </Link>
-        </div>
-
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {small.map((c) => (
-            <figure key={c.name} className="relative flex min-h-[180px] overflow-hidden rounded-2xl border border-white/10 bg-[#1b4a36]">
-              <div className={`absolute inset-y-0 right-0 w-[48%] ${fade}`} aria-hidden="true">
-                <Image src={c.img} alt="" width={c.w} height={c.h} unoptimized className={`h-full w-full object-cover ${c.pos}`} />
+    <section id="coaches" aria-labelledby="coaches-title" className="mx-auto max-w-[1280px] scroll-mt-20 px-4 py-20 sm:px-8 sm:py-24">
+      <p className="text-center text-[13px] font-extrabold uppercase tracking-[0.12em] text-clay">Coaching</p>
+      <h2 id="coaches-title" className="mt-3 text-center text-[clamp(36px,4.5vw,56px)] font-extrabold leading-[1.05] tracking-[-0.03em] text-forest">
+        Meet the <span className="font-serif font-medium italic">coaches</span>
+      </h2>
+      <p className="mx-auto mt-3.5 max-w-[560px] text-center text-[18px] text-muted">Book a session with any of them from the front desk, or start with a free trial.</p>
+      <ul className="mt-12 grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-5">
+        {coaches.map((c) => (
+          <li key={c.name} className="group overflow-hidden rounded-2xl border border-line bg-forest-deep">
+            <div className="relative aspect-[4/5] min-h-[300px] overflow-hidden">
+              <Image src={c.img} alt={`${c.name}, ${c.role.toLowerCase()}`} fill unoptimized sizes="(min-width: 1024px) 20vw, 50vw" className={`object-cover ${c.pos} transition-transform duration-700 group-hover:scale-105`} />
+              <span className="absolute left-3 top-3 rounded-full border border-white/40 bg-forest-deep/40 px-3 py-1 text-[12px] font-bold text-white backdrop-blur-md">{c.sport}</span>
+              <div className="absolute inset-x-2.5 bottom-2.5 rounded-xl border border-white/25 bg-forest-deep/45 px-3.5 py-3 text-white backdrop-blur-[14px]">
+                <p className="text-[15.5px] font-extrabold leading-tight">{c.name}</p>
+                <p className="text-[12.5px] text-[#cfe6a0]">{c.role}</p>
+                <p className="mt-2 text-[13px] leading-snug text-white/90">{c.bio}</p>
               </div>
-              <div className="relative flex w-[64%] flex-col justify-between gap-5 p-5 sm:p-6">
-                <blockquote className="text-[16px] leading-snug sm:text-[17px]">“{c.quote}”</blockquote>
-                <figcaption className="text-[13.5px]">
-                  <strong className="block">{c.name}</strong>
-                  <span className="text-cream/70">{c.role}</span>
-                </figcaption>
-              </div>
-            </figure>
-          ))}
-        </div>
-
-        <div className="mt-5 grid gap-5 lg:grid-cols-2">
-          {big.map((c) => (
-            <figure key={c.name} className="relative flex min-h-[320px] overflow-hidden rounded-2xl border border-white/10 bg-[#1b4a36] sm:min-h-[340px]">
-              <div className={`absolute inset-y-0 right-0 w-[55%] ${fade}`} aria-hidden="true">
-                <Image src={c.img} alt="" width={c.w} height={c.h} unoptimized className={`h-full w-full object-cover ${c.pos}`} />
-              </div>
-              <div className="relative flex w-[72%] flex-col justify-between gap-8 p-6 sm:w-[62%] sm:p-8">
-                <blockquote className="text-[clamp(24px,2.6vw,34px)] font-bold leading-[1.15] tracking-[-0.01em]">“{c.quote}”</blockquote>
-                <figcaption className="flex items-center gap-4">
-                  <Link href="/#club-video" aria-label={`Watch the club film with ${c.name}`} className="grid size-12 shrink-0 place-items-center rounded-full bg-cream text-forest-deep transition-transform hover:scale-105">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </Link>
-                  <span>
-                    <strong className="block text-[20px] font-bold leading-tight sm:text-[22px]">{c.name}</strong>
-                    <span className="text-[14px] text-cream/70">{c.role}</span>
-                  </span>
-                </figcaption>
-              </div>
-            </figure>
-          ))}
-        </div>
-        <p className="mt-5 text-[13px] text-cream/50">Sample coach profiles for the demo</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-5 text-center text-[13.5px] text-muted">Sample coaches for the demo.</p>
+      <div className="mt-6 text-center">
+        <Link href="/trial" className="inline-block rounded-full bg-forest px-7 py-4 text-[17px] font-bold text-cream hover:bg-forest-deep">
+          Book a free trial session
+        </Link>
       </div>
     </section>
   );
