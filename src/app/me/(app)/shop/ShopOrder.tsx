@@ -6,19 +6,30 @@ import { inr } from "@/lib/constants";
 import { cartTotals } from "@/lib/checkout";
 import type { ProductPhoto } from "@/lib/productPhotos";
 import { ProductImage } from "@/components/ProductImage";
+import { INDIAN_STATES, shippingFor, type ShippingRule } from "@/lib/delivery";
 import { placeOrder, type ShopState } from "./actions";
 
 type Product = { id: number; name: string; category: string; price: number; stock: number; memberPrice: number; photo: ProductPhoto | null };
 
+const field =
+  "min-h-11 w-full rounded-xl border border-[#b5aa98] bg-white px-3 text-[15px] text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+const lbl = "grid gap-1 text-[13.5px] font-semibold";
+
 export function ShopOrder({
   products,
   plan,
+  spots,
+  shipping,
+  memberPhone,
 }: {
   products: Product[];
   plan: { name: string; shopDiscount: number; courtRate: number; barDiscount: number } | null;
+  spots: string[];
+  shipping: ShippingRule;
+  memberPhone: string;
 }) {
   const [cart, setCart] = useState<Record<number, number>>({});
-  const [fulfilment, setFulfilment] = useState<"pickup" | "delivery">("pickup");
+  const [fulfilment, setFulfilment] = useState<"club" | "delivery">("club");
   const [state, action, pending] = useActionState<ShopState, FormData>(placeOrder, {});
 
   useEffect(() => {
@@ -34,6 +45,8 @@ export function ShopOrder({
     plan,
     "shop",
   );
+  const ship = lines.length ? shippingFor(fulfilment, t.total, shipping) : 0;
+  const toFree = fulfilment === "delivery" && shipping.freeOver > 0 && ship > 0 ? shipping.freeOver - t.total : 0;
   const change = (p: Product, d: number) => setCart((c) => ({ ...c, [p.id]: Math.max(0, Math.min(p.stock, 10, (c[p.id] ?? 0) + d)) }));
   const categories = [...new Set(products.map((p) => p.category))];
 
@@ -104,9 +117,70 @@ export function ShopOrder({
         </section>
       ))}
 
+      <section className="mx-4 grid gap-3 rounded-[16px] border border-line bg-paper p-4" aria-labelledby="where">
+        <h2 id="where" className="text-[17px] font-bold text-forest">
+          {fulfilment === "club" ? "Where in the club should we bring it?" : "Delivery address"}
+        </h2>
+        {fulfilment === "club" ? (
+          <label className={lbl}>
+            I’m at
+            <select name="clubSpot" defaultValue="" required className={field}>
+              <option value="" disabled>
+                Choose a court or place
+              </option>
+              {spots.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
+            <span className="text-[12.5px] font-normal text-muted">Staff bring it to you, usually within 15 minutes. No delivery charge.</span>
+          </label>
+        ) : (
+          <>
+            <label className={lbl}>
+              House / flat no. and building
+              <input name="line1" autoComplete="address-line1" required minLength={5} className={field} />
+            </label>
+            <label className={lbl}>
+              Street and area
+              <input name="line2" autoComplete="address-line2" required className={field} />
+            </label>
+            <label className={lbl}>
+              Landmark (optional)
+              <input name="landmark" className={field} />
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <label className={lbl}>
+                City
+                <input name="city" autoComplete="address-level2" required className={field} />
+              </label>
+              <label className={lbl}>
+                PIN code
+                <input name="pincode" inputMode="numeric" autoComplete="postal-code" pattern="[1-9][0-9]{5}" maxLength={6} required className={field} />
+              </label>
+            </div>
+            <label className={lbl}>
+              State
+              <select name="state" defaultValue="Punjab" className={field}>
+                {INDIAN_STATES.map((st) => (
+                  <option key={st}>{st}</option>
+                ))}
+              </select>
+            </label>
+            <label className={lbl}>
+              Phone for the delivery
+              <input name="phone" inputMode="tel" autoComplete="tel" defaultValue={memberPhone} required className={field} />
+            </label>
+            <p className="text-[12.5px] text-muted">
+              Shipping {inr(shipping.fee)}
+              {shipping.freeOver > 0 ? `, free on orders of ${inr(shipping.freeOver)} or more` : ""}. Pay by cash or UPI when it arrives.
+            </p>
+          </>
+        )}
+      </section>
+
       <div className="sticky bottom-[68px] z-20 mx-3 grid gap-2.5 rounded-[20px] bg-forest-deep/90 px-4 py-3.5 text-white">
         <div role="radiogroup" aria-label="How do you want it" className="grid grid-cols-2 gap-2">
-          {(["pickup", "delivery"] as const).map((f) => (
+          {(["club", "delivery"] as const).map((f) => (
             <button
               key={f}
               type="button"
@@ -115,24 +189,28 @@ export function ShopOrder({
               onClick={() => setFulfilment(f)}
               className={`min-h-10 rounded-full border-[1.5px] text-[14px] font-bold ${fulfilment === f ? "border-ball bg-ball text-forest-deep" : "border-white/40 text-white"}`}
             >
-              {f === "pickup" ? "Collect at club" : "Deliver to me"}
+              {f === "club" ? "In the club" : "Home delivery"}
             </button>
           ))}
         </div>
-        {fulfilment === "delivery" && (
-          <input
-            name="address"
-            placeholder="House, street, area, city"
-            autoComplete="street-address"
-            className="min-h-11 rounded-xl border-0 bg-white px-3 text-[15px] text-ink outline-none"
-          />
-        )}
         <div className="flex justify-between gap-2 text-[14px]">
           <span>
             {lines.reduce((n, l) => n + l.qty, 0)} items · {inr(t.subtotal)}
           </span>
           {t.discount > 0 && <span className="text-ball">−{inr(t.discount)} member price</span>}
         </div>
+        {fulfilment === "delivery" && lines.length > 0 && (
+          <div className="flex justify-between gap-2 text-[14px]">
+            <span>Shipping{toFree > 0 ? ` · add ${inr(toFree)} more for free shipping` : ""}</span>
+            <span className={ship ? "" : "text-ball"}>{ship ? inr(ship) : "Free"}</span>
+          </div>
+        )}
+        {lines.length > 0 && (
+          <div className="flex justify-between gap-2 text-[15px] font-bold">
+            <span>Total</span>
+            <span>{inr(t.total + ship)}</span>
+          </div>
+        )}
         {(state.ok || state.error) && (
           <p role="status" className={`rounded-[10px] px-2.5 py-2 text-[14px] ${state.error ? "bg-clay-soft text-[#7a2f14]" : "bg-[#e3efc7] text-[#2f4a0a]"}`}>
             {state.error ?? state.ok}
@@ -144,7 +222,7 @@ export function ShopOrder({
           className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-60"
         >
           {pending && <Loader2 className="size-4 animate-spin" />}
-          Place order · {inr(t.total)}
+          Place order · {inr(t.total + ship)}
         </button>
       </div>
     </form>

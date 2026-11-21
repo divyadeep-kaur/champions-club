@@ -5,6 +5,8 @@ import { benefitPlan } from "@/lib/membership";
 import { requireMember } from "@/lib/memberSession";
 import { shopPrice } from "@/lib/pricing";
 import { productPhoto } from "@/lib/productPhotos";
+import { CLUB_SPOTS, FULFILMENT_LABEL } from "@/lib/delivery";
+import { getShippingRule } from "@/lib/deliveryService";
 import { ShopOrder } from "./ShopOrder";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +16,7 @@ const status: Record<string, string> = { pending: "Being packed", ready: "Ready"
 export default async function MemberShop() {
   const member = await requireMember();
   const plan = benefitPlan(member);
-  const [products, orders] = await Promise.all([
+  const [products, orders, courts, shipping] = await Promise.all([
     db.product.findMany({ orderBy: [{ category: "asc" }, { price: "desc" }] }),
     db.order.findMany({
       where: { memberId: member.id, channel: "online" },
@@ -22,6 +24,8 @@ export default async function MemberShop() {
       orderBy: { createdAt: "desc" },
       take: 4,
     }),
+    db.court.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
+    getShippingRule(),
   ]);
 
   return (
@@ -30,7 +34,7 @@ export default async function MemberShop() {
         <Image src="/images/shop-rackets.jpg" alt="" aria-hidden="true" fill priority unoptimized sizes="560px" className="object-cover object-[50%_45%]" />
         <div className="absolute inset-x-4 bottom-3.5 rounded-2xl border border-white/30 bg-forest-deep/50 px-4 py-3 text-white backdrop-blur-md">
           <h1 className="text-[24px] font-extrabold">Pro shop</h1>
-          <span className="text-[14px]">Order now, collect at the club or get it delivered{plan ? ` · ${plan.shopDiscount}% off` : ""}</span>
+          <span className="text-[14px]">Order now, get it brought to you in the club or delivered home{plan ? ` · ${plan.shopDiscount}% off` : ""}</span>
         </div>
       </div>
 
@@ -42,13 +46,20 @@ export default async function MemberShop() {
               <div className="min-w-0">
                 <strong>#{o.id}</strong> · {o.items.map((i) => i.product.name).join(", ")}
                 <div className="text-muted">
-                  {o.fulfilment === "delivery" ? "Delivery" : "Collect at desk"} · {inr(o.total)}
+                  {o.fulfilment === "club" ? `To you at ${o.clubSpot}` : (FULFILMENT_LABEL[o.fulfilment] ?? o.fulfilment)} · {inr(o.total)}
+                  {o.shipping > 0 && ` incl. ${inr(o.shipping)} shipping`}
                 </div>
               </div>
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[12.5px] font-bold ${o.status === "ready" ? "bg-ball text-forest-deep" : o.status === "pending" ? "bg-[#f6e7b8] text-[#5f4605]" : "bg-[#ece5d6] text-muted"}`}
               >
-                {o.status === "ready" && o.fulfilment === "pickup" ? "Ready to collect" : (status[o.status] ?? o.status)}
+                {o.status === "ready"
+                  ? o.fulfilment === "pickup"
+                    ? "Ready to collect"
+                    : o.fulfilment === "club"
+                      ? "On its way"
+                      : "Out for delivery"
+                  : (status[o.status] ?? o.status)}
               </span>
             </div>
           ))}
@@ -66,6 +77,9 @@ export default async function MemberShop() {
           photo: productPhoto(p),
         }))}
         plan={plan ? { name: plan.name, shopDiscount: plan.shopDiscount, courtRate: plan.courtRate, barDiscount: plan.barDiscount } : null}
+        spots={[...courts.map((c) => c.name), ...CLUB_SPOTS]}
+        shipping={shipping}
+        memberPhone={member.phone}
       />
     </main>
   );

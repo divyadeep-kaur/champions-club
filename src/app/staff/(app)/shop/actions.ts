@@ -7,6 +7,7 @@ import { cartTotals, stockError } from "@/lib/checkout";
 import { inr } from "@/lib/constants";
 import { benefitPlan, photoError } from "@/lib/membership";
 import { nextSku } from "@/lib/inventory";
+import { FREE_OVER_KEY, SHIPPING_FEE_KEY } from "@/lib/delivery";
 import { requireStaff } from "@/lib/session";
 
 export type SaleState = { error?: string; ok?: string; at?: number };
@@ -222,4 +223,30 @@ export async function addProduct(_: InventoryState, formData: FormData): Promise
   await db.product.create({ data: { sku, name: f.name, category, price: f.price, stock: f.stock, lowStockAt: f.lowStockAt, photo } });
   refresh();
   return { ok: `${f.name} added as ${sku}`, at: Date.now() };
+}
+
+const shippingSchema = z.object({
+  fee: z.coerce.number({ message: "Enter the shipping charge" }).int("Whole rupees only").min(0).max(10_000),
+  freeOver: z.coerce.number().int("Whole rupees only").min(0).max(1_000_000),
+});
+
+// Home delivery charges. Only the owner sets them; they apply to new orders.
+export async function setShipping(_: InventoryState, formData: FormData): Promise<InventoryState> {
+  await requireStaff(["owner"]);
+  const parsed = shippingSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  await db.$transaction([
+    db.clubSetting.upsert({
+      where: { key: SHIPPING_FEE_KEY },
+      create: { key: SHIPPING_FEE_KEY, value: String(parsed.data.fee) },
+      update: { value: String(parsed.data.fee) },
+    }),
+    db.clubSetting.upsert({
+      where: { key: FREE_OVER_KEY },
+      create: { key: FREE_OVER_KEY, value: String(parsed.data.freeOver) },
+      update: { value: String(parsed.data.freeOver) },
+    }),
+  ]);
+  refresh();
+  return { ok: "Delivery charges saved", at: Date.now() };
 }

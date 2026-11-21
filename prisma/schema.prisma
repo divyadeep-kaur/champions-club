@@ -196,6 +196,10 @@ model Order {
   channel       String
   fulfilment    String
   address       String?
+  clubSpot      String?
+  deliveryPhone String?
+  pincode       String?
+  shipping      Int         @default(0)
   status        String      @default("pending")
   subtotal      Int
   discount      Int         @default(0)

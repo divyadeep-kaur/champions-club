@@ -6,6 +6,9 @@ import { productPhoto } from "@/lib/productPhotos";
 import { benefitPlan } from "@/lib/membership";
 import { CounterSale } from "./CounterSale";
 import { Inventory } from "./Inventory";
+import { ShippingForm } from "./ShippingForm";
+import { FULFILMENT_LABEL } from "@/lib/delivery";
+import { getShippingRule } from "@/lib/deliveryService";
 import { advanceOrder, cancelOrder, restock } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -18,15 +21,16 @@ const statusText: Record<string, { label: string; cls: string }> = {
 };
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
-  await requireStaff(["owner", "desk", "shop"]);
+  const session = await requireStaff(["owner", "desk", "shop"]);
   const asked = (await searchParams).view;
   const view = asked === "online" || asked === "inventory" ? asked : "counter";
 
-  const [products, held, members, orders] = await Promise.all([
+  const [products, held, members, orders, shipping] = await Promise.all([
     db.product.findMany({ orderBy: [{ category: "asc" }, { name: "asc" }] }),
     db.orderItem.groupBy({ by: ["productId"], where: { order: { channel: "online", status: { in: ["pending", "ready"] } } }, _sum: { qty: true } }),
     db.member.findMany({ include: { plan: true }, orderBy: { name: "asc" } }),
     db.order.findMany({ where: { channel: "online" }, include: { items: { include: { product: true } } }, orderBy: { createdAt: "desc" }, take: 20 }),
+    getShippingRule(),
   ]);
   const low = products.filter((p) => p.stock <= p.lowStockAt);
   const toPack = orders.filter((o) => o.status === "pending").length;
@@ -115,6 +119,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         />
       ) : (
         <>
+          {session.role === "owner" && <ShippingForm fee={shipping.fee} freeOver={shipping.freeOver} />}
           <div className="overflow-x-auto border border-line bg-paper">
             <table className="w-full min-w-[760px] text-[14.5px]">
               <thead>
@@ -137,17 +142,30 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                         <span className="block text-[13px] text-muted">{o.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
                       </td>
                       <td className="px-3.5 py-3">{o.items.map((i) => `${i.product.name}${i.qty > 1 ? ` ×${i.qty}` : ""}`).join(", ")}</td>
-                      <td className="px-3.5 py-3 capitalize">
-                        {o.fulfilment}
-                        {o.address && <span className="block text-[13px] normal-case text-muted">{o.address}</span>}
+                      <td className="max-w-[260px] px-3.5 py-3">
+                        <strong className="text-[14px]">{FULFILMENT_LABEL[o.fulfilment] ?? o.fulfilment}</strong>
+                        {o.clubSpot && <span className="block text-[13px]">Bring to: {o.clubSpot}</span>}
+                        {o.address && <span className="block text-[13px] text-muted">{o.address}</span>}
+                        {o.deliveryPhone && (
+                          <a href={`tel:+91${o.deliveryPhone}`} className="block text-[13px] text-forest underline underline-offset-2">
+                            {o.deliveryPhone}
+                          </a>
+                        )}
                       </td>
                       <td className="px-3.5 py-3">
-                        <span className={`px-2 py-0.5 text-[13px] font-semibold ${s.cls}`}>{s.label}</span>
+                        <span className={`px-2 py-0.5 text-[13px] font-semibold ${s.cls}`}>
+                          {o.status === "ready" && o.fulfilment === "delivery"
+                            ? "Out for delivery"
+                            : o.status === "ready" && o.fulfilment === "club"
+                              ? "On its way"
+                              : s.label}
+                        </span>
                       </td>
                       <td className="px-3.5 py-3 font-semibold tabular-nums">
                         {inr(o.total)}
+                        {o.shipping > 0 && <span className="block text-[12.5px] font-normal text-muted">incl. {inr(o.shipping)} shipping</span>}
                         <span className="block text-[12.5px] font-normal text-muted">
-                          {o.paymentMethod ? `Paid · ${o.paymentMethod.toUpperCase()}` : "Pay on collection"}
+                          {o.paymentMethod ? `Paid · ${o.paymentMethod.toUpperCase()}` : o.fulfilment === "pickup" ? "Pay on collection" : "Pay on delivery"}
                         </span>
                       </td>
                       <td className="px-3.5 py-3">
@@ -173,8 +191,12 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                                   className="min-h-9 border-[1.5px] border-forest px-3 text-[13.5px] font-semibold text-forest hover:bg-forest/5"
                                 >
                                   {o.status === "pending"
-                                    ? "Mark packed"
-                                    : `${o.fulfilment === "delivery" ? "Delivered" : "Collected"}${o.paymentMethod ? "" : " & paid"}`}
+                                    ? o.fulfilment === "delivery"
+                                      ? "Packed, send out"
+                                      : o.fulfilment === "club"
+                                        ? "Packed, take it over"
+                                        : "Mark packed"
+                                    : `${o.fulfilment === "pickup" ? "Collected" : "Delivered"}${o.paymentMethod ? "" : " & paid"}`}
                                 </button>
                               </form>
                               <form action={cancelOrder}>

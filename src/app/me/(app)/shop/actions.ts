@@ -7,20 +7,51 @@ import { cartTotals, stockError } from "@/lib/checkout";
 import { inr } from "@/lib/constants";
 import { benefitPlan } from "@/lib/membership";
 import { requireMember } from "@/lib/memberSession";
+import { normalizePhone } from "@/lib/members";
+import { CLUB_SPOTS, INDIAN_STATES, formatAddress, isPincode, shippingFor } from "@/lib/delivery";
+import { getShippingRule } from "@/lib/deliveryService";
 
 export type ShopState = { error?: string; ok?: string; at?: number };
 
 const schema = z.object({
   items: z.string(),
-  fulfilment: z.enum(["pickup", "delivery"]),
-  address: z.string().trim().max(200).optional(),
+  fulfilment: z.enum(["club", "delivery"], { message: "Choose how you want your order" }),
+  clubSpot: z.string().trim().max(60).optional(),
+  line1: z.string().trim().max(120).optional(),
+  line2: z.string().trim().max(120).optional(),
+  landmark: z.string().trim().max(80).optional(),
+  city: z.string().trim().max(60).optional(),
+  state: z.string().trim().max(60).optional(),
+  pincode: z.string().trim().max(10).optional(),
+  phone: z.string().trim().max(20).optional(),
 });
+
+// Checks the delivery details and returns what to store on the order.
+async function deliveryDetails(f: z.infer<typeof schema>, memberPhone: string) {
+  if (f.fulfilment === "club") {
+    const courts = await db.court.findMany({ select: { name: true } });
+    const spots = [...courts.map((c) => c.name), ...CLUB_SPOTS];
+    if (!f.clubSpot || !spots.includes(f.clubSpot)) return { error: "Tell us where in the club to bring it" };
+    return { data: { clubSpot: f.clubSpot, address: null, deliveryPhone: null, pincode: null } };
+  }
+  if (!f.line1 || f.line1.length < 5) return { error: "Enter your house or flat number and building" };
+  if (!f.line2 || f.line2.length < 3) return { error: "Enter your street or area" };
+  if (!f.city || f.city.length < 2) return { error: "Enter your city" };
+  if (!f.state || !INDIAN_STATES.includes(f.state)) return { error: "Choose your state" };
+  if (!f.pincode || !isPincode(f.pincode)) return { error: "Enter a valid 6-digit PIN code" };
+  const phone = normalizePhone(f.phone || memberPhone);
+  if (!phone) return { error: "Enter a 10-digit mobile number for the delivery" };
+  const address = formatAddress({ line1: f.line1, line2: f.line2, landmark: f.landmark, city: f.city, state: f.state, pincode: f.pincode.trim() });
+  return { data: { clubSpot: null, address, deliveryPhone: phone, pincode: f.pincode.trim() } };
+}
 
 export async function placeOrder(_: ShopState, formData: FormData): Promise<ShopState> {
   const member = await requireMember();
   const parsed = schema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: "Choose pickup or delivery" };
-  if (parsed.data.fulfilment === "delivery" && (parsed.data.address?.length ?? 0) < 10) return { error: "Enter your full delivery address" };
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const where = await deliveryDetails(parsed.data, member.phone);
+  if (where.error || !where.data) return { error: where.error };
+  const rule = await getShippingRule();
 
   let lines: { productId: number; qty: number }[];
   try {
@@ -41,6 +72,7 @@ export async function placeOrder(_: ShopState, formData: FormData): Promise<Shop
       const plan = benefitPlan(member);
       const priced = lines.map((l) => ({ ...l, unitPrice: products.find((p) => p.id === l.productId)!.price }));
       const t = cartTotals(priced, plan, "shop");
+      const shipping = shippingFor(parsed.data.fulfilment, t.total, rule);
       return tx.order.create({
         data: {
           memberId: member.id,
@@ -48,11 +80,12 @@ export async function placeOrder(_: ShopState, formData: FormData): Promise<Shop
           customerPhone: member.phone,
           channel: "online",
           fulfilment: parsed.data.fulfilment,
-          address: parsed.data.fulfilment === "delivery" ? parsed.data.address : null,
+          ...where.data,
+          shipping,
           status: "pending",
           subtotal: t.subtotal,
           discount: t.discount,
-          total: t.total,
+          total: t.total + shipping,
           items: { create: priced.map((l) => ({ productId: l.productId, qty: l.qty, unitPrice: l.unitPrice })) },
         },
       });
@@ -61,7 +94,10 @@ export async function placeOrder(_: ShopState, formData: FormData): Promise<Shop
     revalidatePath("/staff/shop");
     revalidatePath("/staff");
     return {
-      ok: `Order #${order.id} placed, ${inr(order.total)}. ${parsed.data.fulfilment === "pickup" ? "We’ll keep it at the front desk, pay when you collect." : "Pay by cash or UPI when it arrives."}`,
+      ok:
+        parsed.data.fulfilment === "club"
+          ? `Order #${order.id} placed, ${inr(order.total)}. We’ll bring it to you at ${order.clubSpot}. Pay when it arrives.`
+          : `Order #${order.id} placed, ${inr(order.total)}${order.shipping ? ` including ${inr(order.shipping)} shipping` : " with free shipping"}. Pay by cash or UPI on delivery.`,
       at: Date.now(),
     };
   } catch (e) {
