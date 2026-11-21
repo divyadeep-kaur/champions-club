@@ -1,71 +1,115 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
-import { fmtDate, fmtTime } from "@/lib/dates";
-import { STAGES, stageLabel } from "@/lib/leads";
+import { startOfMonth } from "@/lib/dates";
+import { STAGES } from "@/lib/leads";
 import { requireStaff } from "@/lib/session";
-import { PageHeader, Table, Td } from "@/components/staff/ui";
-import { LeadBadge } from "./LeadBadge";
+import { btnPrimary } from "@/components/staff/ui";
 
 export const dynamic = "force-dynamic";
 
-export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  await requireStaff(["owner", "desk"]);
-  const { status = "open" } = await searchParams;
+const columnColor: Record<string, string> = { new: "#c4572f", contacted: "#8a6d3b", trial: "#4d7a12", quoted: "#2f6bff", won: "#123828" };
+const action: Record<string, string> = { new: "Call back", contacted: "Book a trial", trial: "Send a quote", quoted: "Convert to member", won: "View member" };
+const short = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+const time = (d: Date) => d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
 
-  const [leads, counts] = await Promise.all([
+export default async function LeadsPage() {
+  await requireStaff(["owner", "desk"]);
+  const monthStart = startOfMonth();
+  const [leads, lost, joinedThisMonth] = await Promise.all([
     db.lead.findMany({
-      where: status === "open" ? { status: { notIn: ["won", "lost"] } } : status === "all" ? {} : { status },
-      include: { activities: { orderBy: { createdAt: "desc" }, take: 1 } },
+      where: { OR: [{ status: { notIn: ["won", "lost"] } }, { status: "won", createdAt: { gte: monthStart } }] },
+      include: { activities: { orderBy: { createdAt: "desc" }, take: 1 }, booking: { include: { court: true } }, member: true },
       orderBy: { createdAt: "desc" },
     }),
-    db.lead.groupBy({ by: ["status"], _count: true }),
+    db.lead.findMany({ where: { status: "lost" }, include: { activities: { where: { kind: "status" }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" }, take: 5 }),
+    db.lead.count({ where: { status: "won", createdAt: { gte: monthStart } } }),
   ]);
-  const count = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
-  const open = counts.filter((c) => c.status !== "won" && c.status !== "lost").reduce((n, c) => n + c._count, 0);
-  const tabs = [{ key: "open", label: "Open", n: open }, ...STAGES.map((s) => ({ key: s.key, label: s.label, n: count(s.key) })), { key: "lost", label: "Lost", n: count("lost") }, { key: "all", label: "All", n: counts.reduce((n, c) => n + c._count, 0) }];
+
+  const open = leads.filter((l) => l.status !== "won");
+  const quotesOut = leads.filter((l) => l.status === "quoted").reduce((s, l) => s + (l.quoteAmount ?? 0), 0);
+
+  const meta = (l: (typeof leads)[number]) => {
+    if (l.status === "won" && l.member) return `Joined as ${l.member.code}`;
+    if (l.status === "quoted" && l.quoteAmount != null) return `Quoted ${l.plan ?? ""} ${inr(l.quoteAmount)}`.replace("  ", " ");
+    if (l.status === "trial" && l.booking) return `Trial ${short(l.booking.start)}, ${time(l.booking.start)} · ${l.booking.court.name}`;
+    if (l.preferredAt) return `Wants ${short(l.preferredAt)}, ${time(l.preferredAt)} · received ${short(l.createdAt)}`;
+    return `Received ${short(l.createdAt)}`;
+  };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Leads" description={`${count("new")} new to call back · ${open} open in the pipeline`} />
+    <div className="grid content-start gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Leads</h1>
+          <p className="mt-1.5 text-muted">Enquiries from the website’s trial page land here. Open a lead for its timeline, trial booking and quote.</p>
+        </div>
+        <Link href="/trial" target="_blank" className={btnPrimary}>
+          Add walk-in enquiry
+        </Link>
+      </div>
 
-      <nav aria-label="Filter by stage" className="flex flex-wrap gap-1">
-        {tabs.map((t) => (
-          <Link
-            key={t.key}
-            href={t.key === "open" ? "/staff/leads" : `/staff/leads?status=${t.key}`}
-            aria-current={status === t.key ? "true" : undefined}
-            className={`flex items-center gap-2 px-3 py-2 text-[14px] font-medium ${status === t.key ? "bg-forest text-cream" : "text-ink hover:bg-paper"}`}
-          >
-            {t.label}
-            <span className={`text-[12.5px] tabular-nums ${status === t.key ? "text-cream/70" : "text-muted"}`}>{t.n}</span>
-          </Link>
-        ))}
-      </nav>
+      <div className="overflow-x-auto pb-2">
+        <div className="grid min-w-[1180px] grid-cols-5 items-start gap-4">
+          {STAGES.map((stage) => {
+            const cards = leads.filter((l) => l.status === stage.key);
+            return (
+              <section key={stage.key} className="grid gap-3 bg-[#ece5d6] p-3.5" aria-label={`${stage.label} leads`}>
+                <h2 className="flex justify-between text-[15px] font-semibold">
+                  <span>{stage.key === "won" ? "Joined this month" : stage.label}</span>
+                  <span className="text-muted">{cards.length}</span>
+                </h2>
+                {cards.length === 0 && <p className="text-[13.5px] text-muted">None right now.</p>}
+                {cards.map((c) => (
+                  <article key={c.id} className="grid gap-2 border border-line border-t-[3px] bg-paper p-3.5" style={{ borderTopColor: columnColor[stage.key] }}>
+                    <div className="flex justify-between gap-2">
+                      <strong className="leading-tight">{c.name}</strong>
+                      <span className="h-fit bg-cream px-2 py-0.5 text-[12.5px] font-bold capitalize">{c.interest}</span>
+                    </div>
+                    <div className="line-clamp-2 text-[14px] leading-[1.45] text-[#3c4a43]">{c.activities[0]?.text ?? c.message ?? "No message"}</div>
+                    <div className="text-[13px] text-muted">{meta(c)}</div>
+                    <Link
+                      href={c.status === "won" && c.member ? `/staff/members/${c.member.id}` : c.status === "quoted" ? `/staff/members/new?lead=${c.id}` : `/staff/leads/${c.id}`}
+                      className="block border-[1.5px] border-forest p-2.5 text-[14px] font-semibold text-forest hover:bg-forest/5"
+                    >
+                      {action[stage.key]} →
+                    </Link>
+                  </article>
+                ))}
+              </section>
+            );
+          })}
+        </div>
+      </div>
 
-      <Table head={["Received", "Name", "Interested in", "Wants to play", "Last update", "Stage"]} empty={leads.length === 0}>
-        {leads.map((l) => (
-          <tr key={l.id} className="group relative hover:bg-cream/70">
-            <Td className="whitespace-nowrap tabular-nums text-muted">{fmtDate(l.createdAt)}</Td>
-            <Td>
-              <Link href={`/staff/leads/${l.id}`} className="font-medium after:absolute after:inset-0 group-hover:underline">
-                {l.name}
+      {lost.length > 0 && (
+        <p className="text-[14.5px] text-muted">
+          <strong className="text-[#a8411f]">Lost ({lost.length}):</strong>{" "}
+          {lost.map((l, i) => (
+            <span key={l.id}>
+              {i > 0 && " · "}
+              {l.name}
+              {l.activities[0] ? `, “${l.activities[0].text.replace(/^Marked lost: /, "")}”` : ""}{" "}
+              <Link href={`/staff/leads/${l.id}`} className="text-forest underline underline-offset-4">
+                Reopen
               </Link>
-              <p className="tabular-nums text-[13px] text-muted">{l.phone}</p>
-            </Td>
-            <Td className="capitalize">
-              {l.interest}
-              {l.quoteAmount ? <span className="block text-[13px] normal-case text-muted">Quoted {inr(l.quoteAmount)}</span> : null}
-            </Td>
-            <Td className="whitespace-nowrap tabular-nums">{l.preferredAt ? `${fmtDate(l.preferredAt)}, ${fmtTime(l.preferredAt)}` : "—"}</Td>
-            <Td className="max-w-[260px] truncate text-[13.5px] text-muted">{l.activities[0]?.text ?? l.message ?? "—"}</Td>
-            <Td>
-              <LeadBadge status={l.status} />
-            </Td>
-          </tr>
+            </span>
+          ))}
+        </p>
+      )}
+
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+        {[
+          ["Open enquiries", String(open.length)],
+          ["Quotes out", inr(quotesOut)],
+          ["Became members this month", String(joinedThisMonth)],
+        ].map(([l, v]) => (
+          <div key={l} className="border border-line bg-paper p-[18px]">
+            <div className="text-[14px] text-muted">{l}</div>
+            <div className="font-serif text-[28px] text-forest">{v}</div>
+          </div>
         ))}
-      </Table>
-      <p className="text-[13.5px] text-muted">Enquiries from the website’s trial form land here as {stageLabel("new")}.</p>
+      </div>
     </div>
   );
 }

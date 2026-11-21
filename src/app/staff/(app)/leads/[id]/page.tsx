@@ -14,6 +14,7 @@ import { LeadBadge } from "../LeadBadge";
 export const dynamic = "force-dynamic";
 
 const icons = { note: MessageSquare, status: Flag, trial: CalendarCheck, quote: ReceiptIndianRupee, joined: Check } as const;
+const dot = { note: "bg-[#8a6d3b]", status: "bg-clay", trial: "bg-[#4d7a12]", quote: "bg-[#2f6bff]", joined: "bg-forest" } as const;
 
 export default async function LeadPage({ params }: { params: Promise<{ id: string }> }) {
   await requireStaff(["owner", "desk"]);
@@ -43,13 +44,13 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
         <ArrowLeft className="size-4" /> All leads
       </Link>
 
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <LeadBadge status={lead.status} />
             <span className="text-[14px] capitalize text-muted">Interested in {lead.interest}</span>
           </div>
-          <h1 className="mt-2 font-serif text-[40px] font-semibold leading-none tracking-[-0.02em] text-forest">{lead.name}</h1>
+          <h1 className="mt-2 font-serif text-[32px] font-semibold text-forest sm:text-[36px]">{lead.name}</h1>
           <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px]">
             <a href={`tel:+91${lead.phone}`} className="inline-flex items-center gap-1.5 font-semibold text-forest underline underline-offset-4">
               <Phone className="size-4" /> {lead.phone}
@@ -68,13 +69,17 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
         )}
       </header>
 
-      <ol aria-label="Pipeline" className="grid grid-cols-5 gap-1">
+      <ol aria-label="Pipeline" className="grid grid-cols-5 gap-1.5">
         {STAGES.map((s, i) => {
-          const done = lead.status !== "lost" && i <= idx;
+          const done = lead.status !== "lost" && i < idx;
+          const current = lead.status !== "lost" && i === idx;
           return (
-            <li key={s.key} className="text-center">
-              <div className={`h-1.5 ${done ? "bg-forest" : "bg-line"}`} />
-              <p className={`mt-1.5 text-[12.5px] font-semibold ${done ? "text-forest" : "text-muted"}`}>{s.label}</p>
+            <li
+              key={s.key}
+              aria-current={current ? "step" : undefined}
+              className={`px-2.5 py-3 text-center text-[14px] font-bold ${current ? "bg-ball text-forest-deep" : done ? "bg-forest text-cream" : "bg-[#ece5d6] text-muted"}`}
+            >
+              {s.label}
             </li>
           );
         })}
@@ -101,21 +106,23 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
             </div>
           )}
 
-          <section>
-            <h2 className="font-serif text-[22px] font-medium text-forest">Timeline</h2>
-            <ol className="mt-3 space-y-0 border-l-2 border-line pl-5">
+          <section className="border border-line bg-paper p-[22px]">
+            <h2 className="text-[18px] font-semibold">Timeline</h2>
+            <ol className="mt-3 grid">
               {timeline.map((a) => {
                 const Icon = icons[a.kind];
                 return (
-                  <li key={`${a.kind}-${a.id}`} className="relative pb-5">
-                    <span className="absolute -left-[31px] top-0 grid size-6 place-items-center rounded-full border-2 border-cream bg-forest text-cream">
+                  <li key={`${a.kind}-${a.id}`} className="grid grid-cols-[22px_minmax(0,1fr)] gap-3 border-t border-[#ece5d6] py-3">
+                    <span aria-hidden="true" className={`mt-0.5 grid size-[22px] place-items-center rounded-full text-cream ${dot[a.kind]}`}>
                       <Icon className="size-3" />
                     </span>
-                    <p className="text-[15px] text-ink">{a.text}</p>
+                    <div>
+                    <p className="font-semibold text-ink">{a.text}</p>
                     <p className="text-[13px] text-muted">
                       {fmtDate(a.createdAt)}, {fmtTime(a.createdAt)}
                       {a.staffName ? ` · ${a.staffName}` : ""}
                     </p>
+                    </div>
                   </li>
                 );
               })}
