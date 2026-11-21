@@ -6,6 +6,7 @@ import { inr } from "@/lib/constants";
 import { fmtTime } from "@/lib/dates";
 import { requireStaff } from "@/lib/session";
 import { AttachMember } from "./AttachMember";
+import { AddMenuItemTile } from "./menu/MenuForms";
 import { addItem, closeShift, removeItem, settleTab, startShift } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -175,6 +176,7 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
                   </button>
                 </form>
               ))}
+              <AddMenuItemTile categories={[...new Set(["drinks", "food", ...menu.map((m) => m.category)])]} />
             </div>
           </section>
         </div>

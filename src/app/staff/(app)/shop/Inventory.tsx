@@ -88,7 +88,7 @@ function Restock({ item }: { item: Item }) {
   );
 }
 
-function AddProduct({ categories, onClose }: { categories: string[]; onClose: () => void }) {
+export function AddProduct({ categories, onClose, framed = true }: { categories: string[]; onClose: () => void; framed?: boolean }) {
   const [state, action, pending] = useActionState<InventoryState, FormData>(addProduct, {});
   const [category, setCategory] = useState(categories[0] ?? "");
   const [preview, setPreview] = useState<string | null>(null);
@@ -102,13 +102,15 @@ function AddProduct({ categories, onClose }: { categories: string[]; onClose: ()
   }, [state.ok, state.at]);
 
   return (
-    <form ref={ref} action={action} className="grid gap-3 border border-forest bg-paper p-5" noValidate>
-      <div className="flex items-center justify-between">
-        <h2 className="text-[18px] font-semibold">Add a new product</h2>
-        <button type="button" onClick={onClose} aria-label="Close" className="grid size-9 place-items-center text-muted hover:text-ink">
-          <X className="size-5" />
-        </button>
-      </div>
+    <form ref={ref} action={action} className={`grid gap-3 bg-paper p-5 ${framed ? "border border-forest" : ""}`} noValidate>
+      {framed && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-[18px] font-semibold">Add a new product</h2>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid size-9 place-items-center text-muted hover:text-ink">
+            <X className="size-5" />
+          </button>
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className={`${labelCls} sm:col-span-2`}>
           Product name

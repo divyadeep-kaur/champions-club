@@ -7,6 +7,8 @@ import { cartTotals } from "@/lib/checkout";
 import type { ProductPhoto } from "@/lib/productPhotos";
 import { ProductImage } from "@/components/ProductImage";
 import { counterSale, type SaleState } from "./actions";
+import { AddTile } from "@/components/staff/AddTile";
+import { AddProduct } from "./Inventory";
 
 type Product = { id: number; name: string; category: string; price: number; stock: number; lowStockAt: number; held: number; photo: ProductPhoto | null };
 type MemberOpt = { code: string; name: string; plan: string; shopDiscount: number; courtRate: number; barDiscount: number; expired: boolean };
@@ -17,7 +19,7 @@ const methods = [
   { v: "cash", l: "Cash" },
 ] as const;
 
-export function CounterSale({ products, members }: { products: Product[]; members: MemberOpt[] }) {
+export function CounterSale({ products, members, canAdd = false }: { products: Product[]; members: MemberOpt[]; canAdd?: boolean }) {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [memberRef, setMemberRef] = useState("");
   const [method, setMethod] = useState<"upi" | "card" | "cash">("upi");
@@ -74,6 +76,17 @@ export function CounterSale({ products, members }: { products: Product[]; member
             </div>
           );
         })}
+        {canAdd && (
+          <AddTile label="Add new product" title="Add a new product">
+            {(close) => (
+              <AddProduct
+                framed={false}
+                onClose={close}
+                categories={[...new Set(["accessories", "apparel", "balls", "rackets", "shoes", ...products.map((p) => p.category)])].sort()}
+              />
+            )}
+          </AddTile>
+        )}
       </div>
 
       <form action={action} className="grid min-w-0 flex-[1_1_320px] gap-3.5 border border-line bg-paper p-[22px]">

@@ -96,6 +96,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         />
       ) : view === "counter" ? (
         <CounterSale
+          canAdd
           products={products.map((p) => ({
             id: p.id,
             name: p.name,

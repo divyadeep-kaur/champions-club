@@ -3,11 +3,12 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { fieldCls, labelCls } from "@/components/staff/ui";
+import { AddTile } from "@/components/staff/AddTile";
 import { addMenuItem, updateMenuItem, type MenuState } from "./actions";
 
 const small = "min-h-10 border border-[#b5aa98] bg-white px-2.5 text-[14.5px] outline-none focus:border-forest";
 
-export function AddItemForm({ categories }: { categories: string[] }) {
+export function AddItemForm({ categories, framed = true }: { categories: string[]; framed?: boolean }) {
   const [state, action, pending] = useActionState<MenuState, FormData>(addMenuItem, {});
   const [category, setCategory] = useState(categories[0] ?? "");
   const [preview, setPreview] = useState<string | null>(null);
@@ -21,8 +22,8 @@ export function AddItemForm({ categories }: { categories: string[] }) {
   }, [state.ok, state.at]);
 
   return (
-    <form ref={ref} action={action} className="grid gap-3 border border-line bg-paper p-5" noValidate>
-      <h2 className="text-[18px] font-semibold">Add a new item</h2>
+    <form ref={ref} action={action} className={`grid gap-3 bg-paper p-5 ${framed ? "border border-line" : ""}`} noValidate>
+      {framed && <h2 className="text-[18px] font-semibold">Add a new item</h2>}
       <label className={labelCls}>
         Item name
         <input name="name" defaultValue={f.name} placeholder="e.g. Mango Smoothie" required className={fieldCls} />
@@ -138,5 +139,14 @@ export function ItemRow({ item, photo }: { item: { id: number; name: string; pri
         {(state.error || state.ok) && <span className={`text-[13px] font-semibold ${state.error ? "text-clay" : "text-[#4d7a12]"}`}>{state.error ?? "✓"}</span>}
       </div>
     </form>
+  );
+}
+
+// The "+" tile at the end of the café counter's menu grid.
+export function AddMenuItemTile({ categories }: { categories: string[] }) {
+  return (
+    <AddTile label="Add new item" title="Add a café or bar item">
+      {() => <AddItemForm categories={categories} framed={false} />}
+    </AddTile>
   );
 }
