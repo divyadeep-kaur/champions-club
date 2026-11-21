@@ -17,6 +17,8 @@ const saleSchema = z.object({
 });
 
 const refresh = () => {
+  revalidatePath("/me");
+  revalidatePath("/me/shop");
   revalidatePath("/staff/shop");
   revalidatePath("/staff");
   revalidatePath("/");

@@ -22,10 +22,11 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
   const { booked } = await searchParams;
   const now = new Date();
 
-  const [upcoming, socials, tab] = await Promise.all([
+  const [upcoming, socials, tab, orders] = await Promise.all([
     db.booking.findMany({ where: { memberId: member.id, status: "booked", end: { gt: now } }, include: { court: true }, orderBy: { start: "asc" }, take: 6 }),
     db.socialPlayer.findMany({ where: { memberId: member.id, booking: { status: "booked", end: { gt: now } } }, include: { booking: { include: { court: true } } } }),
     db.tab.findFirst({ where: { memberId: member.id, status: "open" }, include: { items: true, table: true } }),
+    db.order.findMany({ where: { memberId: member.id, channel: "online", status: { in: ["pending", "ready"] } }, include: { items: { include: { product: true } } }, orderBy: { createdAt: "desc" } }),
   ]);
 
   const since = addDays(startOfDay(now), -16 * 7);
@@ -133,6 +134,30 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
         ))}
         {upcoming.length === 0 && socials.length === 0 && <p className="text-[14.5px] text-muted">No courts booked. You can book up to 7 days ahead.</p>}
       </section>
+
+      {orders.length > 0 && (
+        <section className="grid gap-2.5">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-[20px] font-bold text-forest">Your shop orders</h2>
+            <Link href="/me/shop" className="py-2 text-[14px] font-bold text-forest">
+              Shop
+            </Link>
+          </div>
+          {orders.map((o) => (
+            <div key={o.id} className="flex items-center justify-between gap-2.5 rounded-2xl border border-line bg-paper p-3.5">
+              <div className="min-w-0">
+                <strong>#{o.id}</strong> <span className="text-muted">· {o.items.map((i) => i.product.name).join(", ")}</span>
+                <div className="text-[14px] text-muted">
+                  {o.fulfilment === "delivery" ? "Delivery" : "Collect at the desk"} · {inr(o.total)}
+                </div>
+              </div>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[12.5px] font-bold ${o.status === "ready" ? "bg-ball text-forest-deep" : "bg-[#f6e7b8] text-[#5f4605]"}`}>
+                {o.status === "ready" ? (o.fulfilment === "pickup" ? "Ready to collect" : "Out for delivery") : "Being packed"}
+              </span>
+            </div>
+          ))}
+        </section>
+      )}
 
       <section className="grid gap-2.5">
         <h2 className="text-[20px] font-bold text-forest">Your café tab</h2>
