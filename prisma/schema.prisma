@@ -14,10 +14,80 @@ model Staff {
   passwordHash  String
   role          String
   monthlySalary Int            @default(0)
+  code          String?        @unique
+  jobTitle      String         @default("")
+  department    String         @default("management")
+  phone         String?
+  joinedAt      DateTime       @default(now())
+  active        Boolean        @default(true)
   createdAt     DateTime       @default(now())
   shifts        Shift[]
   leaves        LeaveRequest[] @relation("LeaveStaff")
   decisions     LeaveRequest[] @relation("LeaveDecider")
+  payslips      Payslip[]
+  invoices      StaffInvoice[]
+  queries       StaffQuery[]   @relation("QueryStaff")
+  replies       StaffQuery[]   @relation("QueryReplier")
+}
+
+model Payslip {
+  id          Int      @id @default(autoincrement())
+  staffId     Int
+  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  month       String
+  gross       Int
+  basic       Int
+  hra         Int
+  allowance   Int
+  pf          Int
+  esi         Int
+  pt          Int
+  advance     Int      @default(0)
+  net         Int
+  employerPf  Int
+  employerEsi Int
+  leaveDays   Int      @default(0)
+  expenseId   Int?
+  createdAt   DateTime @default(now())
+
+  @@unique([staffId, month])
+}
+
+model StaffInvoice {
+  id          Int      @id @default(autoincrement())
+  number      String   @unique
+  staffId     Int
+  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  kind        String
+  month       String?
+  payslipId   Int?     @unique
+  queryId     Int?     @unique
+  expenseId   Int?
+  description String
+  amount      Int
+  issuedAt    DateTime @default(now())
+
+  @@index([staffId])
+}
+
+model StaffQuery {
+  id             Int       @id @default(autoincrement())
+  staffId        Int
+  staff          Staff     @relation("QueryStaff", fields: [staffId], references: [id], onDelete: Cascade)
+  topic          String
+  subject        String
+  message        String
+  amount         Int?
+  status         String    @default("open")
+  reply          String?
+  repliedById    Int?
+  repliedBy      Staff?    @relation("QueryReplier", fields: [repliedById], references: [id])
+  repliedAt      DateTime?
+  expenseId      Int?
+  recoveredMonth String?
+  createdAt      DateTime  @default(now())
+
+  @@index([status])
 }
 
 model Plan {

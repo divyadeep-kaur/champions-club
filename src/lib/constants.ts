@@ -1,4 +1,4 @@
-export const ROLES = ["owner", "desk", "bar"] as const;
+export const ROLES = ["owner", "desk", "bar", "shop", "coach", "staff"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const SPORTS = ["tennis", "cricket"] as const;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gstFromInclusive, invoiceTotals, nextInvoiceNumber, gstSummary, monthRange } from "./money";
+import { gstFromInclusive, invoiceTotals, nextInvoiceNumber, gstSummary, monthRange, profitAndLoss } from "./money";
 
 describe("gstFromInclusive", () => {
   it("splits a GST-inclusive price into taxable value and tax", () => {
@@ -31,6 +31,8 @@ describe("invoices", () => {
     expect(nextInvoiceNumber(null, 2026)).toBe("INV-2026-0001");
     expect(nextInvoiceNumber("INV-2026-0041", 2026)).toBe("INV-2026-0042");
     expect(nextInvoiceNumber("INV-2025-0310", 2026)).toBe("INV-2026-0001");
+    expect(nextInvoiceNumber("SAL-2026-0009", 2026, "SAL")).toBe("SAL-2026-0010");
+    expect(nextInvoiceNumber("INV-2026-0009", 2026, "SAL")).toBe("SAL-2026-0001");
   });
   it("adds GST on top of exclusive line prices", () => {
     expect(
@@ -47,5 +49,31 @@ describe("monthRange", () => {
     const { from, to } = monthRange("2026-02");
     expect(from).toEqual(new Date(2026, 1, 1));
     expect(to).toEqual(new Date(2026, 2, 1));
+  });
+});
+
+describe("profitAndLoss", () => {
+  it("takes GST out of takings before subtracting costs", () => {
+    const r = profitAndLoss(
+      [
+        { source: "court", amount: 11800 },
+        { source: "bar", amount: 1050 },
+      ],
+      [
+        { category: "salary", amount: 6000 },
+        { category: "statutory", amount: 1000 },
+        { category: "rent", amount: 2000 },
+      ],
+    );
+    expect(r.gross).toBe(12850);
+    expect(r.gst).toBe(1800 + 50);
+    expect(r.netRevenue).toBe(11000);
+    expect(r.totalCosts).toBe(9000);
+    expect(r.profit).toBe(2000);
+    expect(r.margin).toBe(18.2);
+    expect(r.staffShare).toBe(63.6);
+  });
+  it("reports zero margin with no revenue", () => {
+    expect(profitAndLoss([], [{ category: "rent", amount: 100 }])).toMatchObject({ profit: -100, margin: 0 });
   });
 });

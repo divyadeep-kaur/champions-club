@@ -2,7 +2,9 @@ export const GST_RATE: Record<string, number> = { court: 18, membership: 18, sho
 
 export const EXPENSE_CATEGORIES = [
   { key: "stock", label: "Stock purchases" },
-  { key: "salary", label: "Salaries" },
+  { key: "salary", label: "Salaries & advances" },
+  { key: "statutory", label: "PF, ESI & PT" },
+  { key: "claims", label: "Staff claims" },
   { key: "rent", label: "Rent" },
   { key: "utilities", label: "Electricity & water" },
   { key: "other", label: "Other" },
@@ -20,10 +22,10 @@ export function gstSummary(payments: { source: string; amount: number }[]) {
   });
 }
 
-export function nextInvoiceNumber(last: string | null, year: number) {
-  const m = last?.match(/^INV-(\d{4})-(\d+)$/);
+export function nextInvoiceNumber(last: string | null, year: number, prefix = "INV") {
+  const m = last?.match(new RegExp(`^${prefix}-(\\d{4})-(\\d+)$`));
   const n = m && Number(m[1]) === year ? Number(m[2]) + 1 : 1;
-  return `INV-${year}-${String(n).padStart(4, "0")}`;
+  return `${prefix}-${year}-${String(n).padStart(4, "0")}`;
 }
 
 export function invoiceTotals(lines: { qty: number; unitPrice: number; gstRate: number }[]) {
@@ -42,3 +44,23 @@ export function monthRange(month: string) {
 
 export const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 export const monthLabel = (d: Date) => d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+
+export function profitAndLoss(income: { source: string; amount: number }[], costs: { category: string; amount: number }[]) {
+  const gross = income.reduce((s, p) => s + p.amount, 0);
+  const gst = gstSummary(income).reduce((s, r) => s + r.gst, 0);
+  const netRevenue = gross - gst;
+  const lines = EXPENSE_CATEGORIES.map((c) => ({ ...c, amount: costs.filter((e) => e.category === c.key).reduce((s, e) => s + e.amount, 0) }));
+  const totalCosts = lines.reduce((s, l) => s + l.amount, 0);
+  const profit = netRevenue - totalCosts;
+  const staffCost = lines.filter((l) => ["salary", "statutory", "claims"].includes(l.key)).reduce((s, l) => s + l.amount, 0);
+  return {
+    gross,
+    gst,
+    netRevenue,
+    lines,
+    totalCosts,
+    profit,
+    margin: netRevenue > 0 ? Math.round((profit / netRevenue) * 1000) / 10 : 0,
+    staffShare: netRevenue > 0 ? Math.round((staffCost / netRevenue) * 1000) / 10 : 0,
+  };
+}

@@ -1,5 +1,6 @@
 import { PrismaClient, type Member } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { payslip, statutoryDue } from "../src/lib/payroll";
 
 const db = new PrismaClient();
 
@@ -19,6 +20,9 @@ const at = (daysFromToday: number, hour: number, minute = 0) => {
 };
 
 async function main() {
+  await db.staffInvoice.deleteMany();
+  await db.staffQuery.deleteMany();
+  await db.payslip.deleteMany();
   await db.invoiceLine.deleteMany();
   await db.invoice.deleteMany();
   await db.leaveRequest.deleteMany();
@@ -41,11 +45,47 @@ async function main() {
   await db.staff.deleteMany();
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
-  const [owner, desk, bar] = await Promise.all([
-    db.staff.create({ data: { name: "Ritika Malhotra", email: "owner@champions.club", passwordHash, role: "owner", monthlySalary: 0 } }),
-    db.staff.create({ data: { name: "Aman Gill", email: "desk@champions.club", passwordHash, role: "desk", monthlySalary: 22000 } }),
-    db.staff.create({ data: { name: "Sana Sheikh", email: "bar@champions.club", passwordHash, role: "bar", monthlySalary: 18000 } }),
-  ]);
+  const roster: [string, string, string, string, string, number, number][] = [
+    ["Ritika Malhotra", "owner@champions.club", "owner", "management", "Club owner", 0, -900],
+    ["Aman Gill", "desk@champions.club", "desk", "front", "Front desk lead", 22000, -620],
+    ["Sana Sheikh", "bar@champions.club", "bar", "cafe", "Café manager", 20000, -540],
+    ["Arvid Lund", "arvid@champions.club", "coach", "coaching", "Head tennis coach", 45000, -800],
+    ["Sara Haddad", "sara@champions.club", "coach", "coaching", "Tennis coach", 38000, -410],
+    ["Rohan Mehra", "rohan@champions.club", "coach", "coaching", "Head cricket coach", 42000, -760],
+    ["Imran Qureshi", "imran@champions.club", "coach", "coaching", "Junior cricket coach", 32000, -300],
+    ["Diego Ramos", "diego@champions.club", "coach", "coaching", "Social play host", 28000, -210],
+    ["Neha Bhatia", "neha@champions.club", "desk", "front", "Receptionist", 18000, -180],
+    ["Gurpreet Singh", "gurpreet@champions.club", "bar", "cafe", "Cook", 19000, -450],
+    ["Pooja Rani", "pooja@champions.club", "bar", "cafe", "Café server", 14500, -120],
+    ["Vikram Sood", "vikram@champions.club", "shop", "shop", "Pro shop assistant", 17000, -390],
+    ["Harleen Kaur", "harleen@champions.club", "shop", "shop", "Shop cashier", 16000, -150],
+    ["Ramesh Kumar", "ramesh@champions.club", "staff", "housekeeping", "Sweeper", 13000, -700],
+    ["Sunita Devi", "sunita@champions.club", "staff", "housekeeping", "Sweeper", 13000, -330],
+    ["Baldev Singh", "baldev@champions.club", "staff", "security", "Security guard, day", 16500, -650],
+    ["Mohan Lal", "mohan@champions.club", "staff", "security", "Security guard, night", 16500, -260],
+    ["Jagdish Prasad", "jagdish@champions.club", "staff", "grounds", "Groundsman", 17000, -580],
+  ];
+  const team: Awaited<ReturnType<typeof db.staff.create>>[] = [];
+  for (const [i, [name, email, role, department, jobTitle, monthlySalary, joined]] of roster.entries()) {
+    team.push(
+      await db.staff.create({
+        data: {
+          name,
+          email,
+          passwordHash,
+          role,
+          department,
+          jobTitle,
+          monthlySalary,
+          code: `STF-${String(i + 1).padStart(3, "0")}`,
+          phone: `98140${String(10000 + i * 137).slice(-5)}`,
+          joinedAt: at(joined, 10),
+        },
+      }),
+    );
+  }
+  const [owner, desk, bar] = team;
+  const staffNamed = (name: string) => team.find((t) => t.name === name)!;
 
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   if (adminEmail && process.env.ADMIN_PASSWORD && adminEmail !== "owner@champions.club") {
@@ -280,6 +320,208 @@ async function main() {
     ],
   });
 
+  const firstDay = at(-27, 0);
+  let salaryNo = 0;
+  for (let back = 5; back >= 0; back--) {
+    const mStart = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    const mEnd = new Date(now.getFullYear(), now.getMonth() - back + 1, 1);
+    const label = mStart.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+    const key = `${mStart.getFullYear()}-${String(mStart.getMonth() + 1).padStart(2, "0")}`;
+    const grow = 1 - back * 0.04;
+    for (let w = new Date(mStart); w < mEnd && w.getTime() + 3 * day < now.getTime(); w = new Date(w.getTime() + 7 * day)) {
+      const share = w >= firstDay ? 0.6 : 1;
+      for (const [source, weekly] of [
+        ["court", 78000],
+        ["membership", 72000],
+        ["shop", 34000],
+        ["bar", 27000],
+      ] as const) {
+        await db.payment.create({
+          data: {
+            source,
+            amount: Math.round((weekly * share * grow * (0.85 + rand() * 0.3)) / 10) * 10,
+            method: pick(["upi", "upi", "card", "cash"]),
+            note: "Weekly takings",
+            createdAt: new Date(w.getTime() + 3 * day + 20 * 3600 * 1000),
+          },
+        });
+      }
+    }
+    if (back === 0) continue;
+    const paid = (d: number) => new Date(mStart.getTime() + d * day + 11 * 3600 * 1000);
+    await db.expense.createMany({
+      data: [
+        { category: "rent", description: "Ground and clubhouse rent", vendor: "Landlord", amount: 85000, dueDate: paid(4), paidAt: paid(3), method: "bank" },
+        {
+          category: "utilities",
+          description: "Electricity, floodlights",
+          vendor: "PSPCL",
+          amount: Math.round(21000 + rand() * 6000),
+          dueDate: paid(9),
+          paidAt: paid(8),
+          method: "bank",
+        },
+        { category: "utilities", description: "Water and internet", vendor: "Municipal / Airtel", amount: 4200, dueDate: paid(12), paidAt: paid(11), method: "bank" },
+        {
+          category: "stock",
+          description: "Pro shop restock",
+          vendor: "Pro Sports Distributors",
+          amount: Math.round(36000 + rand() * 12000),
+          dueDate: paid(6),
+          paidAt: paid(6),
+          method: "bank",
+        },
+        {
+          category: "stock",
+          description: "Café supplies",
+          vendor: "FreshFarm Foods",
+          amount: Math.round(30000 + rand() * 8000),
+          dueDate: paid(14),
+          paidAt: paid(14),
+          method: "bank",
+        },
+        {
+          category: "other",
+          description: "Court and net upkeep",
+          vendor: "ClayWorks",
+          amount: Math.round(8000 + rand() * 7000),
+          dueDate: paid(18),
+          paidAt: paid(18),
+          method: "bank",
+        },
+      ],
+    });
+    const payDay = new Date(mEnd.getTime() - day + 12 * 3600 * 1000);
+    const slips = [];
+    for (const t of team.filter((x) => x.monthlySalary > 0 && x.joinedAt < mEnd)) {
+      const slip = payslip(t.monthlySalary);
+      slips.push(slip);
+      const exp = await db.expense.create({
+        data: { category: "salary", description: `Salary ${label} · ${t.name}`, vendor: t.name, amount: slip.net, dueDate: payDay, paidAt: payDay, method: "bank" },
+      });
+      const ps = await db.payslip.create({
+        data: {
+          staffId: t.id,
+          month: key,
+          gross: slip.gross,
+          basic: slip.basic,
+          hra: slip.hra,
+          allowance: slip.allowance,
+          pf: slip.pf,
+          esi: slip.esi,
+          pt: slip.pt,
+          advance: slip.advance,
+          net: slip.net,
+          employerPf: slip.employerPf,
+          employerEsi: slip.employerEsi,
+          expenseId: exp.id,
+          createdAt: payDay,
+        },
+      });
+      salaryNo += 1;
+      await db.staffInvoice.create({
+        data: {
+          number: `SAL-${payDay.getFullYear()}-${String(salaryNo).padStart(4, "0")}`,
+          staffId: t.id,
+          kind: "salary",
+          month: key,
+          payslipId: ps.id,
+          expenseId: exp.id,
+          amount: slip.net,
+          description: `Salary for ${label}: gross ${slip.gross}, deductions ${slip.deductions}`,
+          issuedAt: payDay,
+        },
+      });
+    }
+    const due = statutoryDue(slips);
+    const statDue = new Date(mEnd.getTime() + 14 * day + 12 * 3600 * 1000);
+    await db.expense.create({
+      data: {
+        category: "statutory",
+        description: `PF, ESI and PT ${label}`,
+        vendor: "EPFO / ESIC / Punjab PT",
+        amount: due.total,
+        dueDate: statDue,
+        ...(statDue < now ? { paidAt: statDue, method: "bank" } : {}),
+      },
+    });
+  }
+
+  const ramesh = staffNamed("Ramesh Kumar");
+  const advance = await db.expense.create({
+    data: {
+      category: "salary",
+      description: `Salary advance · ${ramesh.name}`,
+      vendor: ramesh.name,
+      amount: 3000,
+      dueDate: at(-6, 12),
+      paidAt: at(-6, 15),
+      method: "cash",
+    },
+  });
+  salaryNo += 1;
+  await db.staffInvoice.create({
+    data: {
+      number: `SAL-${now.getFullYear()}-${String(salaryNo).padStart(4, "0")}`,
+      staffId: ramesh.id,
+      kind: "advance",
+      expenseId: advance.id,
+      amount: 3000,
+      description: "Salary advance: Advance for school fees",
+      issuedAt: at(-6, 12),
+    },
+  });
+  await db.staffQuery.createMany({
+    data: [
+      {
+        staffId: ramesh.id,
+        topic: "advance",
+        subject: "Advance for school fees",
+        message: "Need ₹3,000 for my daughter’s school fees. Please cut it from this month’s salary.",
+        amount: 3000,
+        status: "approved",
+        reply: "Approved. Collect it in cash from the desk; it comes off this month’s salary.",
+        repliedById: owner.id,
+        repliedAt: at(-6, 12),
+        expenseId: advance.id,
+        createdAt: at(-7, 9),
+      },
+      {
+        staffId: staffNamed("Imran Qureshi").id,
+        topic: "claim",
+        subject: "Cones and bibs for junior camp",
+        message: "Bought 20 cones and 16 bibs from Sports Hub for Sunday’s under-14 camp. The bill is with the desk.",
+        amount: 1850,
+        createdAt: at(-1, 18),
+      },
+      {
+        staffId: staffNamed("Pooja Rani").id,
+        topic: "pay",
+        subject: "ESI number on payslip",
+        message: "My payslip shows ESI deducted but I don’t have my ESI card number yet. Who do I ask?",
+        createdAt: at(-2, 11),
+      },
+      {
+        staffId: staffNamed("Baldev Singh").id,
+        topic: "schedule",
+        subject: "Swap to nights next week",
+        message: "Can I swap with Mohan and do nights from Monday? Family is travelling.",
+        status: "answered",
+        reply: "Fine if Mohan agrees. Update the roster at the desk.",
+        repliedById: owner.id,
+        repliedAt: at(-3, 17),
+        createdAt: at(-4, 8),
+      },
+      {
+        staffId: staffNamed("Vikram Sood").id,
+        topic: "leave",
+        subject: "Leave days left this year",
+        message: "How many paid leave days do I have left? Planning a trip in December.",
+        createdAt: at(0, 10),
+      },
+    ],
+  });
+
   await db.leaveRequest.createMany({
     data: [
       { staffId: bar.id, from: at(3, 0), to: at(4, 0), reason: "Family function", status: "pending" },
@@ -321,7 +563,7 @@ async function main() {
   });
 
   console.log(
-    `Seeded: 3 staff (${owner.email}, ${desk.email}, ${bar.email}), ${members.length} members, ${courts.length} courts, ${products.length} products, ${menu.length} menu items.`,
+    `Seeded: ${team.length} staff (${owner.email}, ${desk.email}, ${bar.email}), ${members.length} members, ${courts.length} courts, ${products.length} products, ${menu.length} menu items.`,
   );
 }
 
