@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/session";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -10,6 +11,7 @@ import { PrintButton } from "./PrintButton";
 export const dynamic = "force-dynamic";
 
 export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
+  await requireStaff(["owner"]);
   const { id } = await params;
   const invoice = await db.invoice.findUnique({ where: { id: Number(id) || 0 }, include: { lines: true } });
   if (!invoice) notFound();

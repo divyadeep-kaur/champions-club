@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/session";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
@@ -9,6 +10,7 @@ import { NewInvoiceForm } from "./NewInvoiceForm";
 export const dynamic = "force-dynamic";
 
 export default async function InvoicesPage() {
+  await requireStaff(["owner"]);
   const [invoices, members] = await Promise.all([
     db.invoice.findMany({ include: { lines: true }, orderBy: { issuedAt: "desc" }, take: 30 }),
     db.member.findMany({ include: { plan: true }, orderBy: { name: "asc" } }),

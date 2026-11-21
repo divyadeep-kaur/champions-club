@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/session";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
@@ -11,6 +12,7 @@ const th = "px-3 py-2.5 font-semibold";
 const td = "px-3 py-2.5 tabular-nums";
 
 export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
+  await requireStaff(["owner"]);
   const month = (await searchParams).month ?? monthKey();
   const { from, to } = monthRange(month);
   const key = monthKey(from);
@@ -43,11 +45,19 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
     <div className="grid content-start gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Link href={`/staff/money/payroll?month=${prev}`} aria-label="Previous month" className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5">
+          <Link
+            href={`/staff/money/payroll?month=${prev}`}
+            aria-label="Previous month"
+            className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5"
+          >
             ‹
           </Link>
           <span className="px-2 text-[17px] font-semibold">Payroll · {label}</span>
-          <Link href={`/staff/money/payroll?month=${next}`} aria-label="Next month" className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5">
+          <Link
+            href={`/staff/money/payroll?month=${next}`}
+            aria-label="Next month"
+            className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5"
+          >
             ›
           </Link>
         </div>
@@ -69,7 +79,10 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
             </form>
           )}
           {rows.length > 0 && (
-            <a href={`/staff/money/payroll/export?month=${key}`} className="flex min-h-11 items-center border-[1.5px] border-forest px-4 font-semibold text-forest hover:bg-forest/5">
+            <a
+              href={`/staff/money/payroll/export?month=${key}`}
+              className="flex min-h-11 items-center border-[1.5px] border-forest px-4 font-semibold text-forest hover:bg-forest/5"
+            >
               Download CSV
             </a>
           )}
@@ -78,8 +91,8 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
 
       {!rows.length && (
         <p className="border border-dashed border-line p-4 text-[14.5px] text-muted">
-          Payroll hasn’t run for {label}. The figures below are a forecast from current salaries. Running it creates a payslip for each person, a salary bill for each
-          take-home amount, and one PF, ESI and PT bill due on the 15th of next month. Approved advances are taken off automatically.
+          Payroll hasn’t run for {label}. The figures below are a forecast from current salaries. Running it creates a payslip for each person, a salary bill
+          for each take-home amount, and one PF, ESI and PT bill due on the 15th of next month. Approved advances are taken off automatically.
         </p>
       )}
 
@@ -119,45 +132,49 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
             </tr>
           </thead>
           <tbody className="[&>tr]:border-t [&>tr]:border-line">
-            {(rows.length ? rows.map((r) => ({ ...r, who: r.staff })) : eligible.map((s, i) => ({ ...projected[i], id: -s.id, who: s, expenseId: null }))).map((r) => {
-              const paidAt = r.expenseId ? paidMap.get(r.expenseId) : null;
-              return (
-                <tr key={r.id}>
-                  <td className="px-3 py-2.5 font-mono font-semibold">{r.who.code}</td>
-                  <td className="px-3 py-2.5">
-                    {r.id > 0 ? (
-                      <Link href={`/staff/payslip/${r.id}`} className="font-semibold text-forest hover:underline">
-                        {r.who.name}
-                      </Link>
-                    ) : (
-                      <span className="font-semibold">{r.who.name}</span>
-                    )}
-                    <span className="block text-[12.5px] text-muted">{deptLabel(r.who.department)}</span>
-                  </td>
-                  <td className={`${td} text-right`}>{inr(r.gross)}</td>
-                  <td className={`${td} text-right`}>{inr(r.pf)}</td>
-                  <td className={`${td} text-right`}>{inr(r.esi)}</td>
-                  <td className={`${td} text-right`}>{inr(r.pt)}</td>
-                  <td className={`${td} text-right`}>{r.advance ? inr(r.advance) : "—"}</td>
-                  <td className={`${td} text-right font-semibold`}>{inr(r.net)}</td>
-                  <td className="px-3 py-2.5">
-                    {r.id < 0 ? (
-                      <span className="text-muted">Forecast</span>
-                    ) : paidAt ? (
-                      <span className="text-[13px] font-semibold text-[#4d7a12]">Paid {paidAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
-                    ) : r.expenseId ? (
-                      <form action={payExpense}>
-                        <input type="hidden" name="expenseId" value={r.expenseId} />
-                        <input type="hidden" name="method" value="bank" />
-                        <button className="min-h-9 border-[1.5px] border-forest px-3 text-[13.5px] font-semibold text-forest hover:bg-forest/5">Pay</button>
-                      </form>
-                    ) : (
-                      <span className="text-muted">Nothing to pay</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+            {(rows.length ? rows.map((r) => ({ ...r, who: r.staff })) : eligible.map((s, i) => ({ ...projected[i], id: -s.id, who: s, expenseId: null }))).map(
+              (r) => {
+                const paidAt = r.expenseId ? paidMap.get(r.expenseId) : null;
+                return (
+                  <tr key={r.id}>
+                    <td className="px-3 py-2.5 font-mono font-semibold">{r.who.code}</td>
+                    <td className="px-3 py-2.5">
+                      {r.id > 0 ? (
+                        <Link href={`/staff/payslip/${r.id}`} className="font-semibold text-forest hover:underline">
+                          {r.who.name}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold">{r.who.name}</span>
+                      )}
+                      <span className="block text-[12.5px] text-muted">{deptLabel(r.who.department)}</span>
+                    </td>
+                    <td className={`${td} text-right`}>{inr(r.gross)}</td>
+                    <td className={`${td} text-right`}>{inr(r.pf)}</td>
+                    <td className={`${td} text-right`}>{inr(r.esi)}</td>
+                    <td className={`${td} text-right`}>{inr(r.pt)}</td>
+                    <td className={`${td} text-right`}>{r.advance ? inr(r.advance) : "—"}</td>
+                    <td className={`${td} text-right font-semibold`}>{inr(r.net)}</td>
+                    <td className="px-3 py-2.5">
+                      {r.id < 0 ? (
+                        <span className="text-muted">Forecast</span>
+                      ) : paidAt ? (
+                        <span className="text-[13px] font-semibold text-[#4d7a12]">
+                          Paid {paidAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                        </span>
+                      ) : r.expenseId ? (
+                        <form action={payExpense}>
+                          <input type="hidden" name="expenseId" value={r.expenseId} />
+                          <input type="hidden" name="method" value="bank" />
+                          <button className="min-h-9 border-[1.5px] border-forest px-3 text-[13.5px] font-semibold text-forest hover:bg-forest/5">Pay</button>
+                        </form>
+                      ) : (
+                        <span className="text-muted">Nothing to pay</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              },
+            )}
             <tr className="bg-cream font-semibold">
               <td className="px-3 py-2.5" colSpan={2}>
                 Total ({basis.length} people)

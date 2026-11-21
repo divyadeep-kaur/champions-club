@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/session";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
@@ -7,6 +8,7 @@ import { SOURCE_LABEL } from "@/lib/reports";
 export const dynamic = "force-dynamic";
 
 export default async function GstPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
+  await requireStaff(["owner"]);
   const month = (await searchParams).month ?? monthKey();
   const { from, to } = monthRange(month);
   const prev = monthKey(new Date(from.getFullYear(), from.getMonth() - 1, 1));

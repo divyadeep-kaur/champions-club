@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/session";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { isoDate } from "@/lib/dates";
@@ -11,6 +12,7 @@ const short = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month
 const catLabel = (k: string) => EXPENSE_CATEGORIES.find((c) => c.key === k)?.label ?? k;
 
 export default async function BillsPage() {
+  await requireStaff(["owner"]);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const [unpaid, paid] = await Promise.all([

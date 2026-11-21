@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/session";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 const KINDS = [{ key: "", label: "All" }, ...Object.entries(STAFF_INVOICE_KIND).map(([key, label]) => ({ key, label }))];
 
 export default async function StaffInvoicesPage({ searchParams }: { searchParams: Promise<{ kind?: string; unpaid?: string; month?: string }> }) {
+  await requireStaff(["owner"]);
   const sp = await searchParams;
   const kind = STAFF_INVOICE_KIND[sp.kind ?? ""] ? sp.kind : undefined;
   const unpaidOnly = sp.unpaid === "1";
@@ -43,8 +45,8 @@ export default async function StaffInvoicesPage({ searchParams }: { searchParams
   return (
     <div className="grid content-start gap-4">
       <p className="text-[14.5px] text-muted">
-        Every salary, advance and approved claim gets a numbered staff invoice (SAL-year-number) linked to its bill, so each rupee paid to staff can be traced in
-        the books.
+        Every salary, advance and approved claim gets a numbered staff invoice (SAL-year-number) linked to its bill, so each rupee paid to staff can be traced
+        in the books.
       </p>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
         <div className="bg-forest p-4 text-cream">
@@ -136,7 +138,12 @@ export default async function StaffInvoicesPage({ searchParams }: { searchParams
                     ) : (
                       <form action={payExpense} className="flex items-center gap-2">
                         <input type="hidden" name="expenseId" value={i.expenseId!} />
-                        <select name="method" aria-label={`How ${i.number} is paid`} defaultValue={i.kind === "salary" ? "bank" : "cash"} className="min-h-9 border border-[#b5aa98] bg-white px-1.5 text-[13.5px]">
+                        <select
+                          name="method"
+                          aria-label={`How ${i.number} is paid`}
+                          defaultValue={i.kind === "salary" ? "bank" : "cash"}
+                          className="min-h-9 border border-[#b5aa98] bg-white px-1.5 text-[13.5px]"
+                        >
                           <option value="bank">Bank</option>
                           <option value="upi">UPI</option>
                           <option value="cash">Cash</option>
