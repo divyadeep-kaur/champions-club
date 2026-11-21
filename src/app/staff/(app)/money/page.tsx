@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
-import { EXPENSE_CATEGORIES, invoiceTotals, monthKey, monthLabel, monthRange } from "@/lib/money";
-import { SOURCE_LABEL } from "@/lib/reports";
+import { EXPENSE_CATEGORIES, invoiceTotals, monthKey, monthLabel, monthRange, profitAndLoss } from "@/lib/money";
+import { METHOD_LABEL, SOURCE_LABEL } from "@/lib/reports";
 
 export const dynamic = "force-dynamic";
 
@@ -17,17 +17,35 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const [income, monthExpenses, unpaid, openInvoices] = await Promise.all([
+  const trendFrom = new Date(from.getFullYear(), from.getMonth() - 5, 1);
+  const [income, monthExpenses, unpaid, openInvoices, trendPay, trendExp, methods] = await Promise.all([
     db.payment.groupBy({ by: ["source"], where: { createdAt: { gte: from, lt: to } }, _sum: { amount: true } }),
     db.expense.findMany({ where: { dueDate: { gte: from, lt: to } } }),
     db.expense.findMany({ where: { paidAt: null }, orderBy: { dueDate: "asc" } }),
     db.invoice.findMany({ where: { status: { not: "paid" } }, include: { lines: true }, orderBy: { dueAt: "asc" } }),
+    db.payment.findMany({ where: { createdAt: { gte: trendFrom, lt: to } }, select: { amount: true, source: true, createdAt: true } }),
+    db.expense.findMany({ where: { dueDate: { gte: trendFrom, lt: to } }, select: { amount: true, category: true, dueDate: true } }),
+    db.payment.groupBy({ by: ["method"], where: { createdAt: { gte: from, lt: to } }, _sum: { amount: true } }),
   ]);
+  const pnl = profitAndLoss(
+    income.map((r) => ({ source: r.source, amount: r._sum.amount ?? 0 })),
+    monthExpenses,
+  );
+  const trend = Array.from({ length: 6 }, (_, i) => {
+    const m = new Date(trendFrom.getFullYear(), trendFrom.getMonth() + i, 1);
+    const k = monthKey(m);
+    const r = profitAndLoss(
+      trendPay.filter((p) => monthKey(p.createdAt) === k),
+      trendExp.filter((e) => monthKey(e.dueDate) === k),
+    );
+    return { k, label: m.toLocaleDateString("en-IN", { month: "short" }), income: r.netRevenue, costs: r.totalCosts, profit: r.profit };
+  });
+  const peak = Math.max(1, ...trend.flatMap((t) => [t.income, t.costs]));
+  const methodTotal = methods.reduce((s, m) => s + (m._sum.amount ?? 0), 0);
 
   const incomeTotal = income.reduce((s, r) => s + (r._sum.amount ?? 0), 0);
   const byCat = EXPENSE_CATEGORIES.map((c) => ({ ...c, amount: monthExpenses.filter((e) => e.category === c.key).reduce((s, e) => s + e.amount, 0) }));
   const costs = byCat.reduce((s, c) => s + c.amount, 0);
-  const profit = incomeTotal - costs;
   const owe = unpaid.reduce((s, e) => s + e.amount, 0);
   const overdue = unpaid.filter((e) => e.dueDate < today);
   const owedToUs = openInvoices.reduce((s, i) => s + invoiceTotals(i.lines).total, 0);
@@ -63,13 +81,111 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
         </div>
         <div className="border border-line bg-paper p-5">
           <div className="text-[14px] text-muted">Profit</div>
-          <div className={`font-serif text-[30px] tabular-nums ${profit < 0 ? "text-[#a8411f]" : "text-[#4d7a12]"}`}>{inr(profit)}</div>
+          <div className={`font-serif text-[30px] tabular-nums ${pnl.profit < 0 ? "text-[#a8411f]" : "text-[#4d7a12]"}`}>{inr(pnl.profit)}</div>
+          <div className="text-[13.5px] text-muted">
+            after {inr(pnl.gst)} GST · {pnl.margin}% margin
+          </div>
+        </div>
+        <div className="border border-line bg-paper p-5">
+          <div className="text-[14px] text-muted">Staff cost share</div>
+          <div className={`font-serif text-[30px] tabular-nums ${pnl.staffShare > 55 ? "text-clay" : "text-forest"}`}>{pnl.staffShare}%</div>
+          <div className="text-[13.5px] text-muted">of revenue after GST</div>
         </div>
         <div className="border border-line bg-paper p-5">
           <div className="text-[14px] text-muted">What we owe</div>
           <div className="font-serif text-[30px] text-clay tabular-nums">{inr(owe)}</div>
           <div className="text-[13.5px] text-muted">{overdue.length ? `${overdue.length} overdue` : "Nothing overdue"}</div>
         </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <section className={card}>
+          <h2 className="mb-1 text-[18px] font-semibold">Six months at a glance</h2>
+          <p className="mb-4 text-[13.5px] text-muted">Revenue after GST against all bills, salaries and dues, by month.</p>
+          <div
+            className="flex h-[200px] items-end gap-3"
+            role="img"
+            aria-label={trend.map((t) => `${t.label}: revenue ${inr(t.income)}, costs ${inr(t.costs)}`).join("; ")}
+          >
+            {trend.map((t) => (
+              <Link key={t.k} href={`/staff/money?month=${t.k}`} className="group grid h-full flex-1 grid-rows-[1fr_auto] gap-1.5">
+                <span className="flex items-end justify-center gap-1">
+                  <span className="w-1/2 max-w-7 bg-forest group-hover:bg-forest-deep" style={{ height: `${(t.income / peak) * 100}%` }} />
+                  <span className="w-1/2 max-w-7 bg-clay/80" style={{ height: `${(t.costs / peak) * 100}%` }} />
+                </span>
+                <span className={`text-center text-[12.5px] ${t.k === monthKey(from) ? "font-bold text-forest" : "text-muted"}`}>{t.label}</span>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-4 text-[13px] text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="size-3 bg-forest" /> Revenue
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-3 bg-clay/80" /> Costs
+            </span>
+          </div>
+          <table className="mt-3 w-full text-[13.5px]">
+            <thead className="text-muted">
+              <tr>
+                <th className="py-1.5 text-left font-semibold">Month</th>
+                <th className="py-1.5 text-right font-semibold">Revenue</th>
+                <th className="py-1.5 text-right font-semibold">Costs</th>
+                <th className="py-1.5 text-right font-semibold">Profit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trend.map((t) => (
+                <tr key={t.k} className="border-t border-line">
+                  <td className="py-1.5">{t.label}</td>
+                  <td className="py-1.5 text-right tabular-nums">{inr(t.income)}</td>
+                  <td className="py-1.5 text-right tabular-nums">{inr(t.costs)}</td>
+                  <td className={`py-1.5 text-right font-semibold tabular-nums ${t.profit < 0 ? "text-[#a8411f]" : "text-[#4d7a12]"}`}>{inr(t.profit)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section className={card}>
+          <h2 className="mb-3 text-[18px] font-semibold">Profit and loss · {monthLabel(from)}</h2>
+          <div className="flex justify-between border-t border-line py-2 text-[14.5px]">
+            <span>Takings (incl. GST)</span>
+            <span className="tabular-nums">{inr(pnl.gross)}</span>
+          </div>
+          <div className="flex justify-between border-t border-line py-2 text-[14.5px] text-muted">
+            <span>Less GST collected</span>
+            <span className="tabular-nums">− {inr(pnl.gst)}</span>
+          </div>
+          <div className="flex justify-between border-t border-line py-2 text-[14.5px] font-semibold">
+            <span>Revenue</span>
+            <span className="tabular-nums">{inr(pnl.netRevenue)}</span>
+          </div>
+          {pnl.lines
+            .filter((l) => l.amount)
+            .map((l) => (
+              <div key={l.key} className="flex justify-between border-t border-line py-2 text-[14.5px] text-muted">
+                <span>Less {l.label.toLowerCase()}</span>
+                <span className="tabular-nums">− {inr(l.amount)}</span>
+              </div>
+            ))}
+          <div className={`mt-1 flex justify-between px-3 py-2.5 font-semibold ${pnl.profit < 0 ? "bg-clay-soft text-[#7a2f14]" : "bg-forest text-cream"}`}>
+            <span>Net profit · {pnl.margin}%</span>
+            <span className="font-serif text-[20px] tabular-nums">{inr(pnl.profit)}</span>
+          </div>
+          <h3 className="mt-5 mb-1 text-[15px] font-semibold">Money in by method</h3>
+          {methods
+            .sort((a, b) => (b._sum.amount ?? 0) - (a._sum.amount ?? 0))
+            .map((m) => (
+              <div key={m.method} className="grid grid-cols-[80px_minmax(0,1fr)_96px] items-center gap-2 py-1 text-[13.5px]">
+                <span>{METHOD_LABEL[m.method] ?? m.method}</span>
+                <span className="h-2.5 bg-[#ece5d6]">
+                  <span className="block h-2.5 bg-[#4d7a12]" style={{ width: `${((m._sum.amount ?? 0) / Math.max(1, methodTotal)) * 100}%` }} />
+                </span>
+                <span className="text-right tabular-nums">{inr(m._sum.amount ?? 0)}</span>
+              </div>
+            ))}
+        </section>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
