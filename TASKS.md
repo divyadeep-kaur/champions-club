@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- (nothing yet)
 - Divyadeep: plan picker for membership on the trial form, remove the Other option (`src/app/trial`, `src/components/landing/Home.tsx`)
 - Divyadeep: kitchen fixes and new features, café team on shift (`src/app/staff/(app)/kitchen`, `src/app/staff/(app)/bar/page.tsx`)
 
