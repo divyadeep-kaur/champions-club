@@ -3,6 +3,7 @@ import { inr, MAX_BOOKINGS_PER_DAY } from "@/lib/constants";
 import { barPrice } from "@/lib/pricing";
 import { landingCourts, weekGlance } from "@/lib/publicData";
 import { Navbar } from "@/components/landing/Navbar";
+import { ClubVideo } from "@/components/landing/ClubVideo";
 import { Footer } from "@/components/landing/Footer";
 import { Contact, Faq, FeatureQuote, Features, HomeHero, OneClub, PerksStrip, Reviews, Sports } from "@/components/landing/Home";
 
@@ -47,6 +48,7 @@ export default async function Home() {
           "Open 6am–11pm",
         ]}
       />
+      <ClubVideo />
       <FeatureQuote />
       <Sports
         text={{
