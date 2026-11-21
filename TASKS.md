@@ -28,6 +28,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 ## In progress
 
 - Jashan: step-by-step member court booking: sport, court, then time (`src/app/me/(app)/book`)
+- Divyadeep: café tab tools: change the person, move table, clear a table (`src/app/staff/(app)/bar`)
 
 ## Next up
 
