@@ -69,8 +69,8 @@ function Links({ items, onNavigate }: { items: Item[]; onNavigate?: () => void }
 function Brand() {
   return (
     <Link href="/staff" className="flex items-center gap-2.5 px-3 text-cream">
-      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white p-0.5">
-        <Image src="/brand/logo-mark.png" alt="" width={32} height={32} unoptimized />
+      <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-white p-1">
+        <Image src="/brand/logo-mark.png" alt="" width={48} height={48} unoptimized />
       </span>
       <span className="font-serif text-[21px] leading-tight">Champions Club</span>
     </Link>

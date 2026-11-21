@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="grid min-h-screen lg:grid-cols-[1fr_1.1fr]">
       <div className="flex flex-col px-6 py-8 sm:px-12">
         <Link href="/" className="flex items-center gap-3 text-forest">
-          <Image src="/brand/logo-mark.png" alt="" width={40} height={40} unoptimized />
+          <Image src="/brand/logo-mark.png" alt="" width={56} height={56} unoptimized />
           <span className="text-[19px] font-extrabold italic text-[#111111]">
             CHAMPI<span className="text-[#5f6b3a]">O</span>NS CLUB
           </span>
