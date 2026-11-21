@@ -83,6 +83,9 @@ model SocialPlayer {
   memberId  Int?
   member    Member?  @relation(fields: [memberId], references: [id])
   name      String
+  phone     String?
+  status    String   @default("confirmed")
+  price     Int      @default(0)
   createdAt DateTime @default(now())
 }
 

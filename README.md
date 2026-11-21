@@ -43,4 +43,4 @@ npm run dev
 
 Open http://localhost:3000. Staff app: http://localhost:3000/staff (demo logins are in `prisma/seed.ts`).
 
-`npm run db:reset` wipes the local database and reseeds it. Stop `npm run dev` before running `npm run build`.
+After pulling a change to `prisma/schema.prisma`, run `npm run db:push`. `npm run db:reset` wipes the local database and reseeds it. Stop `npm run dev` before running `npm run build`.
