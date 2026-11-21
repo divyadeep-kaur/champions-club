@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Caveat, Fraunces, Figtree } from "next/font/google";
 import "./globals.css";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const display = Fraunces({
   variable: "--font-display",
@@ -28,7 +29,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${body.variable} ${script.variable} antialiased`}>{children}</body>
+      <body className={`${display.variable} ${body.variable} ${script.variable} antialiased`}>
+        <ScrollReveal />
+        {children}
+      </body>
     </html>
   );
 }
