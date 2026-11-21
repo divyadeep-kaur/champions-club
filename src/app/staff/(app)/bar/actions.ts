@@ -43,6 +43,11 @@ export async function addItem(formData: FormData) {
   const item = await db.menuItem.findUnique({ where: { id: menuItemId } });
   if (!item || !item.active) return;
 
+  if (tabId) {
+    const current = await db.tab.findUnique({ where: { id: tabId }, select: { status: true } });
+    if (!current || current.status !== "open") return;
+  }
+
   await db.$transaction(async (tx) => {
     if (!tabId) {
       const existing = tableId ? await tx.tab.findFirst({ where: { tableId, status: "open" }, orderBy: { openedAt: "asc" } }) : null;
@@ -61,16 +66,30 @@ export async function addItem(formData: FormData) {
   redirect(`/staff/bar?tab=${tabId}`);
 }
 
+// Items not yet cooked can be taken off freely. Once the kitchen has started, only the owner
+// can remove one, and it is kept as a void line so the value stays on record.
 export async function removeItem(formData: FormData) {
-  await requireStaff(["owner", "bar"]);
+  const staff = await requireStaff(["owner", "bar"]);
   const line = await db.tabItem.findUnique({ where: { id: Number(formData.get("itemId")) }, include: { tab: true } });
-  if (!line || line.tab.status !== "open") return;
+  if (!line || line.tab.status !== "open" || line.status === "void") return;
+  const cooked = line.status !== "new";
+  if (cooked && staff.role !== "owner") return;
   await db.$transaction(async (tx) => {
-    if (line.qty > 1) await tx.tabItem.update({ where: { id: line.id }, data: { qty: { decrement: 1 } } });
-    else await tx.tabItem.delete({ where: { id: line.id } });
+    if (!cooked) {
+      if (line.qty > 1) await tx.tabItem.update({ where: { id: line.id }, data: { qty: { decrement: 1 } } });
+      else await tx.tabItem.delete({ where: { id: line.id } });
+    } else if (line.qty > 1) {
+      await tx.tabItem.update({ where: { id: line.id }, data: { qty: { decrement: 1 } } });
+      await tx.tabItem.create({
+        data: { tabId: line.tabId, menuItemId: line.menuItemId, qty: 1, unitPrice: line.unitPrice, status: "void", createdAt: line.createdAt },
+      });
+    } else {
+      await tx.tabItem.update({ where: { id: line.id }, data: { status: "void" } });
+    }
     await recomputeTab(tx, line.tabId);
   });
   refresh();
+  revalidatePath("/staff/kitchen");
 }
 
 export async function attachMember(_: TabState, formData: FormData): Promise<TabState> {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cartTotals, stockError } from "./checkout";
+import { billable } from "./tabs";
 
 const silver = { courtRate: 300, shopDiscount: 10, barDiscount: 10 };
 const gold = { courtRate: 0, shopDiscount: 15, barDiscount: 20 };
@@ -68,5 +69,17 @@ describe("stockError", () => {
   it("refuses unknown products and empty carts", () => {
     expect(stockError([{ productId: 9, qty: 1 }], shelf)).toMatch(/no longer/);
     expect(stockError([], shelf)).toMatch(/Add/);
+  });
+});
+
+describe("billable tab items", () => {
+  it("leaves voided lines out of the bill", () => {
+    const items = [
+      { unitPrice: 120, qty: 2, status: "served" },
+      { unitPrice: 200, qty: 1, status: "void" },
+      { unitPrice: 60, qty: 1, status: "new" },
+    ];
+    expect(cartTotals(billable(items), null, "bar")).toEqual({ subtotal: 300, discount: 0, total: 300 });
+    expect(cartTotals(billable(items), { courtRate: 0, shopDiscount: 15, barDiscount: 20 }, "bar")).toEqual({ subtotal: 300, discount: 60, total: 240 });
   });
 });
