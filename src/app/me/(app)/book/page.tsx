@@ -8,6 +8,8 @@ import { membershipStatus } from "@/lib/members";
 import { requireMember } from "@/lib/memberSession";
 import { courtPrice } from "@/lib/pricing";
 import { ConfirmBooking } from "./ConfirmBooking";
+import { SocialCard } from "./SocialCard";
+import { socialShare } from "@/lib/socialService";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +24,12 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
   const sport = sp.sport === "cricket" ? "cricket" : "tennis";
   const now = new Date();
 
-  const [courts, bookings, usedToday] = await Promise.all([
+  const [socials, courts, bookings, usedToday] = await Promise.all([
+    db.booking.findMany({
+      where: { type: "social", status: "booked", start: { gte: day, lt: addDays(day, 1) }, end: { gt: now } },
+      include: { court: true, players: true },
+      orderBy: { start: "asc" },
+    }),
     db.court.findMany({ where: { sport }, orderBy: { name: "asc" } }),
     db.booking.findMany({ where: { status: "booked", start: { gte: day, lt: addDays(day, 1) } }, select: { courtId: true, start: true, end: true, memberId: true } }),
     memberDayCount(db, member.id, day),
@@ -64,6 +71,24 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
           );
         })}
       </nav>
+
+      {socials.map((sb) => {
+        const mine = sb.players.find((pl) => pl.memberId === member.id);
+        return (
+          <SocialCard
+            key={sb.id}
+            bookingId={sb.id}
+            court={sb.court.name}
+            when={fmtTime(sb.start)}
+            playing={sb.players.filter((pl) => pl.status === "confirmed").length}
+            capacity={sb.capacity}
+            waiting={sb.players.filter((pl) => pl.status === "waitlist").length}
+            price={socialShare(member.plan, sb.court.walkInRate)}
+            me={mine ? { id: mine.id, status: mine.status } : null}
+            closed={expired}
+          />
+        );
+      })}
 
       {expired ? (
         <p className="rounded-xl bg-clay-soft p-3 text-[14px] text-[#7a2f14]">Your membership has expired. Renew at the front desk to book courts.</p>
