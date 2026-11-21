@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+import type { CourtRow } from "@/lib/publicData";
 import { TodaysCourts } from "./TodaysCourts";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -18,7 +20,7 @@ const facts = [
   { value: "Shop + café", label: "right by the courts" },
 ];
 
-export function Hero() {
+export function Hero({ courts }: { courts: { rows: CourtRow[]; isToday: boolean } }) {
   const reduce = useReducedMotion();
 
   return (
@@ -47,15 +49,15 @@ export function Hero() {
         </motion.p>
 
         <motion.div custom={2} variants={rise} initial="hidden" animate="show" className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-5">
-          <a
-            href="#"
+          <Link
+            href="/trial"
             className="group inline-flex items-center gap-2.5 bg-forest px-7 py-4 text-[17px] font-semibold text-cream transition-colors duration-300 hover:bg-forest-deep active:translate-y-px"
           >
             Book a trial
             <ArrowUpRight className="size-[18px] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-          </a>
+          </Link>
           <a
-            href="#"
+            href="#memberships"
             className="text-[17px] font-semibold text-forest underline decoration-forest/35 decoration-[1.5px] underline-offset-[7px] transition-colors hover:decoration-forest"
           >
             View memberships
@@ -110,7 +112,7 @@ export function Hero() {
           transition={{ delay: 0.75, duration: 0.8, ease }}
           className="relative z-10 mx-3 -mt-10 sm:absolute sm:left-[21%] sm:right-[3%] sm:top-[61%] sm:mx-0 sm:mt-0"
         >
-          <TodaysCourts />
+          <TodaysCourts rows={courts.rows} isToday={courts.isToday} />
         </motion.div>
       </figure>
     </section>

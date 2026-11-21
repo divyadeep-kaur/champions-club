@@ -1,10 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, ChevronDown, Menu, ShieldCheck, Trophy, UserRound, UsersRound, X } from "lucide-react";
 
-const links = ["Courts", "Memberships", "Shop", "Café & Bar"];
+const links = [
+  { href: "/courts", label: "Courts" },
+  { href: "/#memberships", label: "Memberships" },
+  { href: "/#shop", label: "Shop" },
+  { href: "/#cafe", label: "Café & Bar" },
+];
 
 const signIns = [
   { href: "/me/login", label: "Member", hint: "Book courts, order from the café", icon: UserRound },
@@ -52,7 +58,7 @@ function SignInMenu() {
             className="absolute right-0 top-[calc(100%+8px)] w-[290px] origin-top-right border border-forest/20 bg-paper p-1.5 shadow-[0_18px_40px_-18px_rgba(11,42,29,0.45)]"
           >
             {signIns.map(({ href, label, hint, icon: Icon }) => (
-              <a key={label} role="menuitem" href={href} className="group flex items-center gap-3 px-3 py-2.5 hover:bg-cream">
+              <Link key={label} role="menuitem" href={href} className="group flex items-center gap-3 px-3 py-2.5 hover:bg-cream">
                 <span className="grid size-9 shrink-0 place-items-center rounded-full bg-forest/10 text-forest">
                   <Icon className="size-[18px]" />
                 </span>
@@ -61,7 +67,7 @@ function SignInMenu() {
                   <span className="block text-[13px] text-muted">{hint}</span>
                 </span>
                 <ArrowUpRight className="size-4 text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-forest" />
-              </a>
+              </Link>
             ))}
           </motion.div>
         )}
@@ -76,7 +82,7 @@ export function Navbar() {
   return (
     <header className="relative z-30 mx-auto max-w-[1320px] px-4 sm:px-8">
       <div className="flex h-[76px] items-center justify-between border-b-[1.5px] border-forest">
-        <a href="#" className="flex items-center gap-3.5" aria-label="The Champions Club home">
+        <Link href="/" className="flex items-center gap-3.5" aria-label="The Champions Club home">
           <span className="grid size-10 place-items-center rounded-full bg-forest text-cream">
             <Trophy className="size-[19px]" strokeWidth={1.8} />
           </span>
@@ -84,17 +90,17 @@ export function Navbar() {
           <span className="font-serif text-[22px] font-medium tracking-[-0.01em] text-forest sm:text-[24px]">
             The Champions Club
           </span>
-        </a>
+        </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-10 lg:flex">
           {links.map((link) => (
-            <a
-              key={link}
-              href="#"
+            <Link
+              key={link.href}
+              href={link.href}
               className="relative py-1 text-[15.5px] font-medium text-ink after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:scale-x-0 after:bg-forest after:transition-transform after:duration-300 hover:after:scale-x-100"
             >
-              {link}
-            </a>
+              {link.label}
+            </Link>
           ))}
         </nav>
 
@@ -123,18 +129,18 @@ export function Navbar() {
             className="absolute inset-x-4 top-[84px] border border-forest/20 bg-paper p-2 shadow-[0_18px_40px_-20px_rgba(11,42,29,0.45)] sm:inset-x-8 lg:hidden"
           >
             {links.map((link) => (
-              <a key={link} href="#" className="block px-4 py-3 text-[16px] font-medium text-ink hover:bg-cream">
-                {link}
-              </a>
+              <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="block px-4 py-3 text-[16px] font-medium text-ink hover:bg-cream">
+                {link.label}
+              </Link>
             ))}
             <p className="mt-1 border-t border-line px-4 pb-1 pt-3 text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted sm:hidden">Sign in as</p>
             {signIns.map(({ href, label, hint }) => (
-              <a key={label} href={href} className="flex items-center justify-between px-4 py-2.5 text-[15px] font-medium text-forest hover:bg-cream sm:hidden">
+              <Link key={label} href={href} className="flex items-center justify-between px-4 py-2.5 text-[15px] font-medium text-forest hover:bg-cream sm:hidden">
                 <span>
                   {label} <span className="font-normal text-muted">· {hint}</span>
                 </span>
                 <ArrowUpRight className="size-4 shrink-0" />
-              </a>
+              </Link>
             ))}
           </motion.nav>
         )}
