@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: deploy to Vercel with a Turso database for the live site; local dev.db unchanged (`src/lib/db.ts`, `prisma/seed.ts`, `package.json`)
 
 ## Next up
 
