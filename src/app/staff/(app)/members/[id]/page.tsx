@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, Pencil } from "lucide-react";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
-import { fmtDate, isoDate } from "@/lib/dates";
+import { isoDate } from "@/lib/dates";
 import { ageOn } from "@/lib/members";
 import { CHANGE_KINDS, CHANGE_POLICIES, PAYMENT_STATES, benefitPlan, memberState, stateLabel } from "@/lib/membership";
 import { getDefaultPolicy } from "@/lib/membershipService";
@@ -178,7 +178,8 @@ export default async function MemberProfile({
               suspended: !!member.suspendedAt,
               paidThisPeriod,
             }}
-            plans={plans.map(({ id, name, monthlyFee, durationDays, courtRate, shopDiscount, barDiscount }) => ({
+            plans={plans.map(({ id, name, monthlyFee, durationDays, courtRate, shopDiscount, barDiscount, active }) => ({
+              active,
               id,
               name,
               monthlyFee,

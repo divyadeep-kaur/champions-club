@@ -7,7 +7,7 @@ import { juniorAgeError } from "@/lib/members";
 import { CHANGE_POLICIES, extensionQuote, paymentStateFor, planChangeQuote, renewalQuote, type ChangePolicy, type ChangeTiming } from "@/lib/membership";
 import { changePlan, extendMembership, renewMembership, setSuspension, type ActionState } from "../membershipActions";
 
-export type PlanOption = { id: number; name: string; monthlyFee: number; durationDays: number; courtRate: number; shopDiscount: number; barDiscount: number };
+export type PlanOption = { id: number; name: string; monthlyFee: number; durationDays: number; courtRate: number; shopDiscount: number; barDiscount: number; active: boolean };
 export type MemberInfo = {
   id: number;
   name: string;
@@ -168,8 +168,8 @@ function ChangePlan({
               {plans
                 .filter((p) => p.id !== m.planId)
                 .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} · {inr(p.monthlyFee)} / {p.durationDays} days
+                  <option key={p.id} value={p.id} disabled={!p.active}>
+                    {p.name} · {inr(p.monthlyFee)} / {p.durationDays} days{p.active ? "" : " (closed)"}
                   </option>
                 ))}
             </select>
@@ -200,7 +200,7 @@ function ChangePlan({
               <input type="radio" name="timing" value="keep" checked={timing === "keep"} onChange={() => setTiming("keep")} className="mt-1" />
               <span>
                 Keep the current expiry ({fmt(toDate(m.end))})
-                <span className="block text-[13px] text-muted">The new plan's benefits apply from the effective date.</span>
+                <span className="block text-[13px] text-muted">The new plan’s benefits apply from the effective date.</span>
               </span>
             </label>
             <label className="flex items-start gap-2 text-[14.5px]">
@@ -311,8 +311,8 @@ function Renew({ m, plans, today, onDone }: { m: MemberInfo; plans: PlanOption[]
             Plan
             <select name="planId" value={planId} onChange={(e) => setPlanId(e.target.value)} className={input}>
               {plans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · {inr(p.monthlyFee)} / {p.durationDays} days{p.id === m.planId ? " (current)" : ""}
+                <option key={p.id} value={p.id} disabled={!p.active && p.id !== m.planId}>
+                  {p.name} · {inr(p.monthlyFee)} / {p.durationDays} days{p.id === m.planId ? " (current)" : p.active ? "" : " (closed)"}
                 </option>
               ))}
             </select>
