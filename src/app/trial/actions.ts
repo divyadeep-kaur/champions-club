@@ -17,7 +17,7 @@ const schema = z.object({
   name: z.string().trim().min(2, "Enter your name").max(80),
   phone: z.string().trim().min(1, "Enter your mobile number"),
   email: z.union([z.literal(""), z.string().trim().email("Enter a valid email")]),
-  interest: z.enum(["trial", "membership", "other"]),
+  interest: z.enum(["trial", "membership"]),
   date: z.string().optional(),
   time: z.string().optional(),
   courtId: z.string().optional(),
@@ -43,19 +43,25 @@ export async function submitTrial(_: TrialState, formData: FormData): Promise<Tr
     if (preferredAt < new Date()) return { error: "Pick a time later than now", fields };
   }
 
+  // Only a current plan counts, and only when they asked about membership.
+  const plan =
+    f.interest === "membership" && f.plan ? ((await db.plan.findFirst({ where: { name: f.plan, active: true }, select: { name: true } }))?.name ?? null) : null;
+
   const court = f.courtId ? await db.court.findUnique({ where: { id: Number(f.courtId) || 0 } }) : null;
   const sport = f.interest === "trial" ? (court?.sport as "tennis" | "cricket" | undefined) || f.sport || null : null;
   if (f.interest === "trial" && !sport) return { error: "Choose tennis or cricket for your trial", fields };
   const sportName = sport === "cricket" ? "Cricket" : sport === "tennis" ? "Tennis" : null;
-  const details = [sportName && `Sport: ${sportName}`, court && `Court: ${court.name}`, f.plan && `Plan: ${f.plan}`, f.message].filter(Boolean).join(" · ");
+  const details = [sportName && `Sport: ${sportName}`, court && `Court: ${court.name}`, plan && `Plan: ${plan}`, f.message].filter(Boolean).join(" · ");
 
   const when = preferredAt?.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
 
   const { leadId, heldCourt } = await db.$transaction(async (tx) => {
     const lead = await tx.lead.create({
-      data: { name: f.name, phone, email: f.email || null, interest: f.interest, sport, preferredAt, message: details || null, plan: f.plan || null, status: "new" },
+      data: { name: f.name, phone, email: f.email || null, interest: f.interest, sport, preferredAt, message: details || null, plan, status: "new" },
     });
-    await tx.leadActivity.create({ data: { leadId: lead.id, kind: "note", text: `${sportName ? `${sportName} trial request` : "Enquiry"} from the website${when ? ` for ${when}` : ""}` } });
+    await tx.leadActivity.create({
+      data: { leadId: lead.id, kind: "note", text: `${sportName ? `${sportName} trial request` : "Enquiry"} from the website${when ? ` for ${when}` : ""}` },
+    });
     const start = f.interest === "trial" ? preferredAt : null;
     if (!start) return { leadId: lead.id, heldCourt: null };
 
@@ -80,7 +86,9 @@ export async function submitTrial(_: TrialState, formData: FormData): Promise<Tr
         continue;
       }
     }
-    await tx.leadActivity.create({ data: { leadId: lead.id, kind: "note", text: `No ${sportName?.toLowerCase() ?? ""} court was free at the requested time. Call to offer another slot.` } });
+    await tx.leadActivity.create({
+      data: { leadId: lead.id, kind: "note", text: `No ${sportName?.toLowerCase() ?? ""} court was free at the requested time. Call to offer another slot.` },
+    });
     return { leadId: lead.id, heldCourt: null };
   });
 

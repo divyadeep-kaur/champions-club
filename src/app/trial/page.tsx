@@ -15,7 +15,12 @@ type Search = { interest?: string; date?: string; time?: string; court?: string;
 export default async function TrialPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
   const court = sp.court ? await db.court.findUnique({ where: { id: Number(sp.court) || 0 } }) : null;
-  const interest = sp.interest === "membership" || sp.interest === "other" ? sp.interest : "trial";
+  const interest = sp.interest === "membership" ? "membership" : "trial";
+  const plans = await db.plan.findMany({
+    where: { active: true },
+    orderBy: { monthlyFee: "desc" },
+    select: { name: true, monthlyFee: true, durationDays: true, description: true },
+  });
 
   return (
     <div className="min-h-screen">
@@ -58,8 +63,16 @@ export default async function TrialPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="grid content-start gap-[18px] rounded-3xl border border-line bg-paper p-6 sm:p-9">
           <TrialForm
-            defaults={{ interest, date: sp.date, time: sp.time, courtId: court ? String(court.id) : undefined, plan: sp.plan, sport: court?.sport ?? (sp.sport === "cricket" ? "cricket" : undefined) }}
+            defaults={{
+              interest,
+              date: sp.date,
+              time: sp.time,
+              courtId: court ? String(court.id) : undefined,
+              plan: sp.plan,
+              sport: court?.sport ?? (sp.sport === "cricket" ? "cricket" : undefined),
+            }}
             courtName={court?.name}
+            plans={plans}
             minDate={isoDate(new Date())}
           />
         </div>

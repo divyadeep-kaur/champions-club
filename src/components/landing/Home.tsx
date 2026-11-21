@@ -350,8 +350,8 @@ export function Features({
           <span className={eyebrow}>Pro shop</span>
           <h2 className={featureH}>Gear right by the courts</h2>
           <Ticks items={["Rackets, balls, shoes and club apparel", "Racket restringing while you wait", "Member prices at the counter"]} />
-          <Link href="/trial?interest=other" className="mt-6 inline-block font-bold text-forest">
-            Ask the shop →
+          <Link href="/trial" className="mt-6 inline-block font-bold text-forest">
+            Try our rackets on a free trial →
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3.5">

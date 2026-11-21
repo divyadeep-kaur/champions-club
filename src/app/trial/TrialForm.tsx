@@ -12,22 +12,26 @@ const label = "grid gap-1.5 text-[14px] font-bold";
 const interests = [
   { value: "trial", label: "Free trial" },
   { value: "membership", label: "Membership" },
-  { value: "other", label: "Other" },
 ] as const;
+
+type PlanOption = { name: string; monthlyFee: number; durationDays: number; description: string };
 
 export function TrialForm({
   defaults,
   courtName,
   minDate,
+  plans,
 }: {
   defaults: { interest: string; date?: string; time?: string; courtId?: string; plan?: string; sport?: string };
   courtName?: string;
   minDate: string;
+  plans: PlanOption[];
 }) {
   const [state, action, pending] = useActionState<TrialState, FormData>(submitTrial, {});
   const f = state.fields ?? {};
   const [interest, setInterest] = useState(f.interest ?? defaults.interest);
   const [sport, setSport] = useState(f.sport || defaults.sport || "tennis");
+  const [plan, setPlan] = useState(f.plan ?? (plans.some((p) => p.name === defaults.plan) ? defaults.plan! : ""));
   const [again, setAgain] = useState(0);
 
   if (state.done && again === 0) {
@@ -63,7 +67,7 @@ export function TrialForm({
     <form action={action} onSubmit={() => setAgain(0)} className="grid gap-[18px]" noValidate>
       <h2 className="text-[30px] font-extrabold text-forest">{interest === "membership" ? "Ask about membership" : "Book a free trial"}</h2>
       <input type="hidden" name="courtId" value={defaults.courtId ?? ""} />
-      <input type="hidden" name="plan" value={defaults.plan ?? ""} />
+      <input type="hidden" name="plan" value={interest === "membership" ? plan : ""} />
       <input type="hidden" name="interest" value={interest} />
       <input type="hidden" name="sport" value={interest === "trial" ? sport : ""} />
       <label className="sr-only" aria-hidden="true">
@@ -73,7 +77,7 @@ export function TrialForm({
 
       <fieldset className="grid gap-2">
         <legend className="mb-2 text-[14px] font-bold">I’m interested in</legend>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {interests.map((i) => (
             <button
               key={i.value}
@@ -100,6 +104,40 @@ export function TrialForm({
         Email (optional)
         <input name="email" type="email" defaultValue={f.email} autoComplete="email" placeholder="you@example.com" className={field} />
       </label>
+      {interest === "membership" && plans.length > 0 && (
+        <fieldset className="grid gap-2">
+          <legend className="mb-2 text-[14px] font-bold">Which plan?</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {plans.map((p) => (
+              <button
+                key={p.name}
+                type="button"
+                aria-pressed={plan === p.name}
+                onClick={() => setPlan(p.name)}
+                className={`grid content-start gap-1 rounded-xl border-[1.5px] border-forest px-3 py-3 text-left ${plan === p.name ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}
+              >
+                <span className="font-bold">{p.name}</span>
+                <span className="text-[15px] font-semibold tabular-nums">
+                  ₹{p.monthlyFee.toLocaleString("en-IN")}
+                  <span className={`text-[12.5px] font-normal ${plan === p.name ? "text-cream/80" : "text-muted"}`}>
+                    {" "}
+                    / {p.durationDays === 30 ? "month" : `${p.durationDays} days`}
+                  </span>
+                </span>
+                <span className={`text-[12.5px] leading-snug ${plan === p.name ? "text-cream/80" : "text-muted"}`}>{p.description}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            aria-pressed={plan === ""}
+            onClick={() => setPlan("")}
+            className={`min-h-11 rounded-xl border-[1.5px] px-3 text-[14.5px] font-semibold ${plan === "" ? "border-forest bg-forest/10 text-forest" : "border-line text-muted hover:border-forest hover:text-forest"}`}
+          >
+            Not sure yet, help me choose
+          </button>
+        </fieldset>
+      )}
       {interest === "trial" && !defaults.courtId && (
         <fieldset>
           <legend className="mb-2 text-[14px] font-bold">Which sport?</legend>
