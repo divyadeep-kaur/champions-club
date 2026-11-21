@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: finance checks: books check page, daily cash close, refunds and write-offs on Income (`src/app/staff/(app)/money`, `src/lib/ledger.ts`, schema: CashClose)
 
 ## Next up
 
