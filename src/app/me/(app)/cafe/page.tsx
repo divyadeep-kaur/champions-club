@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { db } from "@/lib/db";
-import { membershipStatus } from "@/lib/members";
+import { benefitPlan } from "@/lib/membership";
 import { requireMember } from "@/lib/memberSession";
 import { CafeMenu } from "./CafeMenu";
 
@@ -13,7 +13,7 @@ export default async function MemberCafe() {
     db.barTable.findMany({ orderBy: { id: "asc" } }),
     db.tab.findFirst({ where: { memberId: member.id, status: "open" } }),
   ]);
-  const discount = membershipStatus(member.endDate).status === "expired" ? 0 : member.plan.barDiscount;
+  const discount = benefitPlan(member)?.barDiscount ?? 0;
 
   return (
     <main className="grid content-start gap-3.5 pb-4">

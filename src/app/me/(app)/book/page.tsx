@@ -4,7 +4,7 @@ import { inr, MAX_BOOKINGS_PER_DAY } from "@/lib/constants";
 import { addDays, fmtTime, hhmm, isoDate, parseIsoDate, startOfDay } from "@/lib/dates";
 import { overlaps, sessionEnd, slotStarts } from "@/lib/bookings";
 import { memberDayCount } from "@/lib/bookingService";
-import { membershipStatus } from "@/lib/members";
+import { benefitPlan } from "@/lib/membership";
 import { requireMember } from "@/lib/memberSession";
 import { courtPrice } from "@/lib/pricing";
 import { ConfirmBooking } from "./ConfirmBooking";
@@ -39,7 +39,7 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
   ]);
 
   const mine = bookings.filter((b) => b.memberId === member.id);
-  const expired = membershipStatus(member.endDate).status === "expired";
+  const expired = !benefitPlan(member);
   const limitHit = usedToday >= MAX_BOOKINGS_PER_DAY;
   const slots = slotStarts(day).filter((s) => s > now);
   const selectedCourt = courts.find((c) => c.id === Number(sp.court));

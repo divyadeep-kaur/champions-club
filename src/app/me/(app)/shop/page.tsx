@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
-import { membershipStatus } from "@/lib/members";
+import { benefitPlan } from "@/lib/membership";
 import { requireMember } from "@/lib/memberSession";
 import { shopPrice } from "@/lib/pricing";
 import { productPhoto } from "@/lib/productPhotos";
@@ -13,7 +13,7 @@ const status: Record<string, string> = { pending: "Being packed", ready: "Ready"
 
 export default async function MemberShop() {
   const member = await requireMember();
-  const plan = membershipStatus(member.endDate).status === "expired" ? null : member.plan;
+  const plan = benefitPlan(member);
   const [products, orders] = await Promise.all([
     db.product.findMany({ orderBy: [{ category: "asc" }, { price: "desc" }] }),
     db.order.findMany({

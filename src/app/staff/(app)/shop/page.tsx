@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { requireStaff } from "@/lib/session";
 import { productPhoto } from "@/lib/productPhotos";
+import { benefitPlan } from "@/lib/membership";
 import { CounterSale } from "./CounterSale";
 import { advanceOrder, cancelOrder, restock } from "./actions";
 
@@ -26,7 +27,6 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
     db.order.findMany({ where: { channel: "online" }, include: { items: { include: { product: true } } }, orderBy: { createdAt: "desc" }, take: 20 }),
   ]);
   const low = products.filter((p) => p.stock <= p.lowStockAt);
-  const today = new Date(new Date().toDateString());
   const toPack = orders.filter((o) => o.status === "pending").length;
 
   return (
@@ -87,7 +87,8 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
             shopDiscount: m.plan.shopDiscount,
             courtRate: m.plan.courtRate,
             barDiscount: m.plan.barDiscount,
-            expired: m.endDate < today,
+            // Expired or suspended: no member price (same rule the server uses when charging).
+            expired: !benefitPlan(m),
           }))}
         />
       ) : (
