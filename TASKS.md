@@ -28,6 +28,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 ## In progress
 
 - Jashan: step-by-step member court booking: sport, court, then time (`src/app/me/(app)/book`)
+- Divyadeep: member app menu back to a left olive sidebar on desktop, asked by Divyadeep (`src/app/me/(app)/layout.tsx`, `MemberTopBar.tsx`)
 - Divyadeep: plan picker for membership on the trial form, remove the Other option (`src/app/trial`, `src/components/landing/Home.tsx`)
 - Divyadeep: kitchen fixes and new features, café team on shift (`src/app/staff/(app)/kitchen`, `src/app/staff/(app)/bar/page.tsx`)
 
