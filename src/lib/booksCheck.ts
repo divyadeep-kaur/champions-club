@@ -13,7 +13,7 @@ export function compareRecord(expected: number, paid: number) {
 export async function booksCheck(db: PrismaClient, since = new Date(Date.now() - 60 * 86_400_000)): Promise<BookIssue[]> {
   const issues: BookIssue[] = [];
   const [tabs, orders, bookings, invoices, changes, products, payslips] = await Promise.all([
-    db.tab.findMany({ where: { status: { in: ["paid", "void"] }, closedAt: { gte: since } }, include: { table: true, member: true } }),
+    db.tab.findMany({ where: { status: { in: ["paid", "void"] }, closedAt: { gte: since } }, include: { table: true, member: true, items: true } }),
     db.order.findMany({ where: { createdAt: { gte: since }, status: { in: ["completed", "cancelled"] } } }),
     db.booking.findMany({ where: { start: { gte: since }, type: "regular" }, include: { court: true, member: true } }),
     db.invoice.findMany({ where: { issuedAt: { gte: since } }, include: { lines: true } }),
@@ -33,6 +33,15 @@ export async function booksCheck(db: PrismaClient, since = new Date(Date.now() -
   const inv = sumBy(invoicePaid);
 
   for (const t of tabs) {
+    const itemsTotal = t.items.filter((i) => i.status !== "void").reduce((s, i) => s + i.qty * i.unitPrice, 0);
+    if (t.status === "paid" && (itemsTotal !== t.subtotal || t.subtotal - t.discount !== t.total))
+      issues.push({
+        area: "Café & bar",
+        title: `${t.table?.label ?? "Counter"} tab #${t.id} total doesn't match its items`,
+        detail: `Items ${itemsTotal}, tab subtotal ${t.subtotal}, discount ${t.discount}, total ${t.total}`,
+        amount: itemsTotal - t.discount - t.total,
+        href: `/staff/bar?tab=${t.id}`,
+      });
     const expected = t.status === "paid" ? t.total : 0;
     const c = compareRecord(expected, bar.get(t.id) ?? 0);
     if (c)

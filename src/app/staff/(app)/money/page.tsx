@@ -58,13 +58,18 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
   const invoiceDue = openInvoices.reduce((s, i) => s + invoiceTotals(i.lines).total, 0);
   const owedToUs = invoiceDue + court.total + (memberDues._sum.amount ?? 0);
 
-  const [barDisc, shopDisc, refundsMonth, voided, pendingChanges] = await Promise.all([
+  const [barDisc, shopDisc, refundsMonth, voided, pendingChanges, voidItems] = await Promise.all([
     db.tab.aggregate({ where: { status: "paid", closedAt: { gte: from, lt: to } }, _sum: { discount: true } }),
     db.order.aggregate({ where: { status: "completed", createdAt: { gte: from, lt: to } }, _sum: { discount: true } }),
     db.payment.aggregate({ where: { createdAt: { gte: from, lt: to }, amount: { lt: 0 } }, _sum: { amount: true }, _count: true }),
     db.tab.findMany({ where: { status: "void", closedAt: { gte: from, lt: to } }, include: { table: true, items: true }, orderBy: { closedAt: "desc" } }),
     db.membershipChange.findMany({ where: { paymentStatus: "pending" }, select: { amount: true, createdAt: true } }),
+    db.tabItem.findMany({
+      where: { status: "void", tab: { status: { not: "void" }, openedAt: { gte: from, lt: to } } },
+      select: { qty: true, unitPrice: true },
+    }),
   ]);
+  const voidItemsValue = voidItems.reduce((n, i) => n + i.qty * i.unitPrice, 0);
   const voidValue = voided.reduce((n, t) => n + t.total, 0);
   const servedVoids = voided.filter((t) => t.items.some((i) => i.status !== "new"));
   const givenAway = [
@@ -76,6 +81,7 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
       amount: voidValue,
       note: servedVoids.length ? `${servedVoids.length} after food was served` : "nothing was served",
     },
+    { label: `Café items removed after cooking (${voidItems.reduce((n, i) => n + i.qty, 0)})`, amount: voidItemsValue, note: "only the owner can do this" },
   ];
 
   const nowMs = Date.now();
