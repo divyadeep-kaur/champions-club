@@ -19,6 +19,10 @@ const at = (daysFromToday: number, hour: number, minute = 0) => {
 };
 
 async function main() {
+  await db.invoiceLine.deleteMany();
+  await db.invoice.deleteMany();
+  await db.leaveRequest.deleteMany();
+  await db.expense.deleteMany();
   await db.payment.deleteMany();
   await db.tabItem.deleteMany();
   await db.tab.deleteMany();
@@ -38,9 +42,9 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const [owner, desk, bar] = await Promise.all([
-    db.staff.create({ data: { name: "Ritika Malhotra", email: "owner@champions.club", passwordHash, role: "owner" } }),
-    db.staff.create({ data: { name: "Aman Gill", email: "desk@champions.club", passwordHash, role: "desk" } }),
-    db.staff.create({ data: { name: "Sana Sheikh", email: "bar@champions.club", passwordHash, role: "bar" } }),
+    db.staff.create({ data: { name: "Ritika Malhotra", email: "owner@champions.club", passwordHash, role: "owner", monthlySalary: 0 } }),
+    db.staff.create({ data: { name: "Aman Gill", email: "desk@champions.club", passwordHash, role: "desk", monthlySalary: 22000 } }),
+    db.staff.create({ data: { name: "Sana Sheikh", email: "bar@champions.club", passwordHash, role: "bar", monthlySalary: 18000 } }),
   ]);
 
   const gold = await db.plan.create({
@@ -214,7 +218,7 @@ async function main() {
           paymentMethod: open ? null : method,
           openedAt,
           closedAt: open ? null : new Date(openedAt.getTime() + 50 * 60 * 1000),
-          items: { create: lines.map((l) => ({ menuItemId: l.item.id, qty: l.qty, unitPrice: l.item.price, createdAt: openedAt })) },
+          items: { create: lines.map((l) => ({ menuItemId: l.item.id, qty: l.qty, unitPrice: l.item.price, createdAt: openedAt, status: open ? "new" : "served" })) },
         },
       });
       if (!open) await db.payment.create({ data: { source: "bar", refId: tab.id, amount: tab.total, method, createdAt: tab.closedAt! } });
@@ -225,6 +229,24 @@ async function main() {
     const plan = planOf(m);
     await db.payment.create({ data: { source: "membership", refId: m.id, amount: plan.monthlyFee, method: pick(["card", "upi", "online"]), createdAt: m.startDate } });
   }
+
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  await db.expense.createMany({
+    data: [
+      { category: "rent", description: "Ground and clubhouse rent", vendor: "Landlord", amount: 85000, dueDate: new Date(monthStart.getTime() + 4 * day), paidAt: new Date(monthStart.getTime() + 3 * day), method: "bank" },
+      { category: "stock", description: "Rackets and shoes restock", vendor: "Pro Sports Distributors", amount: 42000, dueDate: at(6, 12) },
+      { category: "stock", description: "Café supplies (weekly)", vendor: "FreshFarm Foods", amount: 9800, dueDate: at(2, 12) },
+      { category: "utilities", description: "Electricity, floodlights", vendor: "PSPCL", amount: 23500, dueDate: at(9, 12) },
+      { category: "other", description: "Court resurfacing (Tennis 3)", vendor: "ClayWorks", amount: 18000, dueDate: at(-3, 12) },
+    ],
+  });
+
+  await db.leaveRequest.createMany({
+    data: [
+      { staffId: bar.id, from: at(3, 0), to: at(4, 0), reason: "Family function", status: "pending" },
+      { staffId: desk.id, from: at(-10, 0), to: at(-10, 0), reason: "Medical appointment", status: "approved", decidedById: owner.id, decidedAt: at(-12, 10) },
+    ],
+  });
 
   await db.lead.createMany({
     data: [

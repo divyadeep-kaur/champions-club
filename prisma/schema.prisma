@@ -8,13 +8,16 @@ datasource db {
 }
 
 model Staff {
-  id           Int      @id @default(autoincrement())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         String
-  createdAt    DateTime @default(now())
-  shifts       Shift[]
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          String
+  monthlySalary Int            @default(0)
+  createdAt     DateTime       @default(now())
+  shifts        Shift[]
+  leaves        LeaveRequest[] @relation("LeaveStaff")
+  decisions     LeaveRequest[] @relation("LeaveDecider")
 }
 
 model Plan {
@@ -30,18 +33,18 @@ model Plan {
 }
 
 model Member {
-  id        Int       @id @default(autoincrement())
-  code      String    @unique
+  id        Int            @id @default(autoincrement())
+  code      String         @unique
   name      String
-  phone     String    @unique
+  phone     String         @unique
   email     String?
   birthDate DateTime?
   planId    Int
-  plan      Plan      @relation(fields: [planId], references: [id])
+  plan      Plan           @relation(fields: [planId], references: [id])
   startDate DateTime
   endDate   DateTime
   notes     String?
-  createdAt DateTime  @default(now())
+  createdAt DateTime       @default(now())
   bookings  Booking[]
   players   SocialPlayer[]
   orders    Order[]
@@ -174,25 +177,27 @@ model Tab {
 }
 
 model TabItem {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   tabId      Int
-  tab        Tab      @relation(fields: [tabId], references: [id], onDelete: Cascade)
+  tab        Tab       @relation(fields: [tabId], references: [id], onDelete: Cascade)
   menuItemId Int
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItem   MenuItem  @relation(fields: [menuItemId], references: [id])
   qty        Int
   unitPrice  Int
-  createdAt  DateTime @default(now())
+  status     String    @default("new")
+  readyAt    DateTime?
+  createdAt  DateTime  @default(now())
 }
 
 model Lead {
-  id          Int       @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   name        String
   phone       String
   email       String?
   interest    String
   message     String?
   preferredAt DateTime?
-  status      String    @default("new")
+  status      String         @default("new")
   quoteAmount Int?
   plan        String?
   notes       String?
@@ -224,4 +229,57 @@ model Payment {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+model Expense {
+  id          Int       @id @default(autoincrement())
+  category    String
+  description String
+  vendor      String?
+  amount      Int
+  dueDate     DateTime
+  paidAt      DateTime?
+  method      String?
+  createdAt   DateTime  @default(now())
+
+  @@index([dueDate])
+}
+
+model LeaveRequest {
+  id          Int       @id @default(autoincrement())
+  staffId     Int
+  staff       Staff     @relation("LeaveStaff", fields: [staffId], references: [id])
+  from        DateTime
+  to          DateTime
+  reason      String
+  status      String    @default("pending")
+  decidedById Int?
+  decidedBy   Staff?    @relation("LeaveDecider", fields: [decidedById], references: [id])
+  decidedAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Invoice {
+  id              Int           @id @default(autoincrement())
+  number          String        @unique
+  customerName    String
+  customerGstin   String?
+  customerAddress String?
+  memberId        Int?
+  status          String        @default("issued")
+  issuedAt        DateTime      @default(now())
+  dueAt           DateTime
+  paidAt          DateTime?
+  notes           String?
+  lines           InvoiceLine[]
+}
+
+model InvoiceLine {
+  id          Int     @id @default(autoincrement())
+  invoiceId   Int
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  qty         Int
+  unitPrice   Int
+  gstRate     Int
 }
