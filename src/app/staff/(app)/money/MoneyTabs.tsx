@@ -18,7 +18,12 @@ export function MoneyTabs() {
       {tabs.map((t) => {
         const on = t.href === "/staff/money" ? pathname === t.href : pathname.startsWith(t.href);
         return (
-          <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined} className={`flex min-h-11 items-center px-4 font-semibold ${on ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}>
+          <Link
+            key={t.href}
+            href={t.href}
+            aria-current={on ? "page" : undefined}
+            className={`flex min-h-11 items-center px-4 font-semibold ${on ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}
+          >
             {t.label}
           </Link>
         );

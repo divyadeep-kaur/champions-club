@@ -13,7 +13,12 @@ export const dynamic = "force-dynamic";
 const when = (d: Date) => {
   const today = new Date();
   const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-  const day = d.toDateString() === today.toDateString() ? "Today" : d.toDateString() === tomorrow.toDateString() ? "Tomorrow" : d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  const day =
+    d.toDateString() === today.toDateString()
+      ? "Today"
+      : d.toDateString() === tomorrow.toDateString()
+        ? "Tomorrow"
+        : d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
   return `${day}, ${d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })}`;
 };
 
@@ -24,20 +29,35 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
 
   const [upcoming, socials, tab, orders] = await Promise.all([
     db.booking.findMany({ where: { memberId: member.id, status: "booked", end: { gt: now } }, include: { court: true }, orderBy: { start: "asc" }, take: 6 }),
-    db.socialPlayer.findMany({ where: { memberId: member.id, booking: { status: "booked", end: { gt: now } } }, include: { booking: { include: { court: true } } } }),
+    db.socialPlayer.findMany({
+      where: { memberId: member.id, booking: { status: "booked", end: { gt: now } } },
+      include: { booking: { include: { court: true } } },
+    }),
     db.tab.findFirst({ where: { memberId: member.id, status: "open" }, include: { items: true, table: true } }),
-    db.order.findMany({ where: { memberId: member.id, channel: "online", status: { in: ["pending", "ready"] } }, include: { items: { include: { product: true } } }, orderBy: { createdAt: "desc" } }),
+    db.order.findMany({
+      where: { memberId: member.id, channel: "online", status: { in: ["pending", "ready"] } },
+      include: { items: { include: { product: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const since = addDays(startOfDay(now), -16 * 7);
   const [playedCourts, playedSocials] = await Promise.all([
     db.booking.findMany({ where: { memberId: member.id, status: "booked", start: { gte: since, lte: now } }, select: { start: true } }),
-    db.socialPlayer.findMany({ where: { memberId: member.id, status: "confirmed", booking: { status: "booked", start: { gte: since, lte: now } } }, select: { booking: { select: { start: true } } } }),
+    db.socialPlayer.findMany({
+      where: { memberId: member.id, status: "confirmed", booking: { status: "booked", start: { gte: since, lte: now } } },
+      select: { booking: { select: { start: true } } },
+    }),
   ]);
   const played = [...playedCourts.map((b) => b.start), ...playedSocials.map((p) => p.booking.start)];
 
   const st = membershipStatus(member.endDate, now);
-  const badge = st.status === "expired" ? { t: "Expired", c: "bg-clay-soft text-[#7a2f14]" } : st.status === "ending" ? { t: "Ending soon", c: "bg-[#f6e7b8] text-[#5f4605]" } : { t: "Active", c: "bg-ball/90 text-forest-deep" };
+  const badge =
+    st.status === "expired"
+      ? { t: "Expired", c: "bg-clay-soft text-[#7a2f14]" }
+      : st.status === "ending"
+        ? { t: "Ending soon", c: "bg-[#f6e7b8] text-[#5f4605]" }
+        : { t: "Active", c: "bg-ball/90 text-forest-deep" };
 
   return (
     <main className="grid content-start gap-[18px] p-5">
@@ -50,7 +70,10 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
         </form>
       </div>
 
-      <section aria-label="Membership card" className="relative flex min-h-[200px] flex-col justify-between gap-5 overflow-hidden rounded-[22px] p-5 text-white">
+      <section
+        aria-label="Membership card"
+        className="relative flex min-h-[200px] flex-col justify-between gap-5 overflow-hidden rounded-[22px] p-5 text-white"
+      >
         <Image src="/images/shop-rackets.jpg" alt="" aria-hidden="true" fill unoptimized sizes="560px" className="object-cover object-[50%_45%]" />
         <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(135deg,rgba(11,42,29,0.85),rgba(11,42,29,0.35))]" />
         <div className="relative flex items-start justify-between gap-3">
@@ -76,7 +99,11 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
         </div>
       </section>
 
-      {st.status === "expired" && <p className="rounded-xl bg-clay-soft p-3 text-[14px] text-[#7a2f14]">Your membership has expired. Renew at the front desk to book courts and get your discounts again.</p>}
+      {st.status === "expired" && (
+        <p className="rounded-xl bg-clay-soft p-3 text-[14px] text-[#7a2f14]">
+          Your membership has expired. Renew at the front desk to book courts and get your discounts again.
+        </p>
+      )}
 
       <div className="grid grid-cols-3 gap-2 text-center text-[13px]">
         {[
@@ -128,7 +155,8 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
           <div key={`s${s.id}`} className="rounded-2xl border border-line bg-paper p-3.5">
             <strong>Friday social · {s.booking.court.name}</strong>
             <div className="text-[14px] text-muted">
-              {when(s.booking.start)} · {s.status === "waitlist" ? "on the waitlist" : s.status === "offered" ? "a place is waiting for you at the desk" : "you’re playing"}
+              {when(s.booking.start)} ·{" "}
+              {s.status === "waitlist" ? "on the waitlist" : s.status === "offered" ? "a place is waiting for you at the desk" : "you’re playing"}
             </div>
           </div>
         ))}
@@ -151,7 +179,9 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
                   {o.fulfilment === "delivery" ? "Delivery" : "Collect at the desk"} · {inr(o.total)}
                 </div>
               </div>
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[12.5px] font-bold ${o.status === "ready" ? "bg-ball text-forest-deep" : "bg-[#f6e7b8] text-[#5f4605]"}`}>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[12.5px] font-bold ${o.status === "ready" ? "bg-ball text-forest-deep" : "bg-[#f6e7b8] text-[#5f4605]"}`}
+              >
                 {o.status === "ready" ? (o.fulfilment === "pickup" ? "Ready to collect" : "Out for delivery") : "Being packed"}
               </span>
             </div>

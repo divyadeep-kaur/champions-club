@@ -33,7 +33,12 @@ describe("invoices", () => {
     expect(nextInvoiceNumber("INV-2025-0310", 2026)).toBe("INV-2026-0001");
   });
   it("adds GST on top of exclusive line prices", () => {
-    expect(invoiceTotals([{ qty: 20, unitPrice: 2000, gstRate: 18 }, { qty: 1, unitPrice: 500, gstRate: 5 }])).toEqual({ subtotal: 40500, gst: 7225, total: 47725 });
+    expect(
+      invoiceTotals([
+        { qty: 20, unitPrice: 2000, gstRate: 18 },
+        { qty: 1, unitPrice: 500, gstRate: 5 },
+      ]),
+    ).toEqual({ subtotal: 40500, gst: 7225, total: 47725 });
   });
 });
 

@@ -5,7 +5,8 @@ import { useActionState } from "react";
 import { Loader2 } from "lucide-react";
 import { memberLogin, type MeState } from "../actions";
 
-const field = "min-h-12 rounded-xl border border-[#b5aa98] bg-white p-3 font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+const field =
+  "min-h-12 rounded-xl border border-[#b5aa98] bg-white p-3 font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 const label = "grid gap-1.5 text-[14px] font-bold";
 
 export function MemberLoginForm({ next }: { next?: string }) {
@@ -28,7 +29,11 @@ export function MemberLoginForm({ next }: { next?: string }) {
           {state.error}
         </p>
       )}
-      <button type="submit" disabled={pending} className="flex items-center justify-center gap-2 rounded-full bg-forest p-[15px] text-[17px] font-extrabold text-cream hover:bg-forest-deep disabled:opacity-70">
+      <button
+        type="submit"
+        disabled={pending}
+        className="flex items-center justify-center gap-2 rounded-full bg-forest p-[15px] text-[17px] font-extrabold text-cream hover:bg-forest-deep disabled:opacity-70"
+      >
         {pending && <Loader2 className="size-4 animate-spin" />}
         Sign in
       </button>

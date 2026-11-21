@@ -49,8 +49,14 @@ export default async function KitchenPage({ searchParams }: { searchParams: Prom
     where: r.tab.table?.label ?? "Counter",
     who: r.tab.member?.name ?? r.tab.guestName ?? "Guest",
   }));
-  const toMake = group(items.filter((i) => i.status === "new"), "createdAt");
-  const ready = group(items.filter((i) => i.status === "ready"), "readyAt");
+  const toMake = group(
+    items.filter((i) => i.status === "new"),
+    "createdAt",
+  );
+  const ready = group(
+    items.filter((i) => i.status === "ready"),
+    "readyAt",
+  );
 
   const column = (title: string, tickets: Ticket[], to: "ready" | "served", tone: string) => (
     <section className="grid content-start gap-3 bg-[#ece5d6] p-3.5" aria-label={title}>
@@ -116,7 +122,12 @@ export default async function KitchenPage({ searchParams }: { searchParams: Prom
             ["food", "Food"],
             ["drinks", "Drinks"],
           ].map(([k, l]) => (
-            <Link key={k} href={k === "all" ? "/staff/kitchen" : `/staff/kitchen?only=${k}`} aria-current={(only ?? "all") === k ? "true" : undefined} className={`flex min-h-11 items-center px-4 font-semibold ${(only ?? "all") === k ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}>
+            <Link
+              key={k}
+              href={k === "all" ? "/staff/kitchen" : `/staff/kitchen?only=${k}`}
+              aria-current={(only ?? "all") === k ? "true" : undefined}
+              className={`flex min-h-11 items-center px-4 font-semibold ${(only ?? "all") === k ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}
+            >
               {l}
             </Link>
           ))}

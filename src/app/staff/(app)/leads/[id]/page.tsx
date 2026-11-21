@@ -14,8 +14,24 @@ import { TrialDecisionCard } from "./TrialDecisionCard";
 
 export const dynamic = "force-dynamic";
 
-const icons = { note: MessageSquare, status: Flag, trial: CalendarCheck, quote: ReceiptIndianRupee, joined: Check, approved: BadgeCheck, declined: CircleX } as const;
-const dot = { note: "bg-[#8a6d3b]", status: "bg-clay", trial: "bg-[#4d7a12]", quote: "bg-[#2f6bff]", joined: "bg-forest", approved: "bg-forest", declined: "bg-clay" } as const;
+const icons = {
+  note: MessageSquare,
+  status: Flag,
+  trial: CalendarCheck,
+  quote: ReceiptIndianRupee,
+  joined: Check,
+  approved: BadgeCheck,
+  declined: CircleX,
+} as const;
+const dot = {
+  note: "bg-[#8a6d3b]",
+  status: "bg-clay",
+  trial: "bg-[#4d7a12]",
+  quote: "bg-[#2f6bff]",
+  joined: "bg-forest",
+  approved: "bg-forest",
+  declined: "bg-clay",
+} as const;
 
 export default async function LeadPage({ params }: { params: Promise<{ id: string }> }) {
   await requireStaff(["owner", "desk"]);
@@ -34,7 +50,10 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   const courtFromMessage = courts.find((c) => lead.message?.includes(c.name));
   const suggested = lead.preferredAt && lead.preferredAt > new Date() ? lead.preferredAt : nextSlot(new Date());
   const idx = stageIndex(lead.status);
-  const decision = trialDecision(lead, lead.activities.map((a) => a.kind));
+  const decision = trialDecision(
+    lead,
+    lead.activities.map((a) => a.kind),
+  );
   const asked = requestDetails(lead.message);
   const heldActive = lead.booking?.status === "booked";
   const request: [string, string][] = [
@@ -70,7 +89,11 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               <Phone className="size-4" /> {lead.phone}
             </a>
             {lead.email && <span className="text-muted">{lead.email}</span>}
-            {lead.preferredAt && <span className="text-muted">Wants {fmtDate(lead.preferredAt)}, {fmtTime(lead.preferredAt)}</span>}
+            {lead.preferredAt && (
+              <span className="text-muted">
+                Wants {fmtDate(lead.preferredAt)}, {fmtTime(lead.preferredAt)}
+              </span>
+            )}
           </p>
         </div>
         {lead.quoteAmount != null && (
@@ -102,8 +125,12 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
           {decision === "pending" && <TrialDecisionCard leadId={lead.id} canApprove={heldActive} />}
-          {decision === "approved" && <p className="border border-[#c9dfa0] bg-[#eef6dc] px-4 py-3 text-[15px] font-semibold text-[#3d5a12]">Trial request approved.</p>}
-          {decision === "declined" && <p className="border border-clay/30 bg-clay-soft px-4 py-3 text-[15px] font-semibold text-clay">Trial request declined.</p>}
+          {decision === "approved" && (
+            <p className="border border-[#c9dfa0] bg-[#eef6dc] px-4 py-3 text-[15px] font-semibold text-[#3d5a12]">Trial request approved.</p>
+          )}
+          {decision === "declined" && (
+            <p className="border border-clay/30 bg-clay-soft px-4 py-3 text-[15px] font-semibold text-clay">Trial request declined.</p>
+          )}
 
           <section className="border border-line bg-paper p-[22px]">
             <h2 className="text-[18px] font-semibold">What they filled in</h2>
@@ -130,7 +157,10 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
             <div className="border border-line bg-paper px-4 py-3 text-[15px]">
               <span className="font-semibold">Trial:</span> {lead.booking.court.name}, {fmtDate(lead.booking.start)} at {fmtTime(lead.booking.start)}
               {lead.booking.status === "cancelled" && <span className="text-clay"> (cancelled)</span>}{" "}
-              <Link href={`/staff/bookings?date=${isoDate(lead.booking.start)}&booking=${lead.booking.id}`} className="font-semibold text-forest underline underline-offset-4">
+              <Link
+                href={`/staff/bookings?date=${isoDate(lead.booking.start)}&booking=${lead.booking.id}`}
+                className="font-semibold text-forest underline underline-offset-4"
+              >
                 Open in grid
               </Link>
             </div>
@@ -147,11 +177,11 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                       <Icon className="size-3" />
                     </span>
                     <div>
-                    <p className="font-semibold text-ink">{a.text}</p>
-                    <p className="text-[13px] text-muted">
-                      {fmtDate(a.createdAt)}, {fmtTime(a.createdAt)}
-                      {a.staffName ? ` · ${a.staffName}` : ""}
-                    </p>
+                      <p className="font-semibold text-ink">{a.text}</p>
+                      <p className="text-[13px] text-muted">
+                        {fmtDate(a.createdAt)}, {fmtTime(a.createdAt)}
+                        {a.staffName ? ` · ${a.staffName}` : ""}
+                      </p>
                     </div>
                   </li>
                 );
@@ -162,7 +192,14 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
 
         <aside>
           <LeadActions
-            lead={{ id: lead.id, status: lead.status, defaultDate: isoDate(suggested), defaultTime: hhmm(suggested), defaultCourtId: courtFromMessage?.id, plan: lead.plan }}
+            lead={{
+              id: lead.id,
+              status: lead.status,
+              defaultDate: isoDate(suggested),
+              defaultTime: hhmm(suggested),
+              defaultCourtId: courtFromMessage?.id,
+              plan: lead.plan,
+            }}
             courts={courts.map((c) => ({ id: c.id, name: c.name }))}
             plans={plans}
             slots={slotStarts(new Date()).map(hhmm)}

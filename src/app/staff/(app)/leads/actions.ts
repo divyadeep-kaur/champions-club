@@ -39,7 +39,9 @@ export async function approveTrial(_: LeadState, formData: FormData): Promise<Le
     const booking = lead.bookingId ? await db.booking.findUnique({ where: { id: lead.bookingId }, include: { court: true } }) : null;
     if (!(await isWaiting(db, lead))) return { error: "This request has already been answered" };
     if (!booking || booking.status !== "booked") return { error: "No court is held yet. Open the request and book a slot to approve it." };
-    await db.leadActivity.create({ data: { leadId: lead.id, kind: "approved", text: `Trial request approved: ${booking.court.name}, ${whenText(booking.start)}`, staffName: staff.name } });
+    await db.leadActivity.create({
+      data: { leadId: lead.id, kind: "approved", text: `Trial request approved: ${booking.court.name}, ${whenText(booking.start)}`, staffName: staff.name },
+    });
     refresh(lead.id);
     revalidatePath("/trial");
     return { ok: "Approved. The guest sees it on their screen." };
@@ -57,7 +59,9 @@ export async function declineTrial(_: LeadState, formData: FormData): Promise<Le
     await db.$transaction([
       ...(lead.bookingId ? [db.booking.updateMany({ where: { id: lead.bookingId, status: "booked" }, data: { status: "cancelled" } })] : []),
       db.lead.update({ where: { id: lead.id }, data: { status: "lost" } }),
-      db.leadActivity.create({ data: { leadId: lead.id, kind: "declined", text: `Trial request declined${reason ? `: ${reason}` : ""}`, staffName: staff.name } }),
+      db.leadActivity.create({
+        data: { leadId: lead.id, kind: "declined", text: `Trial request declined${reason ? `: ${reason}` : ""}`, staffName: staff.name },
+      }),
     ]);
     refresh(lead.id);
     revalidatePath("/staff/bookings");
@@ -77,7 +81,12 @@ export async function logContact(_: LeadState, formData: FormData): Promise<Lead
     await db.$transaction([
       db.leadActivity.create({ data: { leadId: lead.id, kind: "note", text, staffName: staff.name } }),
       ...(moving && canMove(lead.status, "contacted")
-        ? [db.lead.update({ where: { id: lead.id }, data: { status: "contacted" } }), db.leadActivity.create({ data: { leadId: lead.id, kind: "status", text: lead.status === "lost" ? "Reopened" : "Moved to Contacted", staffName: staff.name } })]
+        ? [
+            db.lead.update({ where: { id: lead.id }, data: { status: "contacted" } }),
+            db.leadActivity.create({
+              data: { leadId: lead.id, kind: "status", text: lead.status === "lost" ? "Reopened" : "Moved to Contacted", staffName: staff.name },
+            }),
+          ]
         : []),
     ]);
     refresh(lead.id);
@@ -103,11 +112,24 @@ export async function bookTrial(_: LeadState, formData: FormData): Promise<LeadS
     const start = new Date(`${parsed.data.date}T${parsed.data.time}:00`);
     await db.$transaction(async (tx) => {
       if (lead.bookingId) await tx.booking.updateMany({ where: { id: lead.bookingId, status: "booked" }, data: { status: "cancelled" } });
-      const { booking, court } = await placeBooking(tx, { courtId: parsed.data.courtId, start, member: null, guestName: `Trial: ${lead.name}`, guestPhone: lead.phone, type: "trial", method: "later" });
+      const { booking, court } = await placeBooking(tx, {
+        courtId: parsed.data.courtId,
+        start,
+        member: null,
+        guestName: `Trial: ${lead.name}`,
+        guestPhone: lead.phone,
+        type: "trial",
+        method: "later",
+      });
       await tx.lead.update({ where: { id: lead.id }, data: { bookingId: booking.id, ...(canMove(lead.status, "trial") ? { status: "trial" } : {}) } });
       const when = start.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
-      await tx.leadActivity.create({ data: { leadId: lead.id, kind: "trial", text: `${lead.bookingId ? "Moved trial to" : "Trial booked:"} ${court.name}, ${when}`, staffName: staff.name } });
-      if (await isWaiting(tx, lead)) await tx.leadActivity.create({ data: { leadId: lead.id, kind: "approved", text: `Trial request approved: ${court.name}, ${when}`, staffName: staff.name } });
+      await tx.leadActivity.create({
+        data: { leadId: lead.id, kind: "trial", text: `${lead.bookingId ? "Moved trial to" : "Trial booked:"} ${court.name}, ${when}`, staffName: staff.name },
+      });
+      if (await isWaiting(tx, lead))
+        await tx.leadActivity.create({
+          data: { leadId: lead.id, kind: "approved", text: `Trial request approved: ${court.name}, ${when}`, staffName: staff.name },
+        });
     });
     refresh(lead.id);
     revalidatePath("/staff/bookings");
@@ -128,7 +150,9 @@ export async function sendQuote(_: LeadState, formData: FormData): Promise<LeadS
     if (lead.status !== "quoted" && !canMove(lead.status, "quoted")) return { error: `Can't quote a lead that is ${stageLabel(lead.status).toLowerCase()}` };
     await db.$transaction([
       db.lead.update({ where: { id: lead.id }, data: { status: "quoted", plan: parsed.data.plan, quoteAmount: parsed.data.amount } }),
-      db.leadActivity.create({ data: { leadId: lead.id, kind: "quote", text: `Quoted ${parsed.data.plan} membership at ${inr(parsed.data.amount)}`, staffName: staff.name } }),
+      db.leadActivity.create({
+        data: { leadId: lead.id, kind: "quote", text: `Quoted ${parsed.data.plan} membership at ${inr(parsed.data.amount)}`, staffName: staff.name },
+      }),
     ]);
     refresh(lead.id);
     return { ok: "Quote recorded" };

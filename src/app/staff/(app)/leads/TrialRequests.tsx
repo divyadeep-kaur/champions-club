@@ -28,7 +28,12 @@ function Row({ r }: { r: TrialRequest }) {
 
   const details: [string, React.ReactNode][] = [
     ["Name", r.name],
-    ["Mobile", <a key="p" href={`tel:+91${r.phone}`} className="font-semibold text-forest underline underline-offset-4">{r.phone}</a>],
+    [
+      "Mobile",
+      <a key="p" href={`tel:+91${r.phone}`} className="font-semibold text-forest underline underline-offset-4">
+        {r.phone}
+      </a>,
+    ],
     ["Email", r.email ?? "Not given"],
     ["Interested in", "Free trial"],
     ["Preferred day and time", r.wants ?? "Any time"],
@@ -68,25 +73,45 @@ function Row({ r }: { r: TrialRequest }) {
             {r.held ? (
               <form action={approve}>
                 <input type="hidden" name="leadId" value={r.id} />
-                <button type="submit" disabled={approving} className="inline-flex min-h-11 items-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep disabled:opacity-70">
+                <button
+                  type="submit"
+                  disabled={approving}
+                  className="inline-flex min-h-11 items-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep disabled:opacity-70"
+                >
                   {approving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Approve trial
                 </button>
               </form>
             ) : (
-              <Link href={`/staff/leads/${r.id}`} className="inline-flex min-h-11 items-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep">
+              <Link
+                href={`/staff/leads/${r.id}`}
+                className="inline-flex min-h-11 items-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep"
+              >
                 <Check className="size-4" /> Pick a slot and approve
               </Link>
             )}
             {asking ? (
               <form action={decline} className="flex flex-wrap items-center gap-2">
                 <input type="hidden" name="leadId" value={r.id} />
-                <input name="reason" placeholder="Reason (optional)" aria-label="Reason for declining" className="min-h-11 border border-[#b5aa98] bg-white px-3 text-[15px] outline-none focus:border-forest" />
-                <button type="submit" disabled={declining} className="inline-flex min-h-11 items-center gap-2 border-[1.5px] border-clay/60 px-4 py-2.5 font-semibold text-clay hover:bg-clay-soft disabled:opacity-70">
+                <input
+                  name="reason"
+                  placeholder="Reason (optional)"
+                  aria-label="Reason for declining"
+                  className="min-h-11 border border-[#b5aa98] bg-white px-3 text-[15px] outline-none focus:border-forest"
+                />
+                <button
+                  type="submit"
+                  disabled={declining}
+                  className="inline-flex min-h-11 items-center gap-2 border-[1.5px] border-clay/60 px-4 py-2.5 font-semibold text-clay hover:bg-clay-soft disabled:opacity-70"
+                >
                   {declining && <Loader2 className="size-4 animate-spin" />} Confirm decline
                 </button>
               </form>
             ) : (
-              <button type="button" onClick={() => setAsking(true)} className="inline-flex min-h-11 items-center gap-2 border-[1.5px] border-clay/60 px-4 py-2.5 font-semibold text-clay hover:bg-clay-soft">
+              <button
+                type="button"
+                onClick={() => setAsking(true)}
+                className="inline-flex min-h-11 items-center gap-2 border-[1.5px] border-clay/60 px-4 py-2.5 font-semibold text-clay hover:bg-clay-soft"
+              >
                 <X className="size-4" /> Decline
               </button>
             )}
@@ -113,7 +138,9 @@ export function TrialRequests({ requests }: { requests: TrialRequest[] }) {
         <p className="text-[13.5px] text-muted">New requests appear here on their own. Click a request to see everything they filled in.</p>
       </div>
       {requests.length === 0 ? (
-        <p className="border border-dashed border-line bg-paper px-4 py-3.5 text-[14.5px] text-muted">No trial requests waiting. New ones from the website show up here.</p>
+        <p className="border border-dashed border-line bg-paper px-4 py-3.5 text-[14.5px] text-muted">
+          No trial requests waiting. New ones from the website show up here.
+        </p>
       ) : (
         <ul className="grid gap-2">
           {requests.map((r) => (

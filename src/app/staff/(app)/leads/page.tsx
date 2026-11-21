@@ -32,18 +32,46 @@ export default async function LeadsPage() {
       include: { activities: { orderBy: { createdAt: "desc" } }, booking: { include: { court: true } }, member: true },
       orderBy: { createdAt: "desc" },
     }),
-    db.lead.findMany({ where: { status: "lost" }, include: { activities: { where: { kind: "status" }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" }, take: 5 }),
+    db.lead.findMany({
+      where: { status: "lost" },
+      include: { activities: { where: { kind: "status" }, orderBy: { createdAt: "desc" }, take: 1 } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
     db.lead.count({ where: { status: "won", createdAt: { gte: monthStart } } }),
   ]);
 
   const open = leads.filter((l) => l.status !== "won");
-  const waiting = new Set(leads.filter((l) => trialDecision(l, l.activities.map((a) => a.kind)) === "pending").map((l) => l.id));
+  const waiting = new Set(
+    leads
+      .filter(
+        (l) =>
+          trialDecision(
+            l,
+            l.activities.map((a) => a.kind),
+          ) === "pending",
+      )
+      .map((l) => l.id),
+  );
   const requests: TrialRequest[] = leads
     .filter((l) => waiting.has(l.id))
     .map((l) => {
       const d = requestDetails(l.message);
       const held = l.booking && l.booking.status === "booked" ? `${l.booking.court.name}, ${long(l.booking.start)}` : null;
-      return { id: l.id, name: l.name, phone: l.phone, email: l.email, interest: l.interest, wants: l.preferredAt ? long(l.preferredAt) : null, court: d.court ?? null, held, plan: d.plan ?? l.plan, note: d.note ?? null, received: long(l.createdAt), ago: ago(l.createdAt) };
+      return {
+        id: l.id,
+        name: l.name,
+        phone: l.phone,
+        email: l.email,
+        interest: l.interest,
+        wants: l.preferredAt ? long(l.preferredAt) : null,
+        court: d.court ?? null,
+        held,
+        plan: d.plan ?? l.plan,
+        note: d.note ?? null,
+        received: long(l.createdAt),
+        ago: ago(l.createdAt),
+      };
     });
   const quotesOut = leads.filter((l) => l.status === "quoted").reduce((s, l) => s + (l.quoteAmount ?? 0), 0);
 
@@ -60,7 +88,9 @@ export default async function LeadsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Leads</h1>
-          <p className="mt-1.5 text-muted">Free trial requests from the website wait here for approval. Open any lead for its timeline, trial booking and quote.</p>
+          <p className="mt-1.5 text-muted">
+            Free trial requests from the website wait here for approval. Open any lead for its timeline, trial booking and quote.
+          </p>
         </div>
         <Link href="/trial" target="_blank" className={btnPrimary}>
           Add walk-in enquiry
@@ -82,7 +112,11 @@ export default async function LeadsPage() {
                 </h2>
                 {cards.length === 0 && <p className="text-[13.5px] text-muted">None right now.</p>}
                 {cards.map((c) => (
-                  <article key={c.id} className="grid gap-2 border border-line border-t-[3px] bg-paper p-3.5" style={{ borderTopColor: columnColor[stage.key] }}>
+                  <article
+                    key={c.id}
+                    className="grid gap-2 border border-line border-t-[3px] bg-paper p-3.5"
+                    style={{ borderTopColor: columnColor[stage.key] }}
+                  >
                     <div className="flex justify-between gap-2">
                       <strong className="leading-tight">{c.name}</strong>
                       <span className="h-fit bg-cream px-2 py-0.5 text-[12.5px] font-bold capitalize">{c.interest}</span>
@@ -91,7 +125,13 @@ export default async function LeadsPage() {
                     <div className="text-[13px] text-muted">{meta(c)}</div>
                     {waiting.has(c.id) && <span className="w-fit bg-[#f6e3c4] px-2 py-0.5 text-[12px] font-bold text-[#7a4b0c]">Waiting for approval</span>}
                     <Link
-                      href={c.status === "won" && c.member ? `/staff/members/${c.member.id}` : c.status === "quoted" ? `/staff/members/new?lead=${c.id}` : `/staff/leads/${c.id}`}
+                      href={
+                        c.status === "won" && c.member
+                          ? `/staff/members/${c.member.id}`
+                          : c.status === "quoted"
+                            ? `/staff/members/new?lead=${c.id}`
+                            : `/staff/leads/${c.id}`
+                      }
                       className="block border-[1.5px] border-forest p-2.5 text-[14px] font-semibold text-forest hover:bg-forest/5"
                     >
                       {action[stage.key]} →

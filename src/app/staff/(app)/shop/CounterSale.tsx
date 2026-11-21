@@ -35,7 +35,11 @@ export function CounterSale({ products, members }: { products: Product[]; member
     .filter(([, q]) => q > 0)
     .map(([id, qty]) => ({ productId: Number(id), qty, product: products.find((p) => p.id === Number(id))! }))
     .filter((l) => l.product);
-  const totals = cartTotals(lines.map((l) => ({ unitPrice: l.product.price, qty: l.qty })), plan, "shop");
+  const totals = cartTotals(
+    lines.map((l) => ({ unitPrice: l.product.price, qty: l.qty })),
+    plan,
+    "shop",
+  );
   const add = (p: Product, d: number) => setCart((c) => ({ ...c, [p.id]: Math.max(0, Math.min(p.stock, (c[p.id] ?? 0) + d)) }));
 
   return (
@@ -51,10 +55,17 @@ export function CounterSale({ products, members }: { products: Product[]; member
               <div className="min-h-[42px] font-semibold">{p.name}</div>
               <div className="flex justify-between text-[14.5px]">
                 <span className="tabular-nums">{inr(p.price)}</span>
-                <span className={`font-semibold ${p.stock <= 0 ? "text-muted" : low ? "text-[#a8411f]" : "text-[#4d7a12]"}`}>{p.stock <= 0 ? "Sold out" : `${left} left`}</span>
+                <span className={`font-semibold ${p.stock <= 0 ? "text-muted" : low ? "text-[#a8411f]" : "text-[#4d7a12]"}`}>
+                  {p.stock <= 0 ? "Sold out" : `${left} left`}
+                </span>
               </div>
               {p.held > 0 && <div className="text-[13px] text-muted">{p.held} held for pickup</div>}
-              <button type="button" disabled={left <= 0} onClick={() => add(p, 1)} className="min-h-11 border-[1.5px] border-forest p-2.5 font-semibold text-forest hover:bg-forest/5 disabled:border-line disabled:text-muted">
+              <button
+                type="button"
+                disabled={left <= 0}
+                onClick={() => add(p, 1)}
+                className="min-h-11 border-[1.5px] border-forest p-2.5 font-semibold text-forest hover:bg-forest/5 disabled:border-line disabled:text-muted"
+              >
                 {inCart ? `Add another (${inCart})` : "Add"}
               </button>
             </div>
@@ -68,7 +79,15 @@ export function CounterSale({ products, members }: { products: Product[]; member
         <h2 className="font-serif text-[24px] text-forest">Counter sale</h2>
         <label className="grid gap-1.5 text-[14px] font-semibold">
           Member (optional)
-          <input name="member" list="shop-members" value={memberRef} onChange={(e) => setMemberRef(e.target.value)} placeholder="Name, phone or CC- code" autoComplete="off" className="min-h-11 border border-[#b5aa98] bg-white p-3 font-normal outline-none focus:border-forest" />
+          <input
+            name="member"
+            list="shop-members"
+            value={memberRef}
+            onChange={(e) => setMemberRef(e.target.value)}
+            placeholder="Name, phone or CC- code"
+            autoComplete="off"
+            className="min-h-11 border border-[#b5aa98] bg-white p-3 font-normal outline-none focus:border-forest"
+          />
           <datalist id="shop-members">
             {members.map((m) => (
               <option key={m.code} value={`${m.code} · ${m.name}`}>
@@ -87,7 +106,12 @@ export function CounterSale({ products, members }: { products: Product[]; member
         {lines.map((l) => (
           <div key={l.productId} className="flex items-center justify-between gap-2 border-b border-[#ece5d6] py-2 text-[15px]">
             <span className="flex items-center gap-2">
-              <button type="button" aria-label={`One less ${l.product.name}`} onClick={() => add(l.product, -1)} className="grid size-7 place-items-center border border-line text-muted hover:border-forest hover:text-forest">
+              <button
+                type="button"
+                aria-label={`One less ${l.product.name}`}
+                onClick={() => add(l.product, -1)}
+                className="grid size-7 place-items-center border border-line text-muted hover:border-forest hover:text-forest"
+              >
                 −
               </button>
               {l.qty} × {l.product.name}
@@ -113,12 +137,22 @@ export function CounterSale({ products, members }: { products: Product[]; member
 
         <div role="group" aria-label="Payment method" className="grid grid-cols-3 gap-2">
           {methods.map((m) => (
-            <button key={m.v} type="button" aria-pressed={method === m.v} onClick={() => setMethod(m.v)} className={`min-h-11 border-[1.5px] border-forest p-2.5 font-semibold ${method === m.v ? "bg-forest text-cream" : "text-forest"}`}>
+            <button
+              key={m.v}
+              type="button"
+              aria-pressed={method === m.v}
+              onClick={() => setMethod(m.v)}
+              className={`min-h-11 border-[1.5px] border-forest p-2.5 font-semibold ${method === m.v ? "bg-forest text-cream" : "text-forest"}`}
+            >
               {m.l}
             </button>
           ))}
         </div>
-        <button type="submit" disabled={pending || lines.length === 0} className="flex min-h-12 items-center justify-center gap-2 bg-forest p-3.5 text-[16px] font-semibold text-cream hover:bg-forest-deep disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={pending || lines.length === 0}
+          className="flex min-h-12 items-center justify-center gap-2 bg-forest p-3.5 text-[16px] font-semibold text-cream hover:bg-forest-deep disabled:opacity-60"
+        >
           {pending && <Loader2 className="size-4 animate-spin" />}
           Take payment
         </button>

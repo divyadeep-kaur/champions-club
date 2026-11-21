@@ -31,7 +31,10 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
       orderBy: { start: "asc" },
     }),
     db.court.findMany({ where: { sport }, orderBy: { name: "asc" } }),
-    db.booking.findMany({ where: { status: "booked", start: { gte: day, lt: addDays(day, 1) } }, select: { courtId: true, start: true, end: true, memberId: true } }),
+    db.booking.findMany({
+      where: { status: "booked", start: { gte: day, lt: addDays(day, 1) } },
+      select: { courtId: true, start: true, end: true, memberId: true },
+    }),
     memberDayCount(db, member.id, day),
   ]);
 
@@ -48,7 +51,12 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
         <h1 className="text-[28px] font-extrabold text-forest">Book a court</h1>
         <div role="group" aria-label="Sport" className="flex gap-1.5">
           {(["tennis", "cricket"] as const).map((s) => (
-            <Link key={s} href={`/me/book?${new URLSearchParams({ date, sport: s })}`} aria-current={sport === s ? "true" : undefined} className={`rounded-full border-[1.5px] border-forest px-3 py-1.5 text-[13.5px] font-bold ${sport === s ? "bg-forest text-cream" : "text-forest"}`}>
+            <Link
+              key={s}
+              href={`/me/book?${new URLSearchParams({ date, sport: s })}`}
+              aria-current={sport === s ? "true" : undefined}
+              className={`rounded-full border-[1.5px] border-forest px-3 py-1.5 text-[13.5px] font-bold ${sport === s ? "bg-forest text-cream" : "text-forest"}`}
+            >
               {s === "tennis" ? "Tennis" : "Cricket"}
             </Link>
           ))}
@@ -93,7 +101,9 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
       {expired ? (
         <p className="rounded-xl bg-clay-soft p-3 text-[14px] text-[#7a2f14]">Your membership has expired. Renew at the front desk to book courts.</p>
       ) : limitHit ? (
-        <p className="rounded-xl border border-line bg-paper p-3 text-[14px] text-muted">You already have {MAX_BOOKINGS_PER_DAY} bookings on this day, the most a member can play. Pick another day.</p>
+        <p className="rounded-xl border border-line bg-paper p-3 text-[14px] text-muted">
+          You already have {MAX_BOOKINGS_PER_DAY} bookings on this day, the most a member can play. Pick another day.
+        </p>
       ) : (
         <p className="text-[13.5px] text-muted">
           1-hour sessions · pay at the desk · {usedToday} of {MAX_BOOKINGS_PER_DAY} used this day
@@ -120,7 +130,10 @@ export default async function MemberBook({ searchParams }: { searchParams: Promi
                   const on = selectedCourt?.id === c.id && sp.time === hhmm(s);
                   if (expired || limitHit)
                     return (
-                      <span key={s.toISOString()} className="min-h-11 rounded-full border-[1.5px] border-line px-3 py-2 text-[14px] font-bold tabular-nums text-muted/60">
+                      <span
+                        key={s.toISOString()}
+                        className="min-h-11 rounded-full border-[1.5px] border-line px-3 py-2 text-[14px] font-bold tabular-nums text-muted/60"
+                      >
                         {fmtTime(s)}
                       </span>
                     );

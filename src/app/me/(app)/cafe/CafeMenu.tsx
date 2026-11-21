@@ -42,7 +42,11 @@ export function CafeMenu({
       <input type="hidden" name="items" value={JSON.stringify(lines)} />
       <label className="mx-4 grid gap-1.5 text-[14px] font-bold">
         Your table
-        <select name="tableId" defaultValue={defaultTable ?? ""} className="min-h-12 rounded-xl border border-[#b5aa98] bg-white p-3 font-normal outline-none focus:border-forest">
+        <select
+          name="tableId"
+          defaultValue={defaultTable ?? ""}
+          className="min-h-12 rounded-xl border border-[#b5aa98] bg-white p-3 font-normal outline-none focus:border-forest"
+        >
           <option value="">At the counter</option>
           {tables.map((t) => (
             <option key={t.id} value={t.id}>
@@ -69,13 +73,24 @@ export function CafeMenu({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button type="button" aria-label={`Remove one ${m.name}`} disabled={qty === 0} onClick={() => change(m.id, -1)} className="size-11 rounded-full border-[1.5px] border-forest text-[20px] text-forest disabled:opacity-35">
+                    <button
+                      type="button"
+                      aria-label={`Remove one ${m.name}`}
+                      disabled={qty === 0}
+                      onClick={() => change(m.id, -1)}
+                      className="size-11 rounded-full border-[1.5px] border-forest text-[20px] text-forest disabled:opacity-35"
+                    >
                       −
                     </button>
                     <span className="min-w-4 text-center font-extrabold tabular-nums" aria-live="polite">
                       {qty}
                     </span>
-                    <button type="button" aria-label={`Add one ${m.name}`} onClick={() => change(m.id, 1)} className="size-11 rounded-full bg-forest text-[20px] text-cream">
+                    <button
+                      type="button"
+                      aria-label={`Add one ${m.name}`}
+                      onClick={() => change(m.id, 1)}
+                      className="size-11 rounded-full bg-forest text-[20px] text-cream"
+                    >
                       +
                     </button>
                   </div>
@@ -97,7 +112,11 @@ export function CafeMenu({
             {state.error ?? state.ok}
           </p>
         )}
-        <button type="submit" disabled={pending || lines.length === 0} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={pending || lines.length === 0}
+          className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-60"
+        >
           {pending && <Loader2 className="size-4 animate-spin" />}
           Send to kitchen · tab {inr(after)}
         </button>

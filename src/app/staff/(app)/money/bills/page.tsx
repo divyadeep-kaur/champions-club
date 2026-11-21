@@ -52,7 +52,12 @@ export default async function BillsPage() {
                     <td className="py-2.5">
                       <form action={payExpense} className="flex justify-end gap-1">
                         <input type="hidden" name="expenseId" value={e.id} />
-                        <select name="method" defaultValue="bank" aria-label="Paid by" className="min-h-9 border border-[#b5aa98] bg-white px-1.5 text-[13.5px]">
+                        <select
+                          name="method"
+                          defaultValue="bank"
+                          aria-label="Paid by"
+                          className="min-h-9 border border-[#b5aa98] bg-white px-1.5 text-[13.5px]"
+                        >
                           <option value="bank">Bank transfer</option>
                           <option value="upi">UPI</option>
                           <option value="cash">Cash</option>

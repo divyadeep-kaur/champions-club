@@ -35,11 +35,19 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={`/staff/money?month=${prev}`} aria-label="Previous month" className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5">
+        <Link
+          href={`/staff/money?month=${prev}`}
+          aria-label="Previous month"
+          className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5"
+        >
           ‹
         </Link>
         <span className="px-2 text-[17px] font-semibold">{monthLabel(from)}</span>
-        <Link href={`/staff/money?month=${next}`} aria-label="Next month" className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5">
+        <Link
+          href={`/staff/money?month=${next}`}
+          aria-label="Next month"
+          className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5"
+        >
           ›
         </Link>
       </div>
@@ -101,7 +109,9 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
               </span>
               <span className="shrink-0 text-right">
                 <strong className="tabular-nums">{inr(e.amount)}</strong>
-                <span className={`block text-[12.5px] ${e.dueDate < today ? "font-semibold text-[#a8411f]" : "text-muted"}`}>{e.dueDate < today ? "overdue" : "due"} {short(e.dueDate)}</span>
+                <span className={`block text-[12.5px] ${e.dueDate < today ? "font-semibold text-[#a8411f]" : "text-muted"}`}>
+                  {e.dueDate < today ? "overdue" : "due"} {short(e.dueDate)}
+                </span>
               </span>
             </div>
           ))}
@@ -113,7 +123,11 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
           <h2 className="mb-3 text-[18px] font-semibold">Owed to us</h2>
           <p className="font-serif text-[26px] text-forest tabular-nums">{inr(owedToUs)}</p>
           {openInvoices.slice(0, 5).map((i) => (
-            <Link key={i.id} href={`/staff/money/invoices/${i.id}`} className="flex justify-between gap-3 border-t border-line py-2.5 text-[14.5px] hover:bg-cream">
+            <Link
+              key={i.id}
+              href={`/staff/money/invoices/${i.id}`}
+              className="flex justify-between gap-3 border-t border-line py-2.5 text-[14.5px] hover:bg-cream"
+            >
               <span>
                 {i.number} · {i.customerName}
               </span>

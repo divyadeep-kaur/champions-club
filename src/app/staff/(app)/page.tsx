@@ -51,7 +51,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     db.court.count(),
   ]);
 
-  const low = products.filter((p) => p.stock <= p.lowStockAt).sort((a, b) => a.stock - b.stock).slice(0, 4);
+  const low = products
+    .filter((p) => p.stock <= p.lowStockAt)
+    .sort((a, b) => a.stock - b.stock)
+    .slice(0, 4);
   const greeting = now.getHours() < 12 ? "morning" : now.getHours() < 17 ? "afternoon" : "evening";
   const periodLong = PERIODS.find((p) => p.key === period)!.long;
 
@@ -150,10 +153,42 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </section>
         <section className={card}>
           <h2 className="mb-3 text-[18px] font-semibold">Right now</h2>
-          <Row left={<Link href="/staff/bookings" className="hover:underline">Courts in use</Link>} right={<strong>{inUse} of {courtCount}</strong>} />
-          <Row left={<Link href="/staff/bar" className="hover:underline">Open bar tabs</Link>} right={<strong>{openTabs}</strong>} />
-          <Row left={<Link href="/staff/shop" className="hover:underline">Online orders to pack</Link>} right={<strong>{toPack}</strong>} />
-          <Row left={<Link href="/staff/leads" className="hover:underline">New enquiries</Link>} right={<strong>{newLeads}</strong>} />
+          <Row
+            left={
+              <Link href="/staff/bookings" className="hover:underline">
+                Courts in use
+              </Link>
+            }
+            right={
+              <strong>
+                {inUse} of {courtCount}
+              </strong>
+            }
+          />
+          <Row
+            left={
+              <Link href="/staff/bar" className="hover:underline">
+                Open bar tabs
+              </Link>
+            }
+            right={<strong>{openTabs}</strong>}
+          />
+          <Row
+            left={
+              <Link href="/staff/shop" className="hover:underline">
+                Online orders to pack
+              </Link>
+            }
+            right={<strong>{toPack}</strong>}
+          />
+          <Row
+            left={
+              <Link href="/staff/leads" className="hover:underline">
+                New enquiries
+              </Link>
+            }
+            right={<strong>{newLeads}</strong>}
+          />
         </section>
       </div>
 
@@ -178,7 +213,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 {latest.map((p) => (
                   <tr key={p.id} className="border-t border-line">
                     <td className="px-2 py-2.5 tabular-nums">
-                      {p.createdAt.toDateString() === today.toDateString() ? fmtTime(p.createdAt) : p.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      {p.createdAt.toDateString() === today.toDateString()
+                        ? fmtTime(p.createdAt)
+                        : p.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                     </td>
                     <td className="px-2 py-2.5">{SOURCE_LABEL[p.source] ?? p.source}</td>
                     <td className="px-2 py-2.5">{p.note ?? "—"}</td>

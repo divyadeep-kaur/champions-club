@@ -7,7 +7,11 @@ import { normalizePhone } from "@/lib/members";
 import { placeBooking } from "@/lib/bookingService";
 import { DECISION_KINDS, trialDecision, type TrialDecision } from "@/lib/leads";
 
-export type TrialState = { error?: string; done?: { name: string; when?: string; court?: string; id?: number; phone?: string; trial?: boolean }; fields?: Record<string, string> };
+export type TrialState = {
+  error?: string;
+  done?: { name: string; when?: string; court?: string; id?: number; phone?: string; trial?: boolean };
+  fields?: Record<string, string>;
+};
 
 const schema = z.object({
   name: z.string().trim().min(2, "Enter your name").max(80),
@@ -56,7 +60,15 @@ export async function submitTrial(_: TrialState, formData: FormData): Promise<Tr
     const order = court ? [court, ...courts.filter((c) => c.id !== court.id)] : courts;
     for (const c of order) {
       try {
-        const { booking } = await placeBooking(tx, { courtId: c.id, start, member: null, guestName: `Trial: ${f.name}`, guestPhone: phone, type: "trial", method: "later" });
+        const { booking } = await placeBooking(tx, {
+          courtId: c.id,
+          start,
+          member: null,
+          guestName: `Trial: ${f.name}`,
+          guestPhone: phone,
+          type: "trial",
+          method: "later",
+        });
         await tx.lead.update({ where: { id: lead.id }, data: { status: "trial", bookingId: booking.id } });
         await tx.leadActivity.create({ data: { leadId: lead.id, kind: "trial", text: `Court held for the trial request: ${c.name}, ${when}` } });
         return { leadId: lead.id, heldCourt: c.name };
@@ -98,7 +110,10 @@ export async function trialStatus(id: number, phone: string): Promise<TrialStatu
     include: { activities: { where: { kind: { in: DECISION_KINDS } }, select: { kind: true } }, booking: { include: { court: true } } },
   });
   if (!lead || lead.phone !== phone) return { decision: null };
-  const decision = trialDecision(lead, lead.activities.map((a) => a.kind));
+  const decision = trialDecision(
+    lead,
+    lead.activities.map((a) => a.kind),
+  );
   const booked = lead.booking && lead.booking.status === "booked" ? lead.booking : null;
   return {
     decision,

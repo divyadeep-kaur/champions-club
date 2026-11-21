@@ -26,7 +26,10 @@ export async function memberLogin(_: MeState, formData: FormData): Promise<MeSta
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const phone = normalizePhone(parsed.data.phone);
-  const code = parsed.data.code.toUpperCase().replace(/^CC-?/, "CC-").replace(/^(\d+)$/, "CC-$1");
+  const code = parsed.data.code
+    .toUpperCase()
+    .replace(/^CC-?/, "CC-")
+    .replace(/^(\d+)$/, "CC-$1");
   const member = phone ? await db.member.findUnique({ where: { phone } }) : null;
   if (!member || member.code !== code) return { error: "That phone number and member code don't match. Ask at the front desk if you've lost your code." };
 
@@ -70,7 +73,9 @@ export async function memberCancel(formData: FormData) {
   const refund = paid._sum.amount ?? 0;
   await db.$transaction([
     db.booking.update({ where: { id: booking.id }, data: { status: "cancelled" } }),
-    ...(refund > 0 ? [db.payment.create({ data: { source: "court", refId: booking.id, amount: -refund, method: "cash", note: "Refund, cancelled by member" } })] : []),
+    ...(refund > 0
+      ? [db.payment.create({ data: { source: "court", refId: booking.id, amount: -refund, method: "cash", note: "Refund, cancelled by member" } })]
+      : []),
   ]);
   refreshCourts();
 }
@@ -87,7 +92,10 @@ export async function orderFood(_: MeState, formData: FormData): Promise<MeState
 
   let lines: { id: number; qty: number }[];
   try {
-    lines = z.array(z.object({ id: z.number().int(), qty: z.number().int().min(1).max(20) })).min(1).parse(JSON.parse(parsed.data.items));
+    lines = z
+      .array(z.object({ id: z.number().int(), qty: z.number().int().min(1).max(20) }))
+      .min(1)
+      .parse(JSON.parse(parsed.data.items));
   } catch {
     return { error: "Add something to your order first" };
   }

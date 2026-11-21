@@ -94,7 +94,10 @@ export function Navbar() {
           <div className="hidden sm:block">
             <SignInMenu />
           </div>
-          <Link href="/trial" className="hidden rounded-full bg-ball px-5 py-3 text-[15px] font-bold text-forest-deep transition-colors hover:bg-[#b6dd45] sm:inline-block">
+          <Link
+            href="/trial"
+            className="hidden rounded-full bg-ball px-5 py-3 text-[15px] font-bold text-forest-deep transition-colors hover:bg-[#b6dd45] sm:inline-block"
+          >
             Book a free trial
           </Link>
           <button
@@ -112,7 +115,12 @@ export function Navbar() {
       {open && (
         <nav aria-label="Mobile" className="border-t border-line bg-paper px-4 pb-4 pt-2 lg:hidden">
           {links.map((l) => (
-            <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="block rounded-[10px] px-3 py-3 text-[16px] font-semibold text-ink hover:bg-cream">
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={() => setOpen(false)}
+              className="block rounded-[10px] px-3 py-3 text-[16px] font-semibold text-ink hover:bg-cream"
+            >
               {l.label}
             </Link>
           ))}

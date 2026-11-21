@@ -31,7 +31,8 @@ export async function landingCourts(now = new Date()) {
     const s = courtStatusAt(c.id, at, info);
     const trial = `/trial?${new URLSearchParams({ date: isoDate(at), time: hhmm(at), court: String(c.id) })}`;
     if (s.status === "available") return { courtId: c.id, court: courtLabel(c.name), start: at.toISOString(), status: "available", href: trial };
-    if (s.status === "social") return { courtId: c.id, court: courtLabel(c.name), start: at.toISOString(), status: "social", note: `${s.spotsLeft} spots left`, href: "/me/login" };
+    if (s.status === "social")
+      return { courtId: c.id, court: courtLabel(c.name), start: at.toISOString(), status: "social", note: `${s.spotsLeft} spots left`, href: "/me/login" };
     return { courtId: c.id, court: courtLabel(c.name), start: at.toISOString(), status: "booked", note: s.freeAt ? `free at ${time(s.freeAt)}` : "full today" };
   });
 
@@ -46,7 +47,10 @@ export async function weekGlance(sport: "tennis" | "cricket", now = new Date()) 
   const end = new Date(today.getTime() + 5 * 86_400_000);
   const [courts, bookings] = await Promise.all([
     db.court.findMany({ where: { sport } }),
-    db.booking.findMany({ where: { status: "booked", start: { gte: today, lt: end }, court: { sport } }, select: { courtId: true, start: true, end: true, type: true } }),
+    db.booking.findMany({
+      where: { status: "booked", start: { gte: today, lt: end }, court: { sport } },
+      select: { courtId: true, start: true, end: true, type: true },
+    }),
   ]);
   return days.map((d) => {
     const starts = new Map<number, Date>();

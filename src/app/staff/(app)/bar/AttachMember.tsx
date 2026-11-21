@@ -9,8 +9,19 @@ export function AttachMember({ tabId, members }: { tabId: number; members: { cod
     <form action={action} className="grid gap-1.5">
       <input type="hidden" name="tabId" value={tabId} />
       <div className="flex gap-2">
-        <input name="member" list="bar-members" placeholder="Member code or phone" aria-label="Member code or phone" autoComplete="off" className="min-h-10 min-w-0 flex-1 border border-[#b5aa98] bg-white px-3 text-[14.5px] outline-none focus:border-forest" />
-        <button type="submit" disabled={pending} className="min-h-10 border-[1.5px] border-forest px-3 text-[14px] font-semibold text-forest hover:bg-forest/5 disabled:opacity-60">
+        <input
+          name="member"
+          list="bar-members"
+          placeholder="Member code or phone"
+          aria-label="Member code or phone"
+          autoComplete="off"
+          className="min-h-10 min-w-0 flex-1 border border-[#b5aa98] bg-white px-3 text-[14.5px] outline-none focus:border-forest"
+        />
+        <button
+          type="submit"
+          disabled={pending}
+          className="min-h-10 border-[1.5px] border-forest px-3 text-[14px] font-semibold text-forest hover:bg-forest/5 disabled:opacity-60"
+        >
           Apply
         </button>
       </div>

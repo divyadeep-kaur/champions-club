@@ -68,7 +68,10 @@ export function ComingNext({ items }: { items: string[] }) {
   );
 }
 
-export const fieldCls = "min-h-11 w-full border border-[#b5aa98] bg-white p-3 text-[15px] font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+export const fieldCls =
+  "min-h-11 w-full border border-[#b5aa98] bg-white p-3 text-[15px] font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 export const labelCls = "grid gap-1.5 text-[14px] font-semibold";
-export const btnPrimary = "inline-flex min-h-11 items-center justify-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep disabled:opacity-70";
-export const btnOutline = "inline-flex min-h-11 items-center justify-center gap-2 border-[1.5px] border-forest px-4 py-2.5 font-semibold text-forest hover:bg-forest/5 disabled:opacity-70";
+export const btnPrimary =
+  "inline-flex min-h-11 items-center justify-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep disabled:opacity-70";
+export const btnOutline =
+  "inline-flex min-h-11 items-center justify-center gap-2 border-[1.5px] border-forest px-4 py-2.5 font-semibold text-forest hover:bg-forest/5 disabled:opacity-70";

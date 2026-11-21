@@ -10,7 +10,8 @@ import { SubpageHeader } from "@/components/landing/Navbar";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Courts this week · The Champions Club", description: "Free 1-hour slots for the next 7 days, live from the booking desk." };
 
-const pill = (on: boolean) => `min-h-11 rounded-full border-[1.5px] border-forest px-[18px] py-2.5 font-bold ${on ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`;
+const pill = (on: boolean) =>
+  `min-h-11 rounded-full border-[1.5px] border-forest px-[18px] py-2.5 font-bold ${on ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`;
 const time = (d: Date) => d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).replace(/ ?(am|pm)$/i, "");
 
 export default async function CourtsPage({ searchParams }: { searchParams: Promise<{ date?: string; sport?: string }> }) {
@@ -25,7 +26,10 @@ export default async function CourtsPage({ searchParams }: { searchParams: Promi
 
   const [courts, weekBookings, gold] = await Promise.all([
     db.court.findMany({ where: sport === "all" ? {} : { sport }, orderBy: [{ sport: "desc" }, { name: "asc" }] }),
-    db.booking.findMany({ where: { status: "booked", start: { gte: today, lt: addDays(today, 7) } }, select: { courtId: true, start: true, end: true, type: true } }),
+    db.booking.findMany({
+      where: { status: "booked", start: { gte: today, lt: addDays(today, 7) } },
+      select: { courtId: true, start: true, end: true, type: true },
+    }),
     db.plan.findFirst({ where: { name: "Gold" } }),
   ]);
 
@@ -59,7 +63,12 @@ export default async function CourtsPage({ searchParams }: { searchParams: Promi
               ["tennis", "Tennis"],
               ["cricket", "Cricket"],
             ].map(([k, l]) => (
-              <Link key={k} href={`/courts?${new URLSearchParams({ date, ...(k !== "all" ? { sport: k } : {}) })}`} aria-current={sport === k ? "true" : undefined} className={pill(sport === k)}>
+              <Link
+                key={k}
+                href={`/courts?${new URLSearchParams({ date, ...(k !== "all" ? { sport: k } : {}) })}`}
+                aria-current={sport === k ? "true" : undefined}
+                className={pill(sport === k)}
+              >
                 {l}
               </Link>
             ))}
@@ -108,7 +117,10 @@ export default async function CourtsPage({ searchParams }: { searchParams: Promi
                   <div className="flex flex-wrap gap-2">
                     {slots.map((s) =>
                       s.booked ? (
-                        <span key={s.start.toISOString()} className="rounded-full bg-[#ece5d6] px-3 py-2 text-[14px] font-semibold tabular-nums text-[#6b6357] line-through">
+                        <span
+                          key={s.start.toISOString()}
+                          className="rounded-full bg-[#ece5d6] px-3 py-2 text-[14px] font-semibold tabular-nums text-[#6b6357] line-through"
+                        >
                           {time(s.start)}
                           {s.social && !s.past ? " social" : ""}
                         </span>

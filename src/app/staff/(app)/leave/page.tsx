@@ -26,7 +26,9 @@ export default async function LeavePage() {
     <div className="grid content-start gap-5">
       <div>
         <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Leave</h1>
-        <p className="mt-1.5 text-muted">{isOwner ? "Approve or turn down leave. Approved days show on the payroll page." : "Ask for days off. The owner approves them here."}</p>
+        <p className="mt-1.5 text-muted">
+          {isOwner ? "Approve or turn down leave. Approved days show on the payroll page." : "Ask for days off. The owner approves them here."}
+        </p>
       </div>
       <div className="flex flex-wrap items-start gap-6">
         <div className="grid min-w-0 flex-[999_1_520px] gap-4">
@@ -46,7 +48,10 @@ export default async function LeavePage() {
                       <form key={d} action={decideLeave}>
                         <input type="hidden" name="leaveId" value={r.id} />
                         <input type="hidden" name="decision" value={d} />
-                        <button type="submit" className={`min-h-10 px-3.5 text-[14px] font-semibold ${d === "approved" ? "bg-forest text-cream hover:bg-forest-deep" : "border-[1.5px] border-[#a8411f] text-[#a8411f]"}`}>
+                        <button
+                          type="submit"
+                          className={`min-h-10 px-3.5 text-[14px] font-semibold ${d === "approved" ? "bg-forest text-cream hover:bg-forest-deep" : "border-[1.5px] border-[#a8411f] text-[#a8411f]"}`}
+                        >
                           {d === "approved" ? "Approve" : "Turn down"}
                         </button>
                       </form>

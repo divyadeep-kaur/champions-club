@@ -1,13 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const pattern = [
-  "g.P.gPPgPgPB",
-  "gPB.PgP..g.B",
-  "PgP......gLP",
-  "BBP......gCg",
-  "..gPPPgCBPgP",
-];
+const pattern = ["g.P.gPPgPgPB", "gPB.PgP..g.B", "PgP......gLP", "BBP......gCg", "..gPPPgCBPgP"];
 
 const photos = [
   { src: "/images/junior-cricket.jpg", w: 1100, h: 733, pos: "object-[45%_30%]", alt: "Junior cricketer" },
@@ -39,11 +33,31 @@ export function Athletes() {
   let photo = 0;
   return (
     <section aria-labelledby="athletes-title" className="relative overflow-hidden border-t border-line bg-paper">
-      <svg aria-hidden="true" className="absolute left-[6%] top-6 hidden text-[#c9c1b1] sm:block" width="70" height="80" viewBox="0 0 70 80" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+      <svg
+        aria-hidden="true"
+        className="absolute left-[6%] top-6 hidden text-[#c9c1b1] sm:block"
+        width="70"
+        height="80"
+        viewBox="0 0 70 80"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      >
         <path d="M6 4c4 26 18 48 52 62" />
         <path d="M44 66l15 1-6-14" />
       </svg>
-      <svg aria-hidden="true" className="absolute bottom-6 right-[8%] hidden text-[#c9c1b1] sm:block" width="70" height="120" viewBox="0 0 70 120" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+      <svg
+        aria-hidden="true"
+        className="absolute bottom-6 right-[8%] hidden text-[#c9c1b1] sm:block"
+        width="70"
+        height="120"
+        viewBox="0 0 70 120"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      >
         <path d="M14 4c22 20 30 44 10 58-12 8-22-4-10-12 16-10 28 14 24 56" />
         <path d="M27 103l11 13 9-15" />
       </svg>

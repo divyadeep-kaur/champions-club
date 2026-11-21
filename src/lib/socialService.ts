@@ -11,7 +11,10 @@ export const socialShare = (plan: { courtRate: number } | null, walkInRate: numb
 const paymentNote = (name: string) => `Social play: ${name}`;
 
 async function paidAmount(tx: Tx, bookingId: number, name: string) {
-  const rows = await tx.payment.findMany({ where: { source: "court", refId: bookingId, note: { in: [paymentNote(name), `Refund, social play: ${name}`] } }, select: { amount: true } });
+  const rows = await tx.payment.findMany({
+    where: { source: "court", refId: bookingId, note: { in: [paymentNote(name), `Refund, social play: ${name}`] } },
+    select: { amount: true },
+  });
   return rows.reduce((s, r) => s + r.amount, 0);
 }
 
@@ -28,7 +31,9 @@ export async function joinSession(tx: Tx, bookingId: number, who: { member: (Mem
     const dayEnd = new Date(dayStart.getTime() + 86_400_000);
     const [own, social] = await Promise.all([
       tx.booking.findMany({ where: { memberId: member.id, status: "booked", start: { gte: dayStart, lt: dayEnd } } }),
-      tx.socialPlayer.count({ where: { memberId: member.id, status: { in: ["confirmed", "offered"] }, booking: { status: "booked", start: { gte: dayStart, lt: dayEnd } } } }),
+      tx.socialPlayer.count({
+        where: { memberId: member.id, status: { in: ["confirmed", "offered"] }, booking: { status: "booked", start: { gte: dayStart, lt: dayEnd } } },
+      }),
     ]);
     if (own.some((b) => overlaps(b, booking))) throw new Error(`${member.name} is already on another court at that time`);
     if (own.length + social >= MAX_BOOKINGS_PER_DAY) throw new Error("Members can play at most twice a day");
@@ -55,7 +60,8 @@ export async function leaveSession(tx: Tx, playerId: number) {
   if (!player) return null;
   const paid = await paidAmount(tx, player.bookingId, player.name);
   await tx.socialPlayer.delete({ where: { id: player.id } });
-  if (paid > 0) await tx.payment.create({ data: { source: "court", refId: player.bookingId, amount: -paid, method: "cash", note: `Refund, social play: ${player.name}` } });
+  if (paid > 0)
+    await tx.payment.create({ data: { source: "court", refId: player.bookingId, amount: -paid, method: "cash", note: `Refund, social play: ${player.name}` } });
   if (player.status !== "waitlist") await offerNext(tx, player.bookingId);
   return player;
 }
@@ -65,7 +71,8 @@ export async function answerOffer(tx: Tx, playerId: number, accept: boolean, met
   if (!player || player.status !== "offered") return null;
   if (accept) {
     await tx.socialPlayer.update({ where: { id: player.id }, data: { status: "confirmed" } });
-    if (player.price > 0 && method) await tx.payment.create({ data: { source: "court", refId: player.bookingId, amount: player.price, method, note: paymentNote(player.name) } });
+    if (player.price > 0 && method)
+      await tx.payment.create({ data: { source: "court", refId: player.bookingId, amount: player.price, method, note: paymentNote(player.name) } });
   } else {
     await tx.socialPlayer.delete({ where: { id: player.id } });
     await offerNext(tx, player.bookingId);

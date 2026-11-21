@@ -37,7 +37,13 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
             ["counter", "Counter"],
             ["online", `Online orders${toPack ? ` (${toPack})` : ""}`],
           ].map(([k, l]) => (
-            <Link key={k} role="tab" aria-selected={view === k} href={k === "counter" ? "/staff/shop" : "/staff/shop?view=online"} className={`flex min-h-11 items-center px-[18px] font-semibold ${view === k ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}>
+            <Link
+              key={k}
+              role="tab"
+              aria-selected={view === k}
+              href={k === "counter" ? "/staff/shop" : "/staff/shop?view=online"}
+              className={`flex min-h-11 items-center px-[18px] font-semibold ${view === k ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}
+            >
               {l}
             </Link>
           ))}
@@ -63,8 +69,24 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
       {view === "counter" ? (
         <CounterSale
-          products={products.map((p) => ({ id: p.id, name: p.name, category: p.category, price: p.price, stock: p.stock, lowStockAt: p.lowStockAt, held: held.find((h) => h.productId === p.id)?._sum.qty ?? 0 }))}
-          members={members.map((m) => ({ code: m.code, name: m.name, plan: m.plan.name, shopDiscount: m.plan.shopDiscount, courtRate: m.plan.courtRate, barDiscount: m.plan.barDiscount, expired: m.endDate < today }))}
+          products={products.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            stock: p.stock,
+            lowStockAt: p.lowStockAt,
+            held: held.find((h) => h.productId === p.id)?._sum.qty ?? 0,
+          }))}
+          members={members.map((m) => ({
+            code: m.code,
+            name: m.name,
+            plan: m.plan.name,
+            shopDiscount: m.plan.shopDiscount,
+            courtRate: m.plan.courtRate,
+            barDiscount: m.plan.barDiscount,
+            expired: m.endDate < today,
+          }))}
         />
       ) : (
         <>
@@ -99,7 +121,9 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                       </td>
                       <td className="px-3.5 py-3 font-semibold tabular-nums">
                         {inr(o.total)}
-                        <span className="block text-[12.5px] font-normal text-muted">{o.paymentMethod ? `Paid · ${o.paymentMethod.toUpperCase()}` : "Pay on collection"}</span>
+                        <span className="block text-[12.5px] font-normal text-muted">
+                          {o.paymentMethod ? `Paid · ${o.paymentMethod.toUpperCase()}` : "Pay on collection"}
+                        </span>
                       </td>
                       <td className="px-3.5 py-3">
                         <div className="flex justify-end gap-2">
@@ -108,14 +132,24 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                               <form action={advanceOrder} className="flex gap-1">
                                 <input type="hidden" name="orderId" value={o.id} />
                                 {o.status === "ready" && !o.paymentMethod && (
-                                  <select name="method" aria-label="Paid by" defaultValue="upi" className="min-h-9 border border-[#b5aa98] bg-white px-1.5 text-[13.5px]">
+                                  <select
+                                    name="method"
+                                    aria-label="Paid by"
+                                    defaultValue="upi"
+                                    className="min-h-9 border border-[#b5aa98] bg-white px-1.5 text-[13.5px]"
+                                  >
                                     <option value="upi">UPI</option>
                                     <option value="cash">Cash</option>
                                     <option value="card">Card</option>
                                   </select>
                                 )}
-                                <button type="submit" className="min-h-9 border-[1.5px] border-forest px-3 text-[13.5px] font-semibold text-forest hover:bg-forest/5">
-                                  {o.status === "pending" ? "Mark packed" : `${o.fulfilment === "delivery" ? "Delivered" : "Collected"}${o.paymentMethod ? "" : " & paid"}`}
+                                <button
+                                  type="submit"
+                                  className="min-h-9 border-[1.5px] border-forest px-3 text-[13.5px] font-semibold text-forest hover:bg-forest/5"
+                                >
+                                  {o.status === "pending"
+                                    ? "Mark packed"
+                                    : `${o.fulfilment === "delivery" ? "Delivered" : "Collected"}${o.paymentMethod ? "" : " & paid"}`}
                                 </button>
                               </form>
                               <form action={cancelOrder}>
@@ -135,7 +169,10 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
             </table>
             {orders.length === 0 && <p className="px-4 py-10 text-center text-muted">No online orders yet.</p>}
           </div>
-          <p className="text-[14px] text-muted">Online orders and counter sales take stock from the same products, so the counts on the counter are always the real shelf. Cancelling an order puts its items back and refunds it.</p>
+          <p className="text-[14px] text-muted">
+            Online orders and counter sales take stock from the same products, so the counts on the counter are always the real shelf. Cancelling an order puts
+            its items back and refunds it.
+          </p>
         </>
       )}
     </div>

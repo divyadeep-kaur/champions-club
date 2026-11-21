@@ -56,7 +56,9 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             <p className="text-[20px] font-bold">{invoice.number}</p>
             <p className="text-muted">Issued {fmtDate(invoice.issuedAt)}</p>
             <p className="text-muted">Due {fmtDate(invoice.dueAt)}</p>
-            <p className={`mt-1 inline-block px-2 py-0.5 text-[13px] font-bold ${invoice.status === "paid" ? "bg-[#e3efc7] text-[#2f4a0a]" : "bg-[#f6e7b8] text-[#5f4605]"}`}>
+            <p
+              className={`mt-1 inline-block px-2 py-0.5 text-[13px] font-bold ${invoice.status === "paid" ? "bg-[#e3efc7] text-[#2f4a0a]" : "bg-[#f6e7b8] text-[#5f4605]"}`}
+            >
               {invoice.status === "paid" ? `Paid ${invoice.paidAt ? fmtDate(invoice.paidAt) : ""}` : "Unpaid"}
             </p>
           </div>

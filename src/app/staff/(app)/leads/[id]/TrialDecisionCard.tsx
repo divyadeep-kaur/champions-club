@@ -13,21 +13,36 @@ export function TrialDecisionCard({ leadId, canApprove }: { leadId: number; canA
     <section className="border border-[#e8c98f] bg-[#fbf1df] p-4">
       <h2 className="text-[17px] font-semibold text-[#7a4b0c]">Free trial request waiting for approval</h2>
       <p className="mt-1 text-[14.5px] text-[#5c4a2c]">
-        {canApprove ? "A court is held for them. Approve it, or decline and the court is freed." : "No court is held yet. Book a slot on the right and that approves it, or decline it here."}
+        {canApprove
+          ? "A court is held for them. Approve it, or decline and the court is freed."
+          : "No court is held yet. Book a slot on the right and that approves it, or decline it here."}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2.5">
         {canApprove && (
           <form action={approve}>
             <input type="hidden" name="leadId" value={leadId} />
-            <button type="submit" disabled={approving} className="inline-flex min-h-11 items-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep disabled:opacity-70">
+            <button
+              type="submit"
+              disabled={approving}
+              className="inline-flex min-h-11 items-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep disabled:opacity-70"
+            >
               {approving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Approve trial
             </button>
           </form>
         )}
         <form action={decline} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="leadId" value={leadId} />
-          <input name="reason" placeholder="Reason (optional)" aria-label="Reason for declining" className="min-h-11 border border-[#b5aa98] bg-white px-3 text-[15px] outline-none focus:border-forest" />
-          <button type="submit" disabled={declining} className="inline-flex min-h-11 items-center gap-2 border-[1.5px] border-clay/60 bg-white px-4 py-2.5 font-semibold text-clay hover:bg-clay-soft disabled:opacity-70">
+          <input
+            name="reason"
+            placeholder="Reason (optional)"
+            aria-label="Reason for declining"
+            className="min-h-11 border border-[#b5aa98] bg-white px-3 text-[15px] outline-none focus:border-forest"
+          />
+          <button
+            type="submit"
+            disabled={declining}
+            className="inline-flex min-h-11 items-center gap-2 border-[1.5px] border-clay/60 bg-white px-4 py-2.5 font-semibold text-clay hover:bg-clay-soft disabled:opacity-70"
+          >
             {declining ? <Loader2 className="size-4 animate-spin" /> : <X className="size-4" />} Decline
           </button>
         </form>

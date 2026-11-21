@@ -95,7 +95,17 @@ export async function advanceOrder(formData: FormData) {
   await db.$transaction([
     db.order.update({ where: { id: order.id }, data: { status: next[order.status], ...(needsPayment ? { paymentMethod: method } : {}) } }),
     ...(needsPayment
-      ? [db.payment.create({ data: { source: "shop", refId: order.id, amount: order.total, method, note: `Online order #${order.id}: ${order.items.map((i) => i.product.name).join(", ")}` } })]
+      ? [
+          db.payment.create({
+            data: {
+              source: "shop",
+              refId: order.id,
+              amount: order.total,
+              method,
+              note: `Online order #${order.id}: ${order.items.map((i) => i.product.name).join(", ")}`,
+            },
+          }),
+        ]
       : []),
   ]);
   refresh();
@@ -109,7 +119,19 @@ export async function cancelOrder(formData: FormData) {
   await db.$transaction([
     db.order.update({ where: { id: order.id }, data: { status: "cancelled" } }),
     ...order.items.map((i) => db.product.update({ where: { id: i.productId }, data: { stock: { increment: i.qty } } })),
-    ...((paid._sum.amount ?? 0) > 0 ? [db.payment.create({ data: { source: "shop", refId: order.id, amount: -(paid._sum.amount ?? 0), method: order.paymentMethod ?? "cash", note: `Refund, cancelled order #${order.id}` } })] : []),
+    ...((paid._sum.amount ?? 0) > 0
+      ? [
+          db.payment.create({
+            data: {
+              source: "shop",
+              refId: order.id,
+              amount: -(paid._sum.amount ?? 0),
+              method: order.paymentMethod ?? "cash",
+              note: `Refund, cancelled order #${order.id}`,
+            },
+          }),
+        ]
+      : []),
   ]);
   refresh();
 }

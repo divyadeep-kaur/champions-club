@@ -70,13 +70,23 @@ export async function runPayroll(formData: FormData) {
   refresh();
 }
 
-const lineSchema = z.object({ description: z.string().trim().min(1), qty: z.coerce.number().int().min(1).max(10_000), unitPrice: z.coerce.number().int().min(0).max(10_000_000), gstRate: z.coerce.number().int().refine((r) => [0, 5, 12, 18, 28].includes(r)) });
+const lineSchema = z.object({
+  description: z.string().trim().min(1),
+  qty: z.coerce.number().int().min(1).max(10_000),
+  unitPrice: z.coerce.number().int().min(0).max(10_000_000),
+  gstRate: z.coerce
+    .number()
+    .int()
+    .refine((r) => [0, 5, 12, 18, 28].includes(r)),
+});
 
 export async function createInvoice(_: MoneyState, formData: FormData): Promise<MoneyState> {
   await requireStaff(["owner"]);
   const customerName = String(formData.get("customerName") ?? "").trim();
   if (customerName.length < 2) return { error: "Enter who the invoice is for" };
-  const gstin = String(formData.get("customerGstin") ?? "").trim().toUpperCase();
+  const gstin = String(formData.get("customerGstin") ?? "")
+    .trim()
+    .toUpperCase();
   if (gstin && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(gstin)) return { error: "That GSTIN doesn’t look right (15 characters)" };
 
   const lines = [0, 1, 2]

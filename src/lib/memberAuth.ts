@@ -8,11 +8,7 @@ export type MemberSession = { memberId: number; name: string };
 const key = () => new TextEncoder().encode(process.env.SESSION_SECRET);
 
 export async function signMember(session: MemberSession) {
-  return new SignJWT({ ...session, kind: "member" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${MEMBER_MAX_AGE}s`)
-    .sign(key());
+  return new SignJWT({ ...session, kind: "member" }).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime(`${MEMBER_MAX_AGE}s`).sign(key());
 }
 
 export async function verifyMember(token: string | undefined): Promise<MemberSession | null> {

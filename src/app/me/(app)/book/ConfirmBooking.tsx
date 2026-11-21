@@ -6,7 +6,17 @@ import { Loader2, X } from "lucide-react";
 import { inr } from "@/lib/constants";
 import { memberBook, type MeState } from "../../actions";
 
-export function ConfirmBooking(props: { courtId: number; courtName: string; date: string; time: string; label: string; plan: string; price: number; walkIn: number; closeHref: string }) {
+export function ConfirmBooking(props: {
+  courtId: number;
+  courtName: string;
+  date: string;
+  time: string;
+  label: string;
+  plan: string;
+  price: number;
+  walkIn: number;
+  closeHref: string;
+}) {
   const [state, action, pending] = useActionState<MeState, FormData>(memberBook, {});
   return (
     <div className="fixed inset-x-0 bottom-[68px] z-20 mx-auto max-w-[560px] px-3">
@@ -31,7 +41,11 @@ export function ConfirmBooking(props: { courtId: number; courtName: string; date
             {state.error}
           </p>
         )}
-        <button type="submit" disabled={pending} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-70">
+        <button
+          type="submit"
+          disabled={pending}
+          className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-70"
+        >
           {pending && <Loader2 className="size-4 animate-spin" />}
           Confirm booking
         </button>

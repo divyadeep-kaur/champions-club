@@ -21,9 +21,7 @@ export default async function MemberCafe() {
         <Image src="/images/cafe-bowl.jpg" alt="" aria-hidden="true" fill priority unoptimized sizes="560px" className="object-cover" />
         <div className="absolute inset-x-4 bottom-3.5 rounded-2xl border border-white/30 bg-forest-deep/50 px-4 py-3 text-white backdrop-blur-md">
           <h1 className="text-[24px] font-extrabold">Café &amp; bar</h1>
-          <span className="text-[14px]">
-            Order to your table{discount ? ` · ${discount}% ${member.plan.name} discount` : ""}
-          </span>
+          <span className="text-[14px]">Order to your table{discount ? ` · ${discount}% ${member.plan.name} discount` : ""}</span>
         </div>
       </div>
       <CafeMenu

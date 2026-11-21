@@ -79,7 +79,11 @@ export async function attachMember(_: TabState, formData: FormData): Promise<Tab
   const ref = String(formData.get("member") ?? "").trim();
   const code = ref.match(/CC-\d{4}/i)?.[0]?.toUpperCase();
   const digits = ref.replace(/\D/g, "");
-  const member = code ? await db.member.findUnique({ where: { code } }) : digits.length === 10 ? await db.member.findUnique({ where: { phone: digits } }) : null;
+  const member = code
+    ? await db.member.findUnique({ where: { code } })
+    : digits.length === 10
+      ? await db.member.findUnique({ where: { phone: digits } })
+      : null;
   if (!member) return { error: "No member found. Use their code or 10-digit phone" };
   await db.$transaction(async (tx) => {
     await tx.tab.update({ where: { id: tabId }, data: { memberId: member.id, guestName: null } });
@@ -99,7 +103,15 @@ export async function settleTab(formData: FormData) {
   const shift = await openShift(staff.id);
   await db.$transaction([
     db.tab.update({ where: { id: tab.id }, data: { status: "paid", paymentMethod: method, closedAt: new Date(), shiftId: tab.shiftId ?? shift?.id } }),
-    db.payment.create({ data: { source: "bar", refId: tab.id, amount: tab.total, method, note: `${tab.table ? `${tab.table.label} tab` : "Counter tab"}${tab.member ? ` · ${tab.member.name}` : ""}` } }),
+    db.payment.create({
+      data: {
+        source: "bar",
+        refId: tab.id,
+        amount: tab.total,
+        method,
+        note: `${tab.table ? `${tab.table.label} tab` : "Counter tab"}${tab.member ? ` · ${tab.member.name}` : ""}`,
+      },
+    }),
   ]);
   refresh();
   redirect(`/staff/bar?paid=${encodeURIComponent(`${tab.table?.label ?? "Counter"} paid ${inr(tab.total)} by ${method.toUpperCase()}`)}`);

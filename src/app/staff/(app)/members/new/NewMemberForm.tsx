@@ -6,7 +6,16 @@ import { inr } from "@/lib/constants";
 import { createMember, type FormState } from "../actions";
 import { VisitPreview, type Visit } from "./VisitPreview";
 
-type Plan = { id: number; name: string; monthlyFee: number; courtRate: number; shopDiscount: number; barDiscount: number; durationDays: number; description: string };
+type Plan = {
+  id: number;
+  name: string;
+  monthlyFee: number;
+  courtRate: number;
+  shopDiscount: number;
+  barDiscount: number;
+  durationDays: number;
+  description: string;
+};
 
 const input =
   "mt-1.5 w-full border border-[#b5aa98] bg-white px-3.5 py-2.5 text-[15.5px] text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
@@ -73,7 +82,12 @@ export function NewMemberForm({ plans, visit, defaults }: { plans: Plan[]; visit
         </label>
         <label className="block">
           <span className={label}>
-            Date of birth {selected?.name === "Junior" ? <span className="font-normal text-clay">(needed for Junior)</span> : <span className="font-normal text-muted">(optional)</span>}
+            Date of birth{" "}
+            {selected?.name === "Junior" ? (
+              <span className="font-normal text-clay">(needed for Junior)</span>
+            ) : (
+              <span className="font-normal text-muted">(optional)</span>
+            )}
           </span>
           <input name="birthDate" type="date" defaultValue={f.birthDate} max={new Date().toISOString().slice(0, 10)} className={input} />
         </label>

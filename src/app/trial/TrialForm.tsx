@@ -5,7 +5,8 @@ import { useActionState, useEffect, useState } from "react";
 import { CheckCircle2, Clock3, Loader2, XCircle } from "lucide-react";
 import { submitTrial, trialStatus, type TrialState, type TrialStatus } from "./actions";
 
-const field = "min-h-11 rounded-[10px] border border-[#b5aa98] bg-white p-3 font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+const field =
+  "min-h-11 rounded-[10px] border border-[#b5aa98] bg-white p-3 font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 const label = "grid gap-1.5 text-[14px] font-bold";
 
 const interests = [
@@ -33,7 +34,8 @@ export function TrialForm({
       <div role="status" className="grid gap-3.5">
         <h2 className="text-[32px] font-extrabold text-forest">Thanks, {state.done.name}!</h2>
         <p className="text-[17px] leading-relaxed">
-          We’ve got your request{state.done.when ? (
+          We’ve got your request
+          {state.done.when ? (
             <>
               {" "}
               for <strong>{state.done.when}</strong>
@@ -111,9 +113,19 @@ export function TrialForm({
       {courtName && interest === "trial" && <p className="-mt-2 text-[14px] text-muted">You picked {courtName}. We’ll hold it while we call you.</p>}
       <label className={label}>
         Anything we should know? (optional)
-        <textarea name="message" defaultValue={f.message} rows={3} placeholder={interest === "membership" ? "e.g. family of three, mostly weekends" : "e.g. haven’t played in a few years"} className={field} />
+        <textarea
+          name="message"
+          defaultValue={f.message}
+          rows={3}
+          placeholder={interest === "membership" ? "e.g. family of three, mostly weekends" : "e.g. haven’t played in a few years"}
+          className={field}
+        />
       </label>
-      <button type="submit" disabled={pending} className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-forest p-4 text-[17px] font-extrabold text-cream hover:bg-forest-deep disabled:opacity-70">
+      <button
+        type="submit"
+        disabled={pending}
+        className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-forest p-4 text-[17px] font-extrabold text-cream hover:bg-forest-deep disabled:opacity-70"
+      >
         {pending && <Loader2 className="size-4 animate-spin" />}
         {interest === "trial" ? "Request my free trial" : "Send my enquiry"}
       </button>
@@ -149,7 +161,13 @@ function LiveStatus({ id, phone, held }: { id: number; phone: string; held?: str
       <p role="status" className="flex items-start gap-2.5 bg-[#e3efc7] px-3.5 py-3 text-[15px] text-[#2f4a0a]">
         <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         <span>
-          <strong>Approved!</strong> Your free trial is confirmed{status.court ? <> on <strong>{status.court}</strong></> : null}
+          <strong>Approved!</strong> Your free trial is confirmed
+          {status.court ? (
+            <>
+              {" "}
+              on <strong>{status.court}</strong>
+            </>
+          ) : null}
           {status.when ? <>, {status.when}</> : null}. See you at the club.
         </span>
       </p>
@@ -168,7 +186,14 @@ function LiveStatus({ id, phone, held }: { id: number; phone: string; held?: str
       <Clock3 className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
       <span>
         <strong>Waiting for approval.</strong>{" "}
-        {held ? <>We’re holding <strong>{held}</strong> for you while the desk checks it.</> : "The desk will pick a court for you."} This updates by itself.
+        {held ? (
+          <>
+            We’re holding <strong>{held}</strong> for you while the desk checks it.
+          </>
+        ) : (
+          "The desk will pick a court for you."
+        )}{" "}
+        This updates by itself.
       </span>
     </p>
   );

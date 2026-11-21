@@ -37,10 +37,19 @@ export function SocialCard(p: Props) {
           {p.waiting ? `${p.waiting} waiting` : "players"}
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-[#ece5d6]" role="progressbar" aria-valuenow={p.playing} aria-valuemin={0} aria-valuemax={p.capacity} aria-label="Places filled">
+      <div
+        className="h-1.5 rounded-full bg-[#ece5d6]"
+        role="progressbar"
+        aria-valuenow={p.playing}
+        aria-valuemin={0}
+        aria-valuemax={p.capacity}
+        aria-label="Places filled"
+      >
         <div className="h-full rounded-full bg-clay" style={{ width: `${pct}%` }} />
       </div>
-      <p className="text-[13.5px] text-muted">Come alone, get matched on a shared court. {p.price ? `Your share is ₹${p.price}, paid at the desk.` : "Free on your plan."}</p>
+      <p className="text-[13.5px] text-muted">
+        Come alone, get matched on a shared court. {p.price ? `Your share is ₹${p.price}, paid at the desk.` : "Free on your plan."}
+      </p>
 
       {p.me?.status === "offered" ? (
         <div className="grid gap-2">
@@ -50,7 +59,10 @@ export function SocialCard(p: Props) {
               <form key={a} action={memberAnswerOffer}>
                 <input type="hidden" name="playerId" value={p.me!.id} />
                 <input type="hidden" name="answer" value={a} />
-                <button type="submit" className={`min-h-11 w-full rounded-full font-bold ${a === "accept" ? "bg-forest text-cream" : "border-[1.5px] border-line text-muted"}`}>
+                <button
+                  type="submit"
+                  className={`min-h-11 w-full rounded-full font-bold ${a === "accept" ? "bg-forest text-cream" : "border-[1.5px] border-line text-muted"}`}
+                >
                   {a === "accept" ? "Take the place" : "No thanks"}
                 </button>
               </form>
@@ -70,13 +82,21 @@ export function SocialCard(p: Props) {
       ) : !p.closed ? (
         <form action={join}>
           <input type="hidden" name="bookingId" value={p.bookingId} />
-          <button type="submit" disabled={pending} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-clay font-bold text-white disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={pending}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-clay font-bold text-white disabled:opacity-60"
+          >
             {pending && <Loader2 className="size-4 animate-spin" />}
             {full ? "Join the waitlist" : "Join social play"}
           </button>
         </form>
       ) : null}
-      {(state.ok || state.error) && <p className={`rounded-xl p-2.5 text-[14px] ${state.error ? "bg-clay-soft text-[#7a2f14]" : "bg-[#e3efc7] text-[#2f4a0a]"}`}>{state.error ?? state.ok}</p>}
+      {(state.ok || state.error) && (
+        <p className={`rounded-xl p-2.5 text-[14px] ${state.error ? "bg-clay-soft text-[#7a2f14]" : "bg-[#e3efc7] text-[#2f4a0a]"}`}>
+          {state.error ?? state.ok}
+        </p>
+      )}
     </section>
   );
 }

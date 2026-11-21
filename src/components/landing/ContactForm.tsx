@@ -4,7 +4,8 @@ import { useActionState, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { submitTrial, type TrialState } from "@/app/trial/actions";
 
-const field = "min-h-11 rounded-[10px] border border-[#b5aa98] bg-white p-3 font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+const field =
+  "min-h-11 rounded-[10px] border border-[#b5aa98] bg-white p-3 font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 const label = "grid gap-1.5 text-[14px] font-bold";
 
 export function ContactForm() {
@@ -57,7 +58,11 @@ export function ContactForm() {
         Message
         <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} className={field} />
       </label>
-      <button type="submit" disabled={pending} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-4 text-[17px] font-extrabold text-forest-deep hover:bg-[#b6dd45] disabled:opacity-70">
+      <button
+        type="submit"
+        disabled={pending}
+        className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-4 text-[17px] font-extrabold text-forest-deep hover:bg-[#b6dd45] disabled:opacity-70"
+      >
         {pending && <Loader2 className="size-4 animate-spin" />}
         Send us a message
       </button>

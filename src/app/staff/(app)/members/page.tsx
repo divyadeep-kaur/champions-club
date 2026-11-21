@@ -23,13 +23,26 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
   const phone = normalizePhone(term);
   const where: Prisma.MemberWhereInput = {
     AND: [
-      term ? { OR: [{ name: { contains: term } }, { code: { contains: term.toUpperCase() } }, { phone: { contains: phone ?? (term.replace(/\D/g, "") || term) } }] } : {},
-      status === "active" ? { endDate: { gte: weekOut } } : status === "ending" ? { endDate: { gte: today, lt: weekOut } } : status === "expired" ? { endDate: { lt: today } } : {},
+      term
+        ? {
+            OR: [{ name: { contains: term } }, { code: { contains: term.toUpperCase() } }, { phone: { contains: phone ?? (term.replace(/\D/g, "") || term) } }],
+          }
+        : {},
+      status === "active"
+        ? { endDate: { gte: weekOut } }
+        : status === "ending"
+          ? { endDate: { gte: today, lt: weekOut } }
+          : status === "expired"
+            ? { endDate: { lt: today } }
+            : {},
       plan !== "all" ? { plan: { name: plan } } : {},
     ],
   };
 
-  const [members, plans] = await Promise.all([db.member.findMany({ where, include: { plan: true }, orderBy: { name: "asc" } }), db.plan.findMany({ orderBy: { monthlyFee: "desc" } })]);
+  const [members, plans] = await Promise.all([
+    db.member.findMany({ where, include: { plan: true }, orderBy: { name: "asc" } }),
+    db.plan.findMany({ orderBy: { monthlyFee: "desc" } }),
+  ]);
   const pickedId = Number(selected) || members[0]?.id;
   const picked = pickedId
     ? await db.member.findUnique({
@@ -46,7 +59,11 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
   const history = picked
     ? [
-        ...picked.bookings.map((b) => ({ when: b.start, what: `${b.court.name}${b.status === "cancelled" ? " (cancelled)" : ""}`, amount: b.price ? inr(b.price) : "—" })),
+        ...picked.bookings.map((b) => ({
+          when: b.start,
+          what: `${b.court.name}${b.status === "cancelled" ? " (cancelled)" : ""}`,
+          amount: b.price ? inr(b.price) : "—",
+        })),
         ...picked.orders.map((o) => ({ when: o.createdAt, what: o.items.map((i) => i.product.name).join(", "), amount: inr(o.total) })),
         ...picked.tabs.map((t) => ({ when: t.openedAt, what: "Café & bar tab", amount: inr(t.total) })),
         ...payments.map((p) => ({ when: p.createdAt, what: p.note ?? "Membership", amount: inr(p.amount) })),
@@ -55,7 +72,8 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         .slice(0, 7)
     : [];
 
-  const qs = (extra: Record<string, string>) => `/staff/members?${new URLSearchParams({ ...(term ? { q: term } : {}), ...(status !== "all" ? { status } : {}), ...(plan !== "all" ? { plan } : {}), ...extra })}`;
+  const qs = (extra: Record<string, string>) =>
+    `/staff/members?${new URLSearchParams({ ...(term ? { q: term } : {}), ...(status !== "all" ? { status } : {}), ...(plan !== "all" ? { plan } : {}), ...extra })}`;
 
   return (
     <div className="flex flex-wrap content-start gap-6">
@@ -115,7 +133,12 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                 return (
                   <tr key={m.id} className={`relative border-t border-line ${on ? "bg-[#e3efc7]" : "hover:bg-cream"}`}>
                     <td className="px-3.5 py-3 font-semibold">
-                      <Link href={qs({ selected: String(m.id) })} scroll={false} aria-current={on ? "true" : undefined} className="after:absolute after:inset-0">
+                      <Link
+                        href={qs({ selected: String(m.id) })}
+                        scroll={false}
+                        aria-current={on ? "true" : undefined}
+                        className="after:absolute after:inset-0"
+                      >
                         {m.name}
                       </Link>
                     </td>
@@ -123,7 +146,9 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                     <td className="px-3.5 py-3 tabular-nums">{m.phone}</td>
                     <td className="px-3.5 py-3">{m.plan.name}</td>
                     <td className="px-3.5 py-3">{short(m.endDate)}</td>
-                    <td className={`px-3.5 py-3 font-semibold ${s.status === "active" ? "text-[#4d7a12]" : s.status === "ending" ? "text-[#a8411f]" : "text-muted"}`}>
+                    <td
+                      className={`px-3.5 py-3 font-semibold ${s.status === "active" ? "text-[#4d7a12]" : s.status === "ending" ? "text-[#a8411f]" : "text-muted"}`}
+                    >
                       {s.status === "active" ? "Active" : s.status === "ending" ? (s.daysLeft === 0 ? "Ends today" : `Ends in ${s.daysLeft}d`) : "Expired"}
                     </td>
                   </tr>
@@ -158,7 +183,8 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
               </span>
             </div>
             <div className="opacity-85">
-              Courts {picked.plan.courtRate === 0 ? "free" : `${inr(picked.plan.courtRate)}/hr`} · Shop {picked.plan.shopDiscount}% · Bar {picked.plan.barDiscount}%
+              Courts {picked.plan.courtRate === 0 ? "free" : `${inr(picked.plan.courtRate)}/hr`} · Shop {picked.plan.shopDiscount}% · Bar{" "}
+              {picked.plan.barDiscount}%
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">

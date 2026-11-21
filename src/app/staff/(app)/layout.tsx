@@ -9,7 +9,17 @@ export const metadata = { title: "Staff · The Champions Club" };
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   const session = await requireStaff();
   const nav = navFor(session.role);
-  const newLeads = nav.some((i) => i.href === "/staff/leads") ? await db.lead.count({ where: { OR: [{ status: "new", interest: { not: "trial" } }, { interest: "trial", status: { in: ["new", "trial", "contacted", "quoted"] }, activities: { none: { kind: { in: ["approved", "declined"] } } } }], createdAt: { gte: new Date(Date.now() - 14 * 86_400_000) } } }) : 0;
+  const newLeads = nav.some((i) => i.href === "/staff/leads")
+    ? await db.lead.count({
+        where: {
+          OR: [
+            { status: "new", interest: { not: "trial" } },
+            { interest: "trial", status: { in: ["new", "trial", "contacted", "quoted"] }, activities: { none: { kind: { in: ["approved", "declined"] } } } },
+          ],
+          createdAt: { gte: new Date(Date.now() - 14 * 86_400_000) },
+        },
+      })
+    : 0;
   const items = nav.map(({ href, label, icon }) => ({ href, label, icon, badge: href === "/staff/leads" ? newLeads : undefined }));
 
   return (

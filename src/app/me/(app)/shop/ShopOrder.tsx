@@ -8,7 +8,13 @@ import { placeOrder, type ShopState } from "./actions";
 
 type Product = { id: number; name: string; category: string; price: number; stock: number; memberPrice: number };
 
-export function ShopOrder({ products, plan }: { products: Product[]; plan: { name: string; shopDiscount: number; courtRate: number; barDiscount: number } | null }) {
+export function ShopOrder({
+  products,
+  plan,
+}: {
+  products: Product[];
+  plan: { name: string; shopDiscount: number; courtRate: number; barDiscount: number } | null;
+}) {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [fulfilment, setFulfilment] = useState<"pickup" | "delivery">("pickup");
   const [state, action, pending] = useActionState<ShopState, FormData>(placeOrder, {});
@@ -21,7 +27,11 @@ export function ShopOrder({ products, plan }: { products: Product[]; plan: { nam
     .filter(([, q]) => q > 0)
     .map(([id, qty]) => ({ productId: Number(id), qty, product: products.find((p) => p.id === Number(id))! }))
     .filter((l) => l.product);
-  const t = cartTotals(lines.map((l) => ({ unitPrice: l.product.price, qty: l.qty })), plan, "shop");
+  const t = cartTotals(
+    lines.map((l) => ({ unitPrice: l.product.price, qty: l.qty })),
+    plan,
+    "shop",
+  );
   const change = (p: Product, d: number) => setCart((c) => ({ ...c, [p.id]: Math.max(0, Math.min(p.stock, 10, (c[p.id] ?? 0) + d)) }));
   const categories = [...new Set(products.map((p) => p.category))];
 
@@ -55,13 +65,25 @@ export function ShopOrder({ products, plan }: { products: Product[]; plan: { nam
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button type="button" aria-label={`Remove one ${p.name}`} disabled={qty === 0} onClick={() => change(p, -1)} className="size-11 rounded-full border-[1.5px] border-forest text-[20px] text-forest disabled:opacity-35">
+                    <button
+                      type="button"
+                      aria-label={`Remove one ${p.name}`}
+                      disabled={qty === 0}
+                      onClick={() => change(p, -1)}
+                      className="size-11 rounded-full border-[1.5px] border-forest text-[20px] text-forest disabled:opacity-35"
+                    >
                       −
                     </button>
                     <span className="min-w-4 text-center font-extrabold tabular-nums" aria-live="polite">
                       {qty}
                     </span>
-                    <button type="button" aria-label={`Add one ${p.name}`} disabled={out || qty >= p.stock} onClick={() => change(p, 1)} className="size-11 rounded-full bg-forest text-[20px] text-cream disabled:opacity-35">
+                    <button
+                      type="button"
+                      aria-label={`Add one ${p.name}`}
+                      disabled={out || qty >= p.stock}
+                      onClick={() => change(p, 1)}
+                      className="size-11 rounded-full bg-forest text-[20px] text-cream disabled:opacity-35"
+                    >
                       +
                     </button>
                   </div>
@@ -74,12 +96,26 @@ export function ShopOrder({ products, plan }: { products: Product[]; plan: { nam
       <div className="sticky bottom-[68px] z-20 mx-3 grid gap-2.5 rounded-[20px] bg-forest-deep/90 px-4 py-3.5 text-white">
         <div role="radiogroup" aria-label="How do you want it" className="grid grid-cols-2 gap-2">
           {(["pickup", "delivery"] as const).map((f) => (
-            <button key={f} type="button" role="radio" aria-checked={fulfilment === f} onClick={() => setFulfilment(f)} className={`min-h-10 rounded-full border-[1.5px] text-[14px] font-bold ${fulfilment === f ? "border-ball bg-ball text-forest-deep" : "border-white/40 text-white"}`}>
+            <button
+              key={f}
+              type="button"
+              role="radio"
+              aria-checked={fulfilment === f}
+              onClick={() => setFulfilment(f)}
+              className={`min-h-10 rounded-full border-[1.5px] text-[14px] font-bold ${fulfilment === f ? "border-ball bg-ball text-forest-deep" : "border-white/40 text-white"}`}
+            >
               {f === "pickup" ? "Collect at club" : "Deliver to me"}
             </button>
           ))}
         </div>
-        {fulfilment === "delivery" && <input name="address" placeholder="House, street, area, city" autoComplete="street-address" className="min-h-11 rounded-xl border-0 bg-white px-3 text-[15px] text-ink outline-none" />}
+        {fulfilment === "delivery" && (
+          <input
+            name="address"
+            placeholder="House, street, area, city"
+            autoComplete="street-address"
+            className="min-h-11 rounded-xl border-0 bg-white px-3 text-[15px] text-ink outline-none"
+          />
+        )}
         <div className="flex justify-between gap-2 text-[14px]">
           <span>
             {lines.reduce((n, l) => n + l.qty, 0)} items · {inr(t.subtotal)}
@@ -91,7 +127,11 @@ export function ShopOrder({ products, plan }: { products: Product[]; plan: { nam
             {state.error ?? state.ok}
           </p>
         )}
-        <button type="submit" disabled={pending || lines.length === 0} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={pending || lines.length === 0}
+          className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-60"
+        >
           {pending && <Loader2 className="size-4 animate-spin" />}
           Place order · {inr(t.total)}
         </button>

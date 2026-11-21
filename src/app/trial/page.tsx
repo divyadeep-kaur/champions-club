@@ -28,7 +28,15 @@ export default async function TrialPage({ searchParams }: { searchParams: Promis
       />
       <main className="mx-auto grid max-w-[1280px] items-stretch gap-8 px-4 pb-20 pt-10 sm:px-8 lg:grid-cols-2">
         <div className="relative flex min-h-[420px] items-end overflow-hidden rounded-3xl p-[22px] lg:min-h-[560px]">
-          <Image src="/images/tennis-court.jpg" alt="Floodlit tennis court with umpire chair" fill priority unoptimized sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover object-[50%_55%]" />
+          <Image
+            src="/images/tennis-court.jpg"
+            alt="Floodlit tennis court with umpire chair"
+            fill
+            priority
+            unoptimized
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover object-[50%_55%]"
+          />
           <div className="relative grid gap-3.5 rounded-[18px] border border-white/25 bg-forest-deep/55 p-7 text-white backdrop-blur-[14px]">
             <h1 className="text-[clamp(36px,4vw,52px)] font-extrabold leading-[1.05] tracking-[-0.03em]">
               {interest === "membership" ? (

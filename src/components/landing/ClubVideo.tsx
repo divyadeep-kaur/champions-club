@@ -14,7 +14,10 @@ export function ClubVideo() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+        if (e.isIntersecting)
+          v.play()
+            .then(() => setPlaying(true))
+            .catch(() => setPlaying(false));
         else {
           v.pause();
           setPlaying(false);
@@ -29,7 +32,10 @@ export function ClubVideo() {
   const toggle = () => {
     const v = ref.current;
     if (!v) return;
-    if (v.paused) v.play().then(() => setPlaying(true)).catch(() => {});
+    if (v.paused)
+      v.play()
+        .then(() => setPlaying(true))
+        .catch(() => {});
     else {
       v.pause();
       setPlaying(false);
@@ -48,7 +54,17 @@ export function ClubVideo() {
   return (
     <section id="club-video" aria-label="Club video" className="mx-auto max-w-[1280px] scroll-mt-20 px-4 pt-20 sm:px-8 sm:pt-24">
       <div className="relative overflow-hidden rounded-3xl bg-forest-deep">
-        <video ref={ref} className="block aspect-[2/1] w-full object-cover" src="/videos/club-tour.mp4" poster="/videos/club-tour-poster.jpg" muted loop playsInline preload="metadata" aria-label="A short film about running the club: bookings, gear, analytics and keeping players coming back" />
+        <video
+          ref={ref}
+          className="block aspect-[2/1] w-full object-cover"
+          src="/videos/club-tour.mp4"
+          poster="/videos/club-tour-poster.jpg"
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-label="A short film about running the club: bookings, gear, analytics and keeping players coming back"
+        />
         <div className="absolute bottom-4 right-4 flex gap-2">
           <button type="button" onClick={toggle} aria-label={playing ? "Pause video" : "Play video"} className={btn}>
             {playing ? <Pause className="size-5" /> : <Play className="size-5" />}

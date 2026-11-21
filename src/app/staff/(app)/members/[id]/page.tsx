@@ -21,7 +21,10 @@ function HistorySection({ title, rows }: { title: string; rows: Row[] }) {
       <h2 className="mb-2.5 text-[17px] font-semibold">{title}</h2>
       {rows.length === 0 && <p className="border-t border-[#ece5d6] py-2.5 text-[14.5px] text-muted">Nothing yet.</p>}
       {rows.map((r, i) => (
-        <div key={i} className={`grid grid-cols-[80px_minmax(0,1fr)_auto] gap-2.5 border-t border-[#ece5d6] py-2.5 text-[14.5px] ${r.struck ? "text-muted line-through" : ""}`}>
+        <div
+          key={i}
+          className={`grid grid-cols-[80px_minmax(0,1fr)_auto] gap-2.5 border-t border-[#ece5d6] py-2.5 text-[14.5px] ${r.struck ? "text-muted line-through" : ""}`}
+        >
           <span className="text-muted">{short(r.when)}</span>
           <span className="truncate">{r.what}</span>
           <strong className="tabular-nums">{r.amount}</strong>
@@ -137,7 +140,10 @@ export default async function MemberProfile({ params, searchParams }: { params: 
             struck: b.status === "cancelled",
           }))}
         />
-        <HistorySection title="Membership payments" rows={payments.map((p) => ({ when: p.createdAt, what: `${p.note ?? "Membership"} · ${p.method.toUpperCase()}`, amount: inr(p.amount) }))} />
+        <HistorySection
+          title="Membership payments"
+          rows={payments.map((p) => ({ when: p.createdAt, what: `${p.note ?? "Membership"} · ${p.method.toUpperCase()}`, amount: inr(p.amount) }))}
+        />
         <HistorySection
           title="Shop purchases"
           rows={member.orders.map((o) => ({
@@ -148,7 +154,11 @@ export default async function MemberProfile({ params, searchParams }: { params: 
         />
         <HistorySection
           title="Café & bar"
-          rows={member.tabs.map((t) => ({ when: t.openedAt, what: `${t.status === "open" ? "Open tab" : "Tab"}${t.discount ? ` (−${inr(t.discount)} member discount)` : ""}`, amount: inr(t.total) }))}
+          rows={member.tabs.map((t) => ({
+            when: t.openedAt,
+            what: `${t.status === "open" ? "Open tab" : "Tab"}${t.discount ? ` (−${inr(t.discount)} member discount)` : ""}`,
+            amount: inr(t.total),
+          }))}
         />
       </div>
     </div>

@@ -7,7 +7,16 @@ import { inr } from "@/lib/constants";
 import { courtPrice } from "@/lib/pricing";
 import { createBooking, type BookingState } from "./actions";
 
-export type MemberOption = { code: string; name: string; plan: string; courtRate: number; shopDiscount: number; barDiscount: number; expired: boolean; today: number };
+export type MemberOption = {
+  code: string;
+  name: string;
+  plan: string;
+  courtRate: number;
+  shopDiscount: number;
+  barDiscount: number;
+  expired: boolean;
+  today: number;
+};
 
 const input = "mt-1 w-full border border-[#b5aa98] bg-white px-3 py-2.5 text-[15px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 const lbl = "text-[13px] font-semibold text-muted";
@@ -148,9 +157,7 @@ export function NewBookingForm({
       <div className="flex items-center justify-between border-t border-line pt-4">
         <div>
           <p className="text-[13px] text-muted">Price</p>
-          <p className="font-serif text-[26px] font-semibold leading-none text-forest">
-            {price === null ? "—" : price === 0 ? "Free" : inr(price)}
-          </p>
+          <p className="font-serif text-[26px] font-semibold leading-none text-forest">{price === null ? "—" : price === 0 ? "Free" : inr(price)}</p>
           {type === "regular" && who === "member" && member && member.courtRate < court.walkInRate && (
             <p className="mt-1 text-[12.5px] text-[#4d7a12]">saves {inr(court.walkInRate - member.courtRate)} on walk-in</p>
           )}

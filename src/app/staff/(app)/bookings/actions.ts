@@ -87,7 +87,11 @@ export async function cancelBooking(formData: FormData) {
   await db.$transaction([
     db.booking.update({ where: { id }, data: { status: "cancelled" } }),
     ...(refund > 0
-      ? [db.payment.create({ data: { source: "court", refId: id, amount: -refund, method: "cash", note: `Refund for cancelled ${booking.court.name} booking` } })]
+      ? [
+          db.payment.create({
+            data: { source: "court", refId: id, amount: -refund, method: "cash", note: `Refund for cancelled ${booking.court.name} booking` },
+          }),
+        ]
       : []),
   ]);
 

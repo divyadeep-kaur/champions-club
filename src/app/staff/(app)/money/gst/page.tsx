@@ -18,11 +18,19 @@ export default async function GstPage({ searchParams }: { searchParams: Promise<
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={`/staff/money/gst?month=${prev}`} aria-label="Previous month" className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5">
+        <Link
+          href={`/staff/money/gst?month=${prev}`}
+          aria-label="Previous month"
+          className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5"
+        >
           ‹
         </Link>
         <span className="px-2 text-[17px] font-semibold">{monthLabel(from)}</span>
-        <Link href={`/staff/money/gst?month=${next}`} aria-label="Next month" className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5">
+        <Link
+          href={`/staff/money/gst?month=${next}`}
+          aria-label="Next month"
+          className="grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5"
+        >
           ›
         </Link>
       </div>
@@ -69,7 +77,8 @@ export default async function GstPage({ searchParams }: { searchParams: Promise<
         </table>
       </div>
       <p className="text-[13.5px] text-muted">
-        Estimate for filing. Prices are treated as GST-inclusive, at 18% for court time and memberships, 12% for shop goods and 5% for café food and drinks. Check the rates with your accountant before filing GSTR-1 / GSTR-3B. Refunds reduce the totals.
+        Estimate for filing. Prices are treated as GST-inclusive, at 18% for court time and memberships, 12% for shop goods and 5% for café food and drinks.
+        Check the rates with your accountant before filing GSTR-1 / GSTR-3B. Refunds reduce the totals.
       </p>
     </>
   );

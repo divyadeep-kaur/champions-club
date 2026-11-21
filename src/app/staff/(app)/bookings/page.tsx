@@ -58,7 +58,16 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
 
   const court = sp.court ? courts.find((c) => c.id === Number(sp.court)) : undefined;
   const slotStart = court && sp.time?.match(/^\d{2}:\d{2}$/) ? new Date(`${date}T${sp.time}:00`) : null;
-  const win: GridWindow = sp.w && sp.w in WINDOWS ? (sp.w as GridWindow) : slotStart ? (slotStart.getHours() < 12 ? "morning" : slotStart.getHours() < 17 ? "afternoon" : "evening") : defaultWindow(now, day);
+  const win: GridWindow =
+    sp.w && sp.w in WINDOWS
+      ? (sp.w as GridWindow)
+      : slotStart
+        ? slotStart.getHours() < 12
+          ? "morning"
+          : slotStart.getHours() < 17
+            ? "afternoon"
+            : "evening"
+        : defaultWindow(now, day);
   const closeHref = `/staff/bookings?date=${date}&w=${win}`;
   const revenue = bookings.reduce((s, b) => s + b.price, 0);
   const social = bookings.find((b) => b.type === "social");
@@ -81,7 +90,13 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
           </Link>
           <form className="flex">
             <input type="hidden" name="w" value={win} />
-            <input type="date" name="date" defaultValue={date} aria-label="Go to date" className="min-h-11 border border-[#b5aa98] bg-white px-3 text-[14px] outline-none focus:border-forest" />
+            <input
+              type="date"
+              name="date"
+              defaultValue={date}
+              aria-label="Go to date"
+              className="min-h-11 border border-[#b5aa98] bg-white px-3 text-[14px] outline-none focus:border-forest"
+            />
             <button type="submit" className="sr-only">
               Go
             </button>
@@ -91,15 +106,28 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-4 text-[13.5px] text-muted">
-          <span className="flex items-center gap-1.5"><span className="size-3.5 bg-forest" /> Member</span>
-          <span className="flex items-center gap-1.5"><span className="size-3.5 bg-[#8a6d3b]" /> Walk-in</span>
-          <span className="flex items-center gap-1.5"><span className="size-3.5 bg-[#4d7a12]" /> Trial</span>
-          <span className="flex items-center gap-1.5"><span className="size-3.5 bg-clay" /> Friday social play</span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-3.5 bg-forest" /> Member
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-3.5 bg-[#8a6d3b]" /> Walk-in
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-3.5 bg-[#4d7a12]" /> Trial
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-3.5 bg-clay" /> Friday social play
+          </span>
           <span>Sessions are 1 hour and start every 30 minutes. Click a free slot to book.</span>
         </div>
         <div role="group" aria-label="Part of day" className="flex border-[1.5px] border-forest">
           {(Object.keys(WINDOWS) as GridWindow[]).map((k) => (
-            <Link key={k} href={`/staff/bookings?date=${date}&w=${k}${preMember ? `&member=${preMember.id}` : ""}`} aria-current={win === k ? "true" : undefined} className={`px-3.5 py-2 text-[14px] font-semibold ${win === k ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}>
+            <Link
+              key={k}
+              href={`/staff/bookings?date=${date}&w=${k}${preMember ? `&member=${preMember.id}` : ""}`}
+              aria-current={win === k ? "true" : undefined}
+              className={`px-3.5 py-2 text-[14px] font-semibold ${win === k ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}
+            >
               {WINDOWS[k].label}
             </Link>
           ))}
@@ -130,7 +158,9 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
           <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
             <div className="border border-line bg-paper p-[18px]">
               <div className="text-[14px] text-muted">Booked {now.toDateString() === day.toDateString() ? "today" : "this day"}</div>
-              <div className="font-serif text-[28px] text-forest">{bookings.length} {bookings.length === 1 ? "session" : "sessions"}</div>
+              <div className="font-serif text-[28px] text-forest">
+                {bookings.length} {bookings.length === 1 ? "session" : "sessions"}
+              </div>
             </div>
             <div className="border border-line bg-paper p-[18px]">
               <div className="text-[14px] text-muted">Court income</div>
@@ -220,7 +250,8 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
               <div className="space-y-2 text-[15px]">
                 <h2 className="font-serif text-[22px] font-medium text-forest">Pick a free slot</h2>
                 <p className="text-muted">
-                  {preMember ? `Booking for ${preMember.name}. ` : ""}Hover the grid and click any free half-hour to start a booking. Click a booking to see details or cancel it.
+                  {preMember ? `Booking for ${preMember.name}. ` : ""}Hover the grid and click any free half-hour to start a booking. Click a booking to see
+                  details or cancel it.
                 </p>
                 {day.getDay() === 5 && <p className="text-muted">It’s Friday: evening slots from 6 pm can be opened for social play.</p>}
               </div>

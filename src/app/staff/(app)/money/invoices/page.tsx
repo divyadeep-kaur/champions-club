@@ -42,13 +42,17 @@ export default async function InvoicesPage() {
                     <td className="px-3.5 py-3">{i.customerName}</td>
                     <td className="px-3.5 py-3">{i.issuedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</td>
                     <td className="px-3.5 py-3 font-semibold tabular-nums">{inr(invoiceTotals(i.lines).total)}</td>
-                    <td className={`px-3.5 py-3 font-semibold ${i.status === "paid" ? "text-[#4d7a12]" : overdue ? "text-[#a8411f]" : "text-[#8a6d3b]"}`}>{i.status === "paid" ? "Paid" : overdue ? "Overdue" : "Unpaid"}</td>
+                    <td className={`px-3.5 py-3 font-semibold ${i.status === "paid" ? "text-[#4d7a12]" : overdue ? "text-[#a8411f]" : "text-[#8a6d3b]"}`}>
+                      {i.status === "paid" ? "Paid" : overdue ? "Overdue" : "Unpaid"}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          {invoices.length === 0 && <p className="px-4 py-10 text-center text-muted">No invoices yet. Create one for a business client, or invoice a member’s plan.</p>}
+          {invoices.length === 0 && (
+            <p className="px-4 py-10 text-center text-muted">No invoices yet. Create one for a business client, or invoice a member’s plan.</p>
+          )}
         </div>
 
         <form action={invoiceMembership} className="flex flex-wrap items-end gap-2 border border-line bg-paper p-5">

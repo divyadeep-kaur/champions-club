@@ -28,7 +28,14 @@ export function SocialRoster({
           </p>
           {waitlist.length > 0 && <span className="text-[13.5px] text-muted">{waitlist.length} waiting</span>}
         </div>
-        <div className="mt-2 h-1.5 bg-cream" role="progressbar" aria-valuenow={playing.length} aria-valuemin={0} aria-valuemax={booking.capacity} aria-label="Places filled">
+        <div
+          className="mt-2 h-1.5 bg-cream"
+          role="progressbar"
+          aria-valuenow={playing.length}
+          aria-valuemin={0}
+          aria-valuemax={booking.capacity}
+          aria-label="Places filled"
+        >
           <div className="h-full bg-ball" style={{ width: `${fill}%` }} />
         </div>
       </div>
@@ -102,7 +109,9 @@ export function SocialRoster({
       )}
 
       {open && <JoinSocialForm bookingId={booking.id} members={members} full={playing.length + offered.length >= booking.capacity} />}
-      <p className="text-[12.5px] text-muted">Each player pays a quarter of their court rate. When someone drops out, the first person waiting is offered the place.</p>
+      <p className="text-[12.5px] text-muted">
+        Each player pays a quarter of their court rate. When someone drops out, the first person waiting is offered the place.
+      </p>
     </div>
   );
 }

@@ -26,7 +26,11 @@ export function JoinSocialForm({ bookingId, members, full }: { bookingId: number
             <option value="card">Card</option>
             <option value="cash">Cash</option>
           </select>
-          <button type="submit" disabled={pending} className="inline-flex items-center gap-1.5 bg-forest px-3 text-[14px] font-semibold text-cream disabled:opacity-70">
+          <button
+            type="submit"
+            disabled={pending}
+            className="inline-flex items-center gap-1.5 bg-forest px-3 text-[14px] font-semibold text-cream disabled:opacity-70"
+          >
             {pending && <Loader2 className="size-3.5 animate-spin" />}
             {full ? "Wait" : "Join"}
           </button>

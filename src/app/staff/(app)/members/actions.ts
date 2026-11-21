@@ -62,7 +62,9 @@ export async function createMember(_: FormState, formData: FormData): Promise<Fo
         notes: data.notes || null,
       },
     });
-    await tx.payment.create({ data: { source: "membership", refId: m.id, amount: fee, method: data.method, note: `New ${plan.name} membership${lead ? " (from enquiry)" : ""}` } });
+    await tx.payment.create({
+      data: { source: "membership", refId: m.id, amount: fee, method: data.method, note: `New ${plan.name} membership${lead ? " (from enquiry)" : ""}` },
+    });
     if (lead && lead.status !== "won") {
       await tx.lead.update({ where: { id: lead.id }, data: { status: "won", memberId: m.id } });
       if (lead.bookingId) await tx.booking.update({ where: { id: lead.bookingId }, data: { memberId: m.id, guestName: null } });

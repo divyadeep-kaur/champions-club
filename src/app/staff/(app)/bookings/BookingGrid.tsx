@@ -118,7 +118,9 @@ export function BookingGrid({
               style={{ gridRow: ri + 2, gridColumn: `${startCol} / span ${span}` }}
             >
               <strong className="block truncate">{b.label}</strong>
-              <span className="block truncate opacity-90">{b.type === "social" ? `${b.players} of ${b.capacity} places` : b.type === "trial" ? "Trial" : (b.plan ?? "Walk-in")}</span>
+              <span className="block truncate opacity-90">
+                {b.type === "social" ? `${b.players} of ${b.capacity} places` : b.type === "trial" ? "Trial" : (b.plan ?? "Walk-in")}
+              </span>
             </Link>
           );
         })}

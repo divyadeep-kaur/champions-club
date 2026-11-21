@@ -9,11 +9,7 @@ export type Session = { id: number; name: string; role: Role };
 const key = () => new TextEncoder().encode(process.env.SESSION_SECRET);
 
 export async function signSession(session: Session) {
-  return new SignJWT(session)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${SESSION_MAX_AGE}s`)
-    .sign(key());
+  return new SignJWT(session).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime(`${SESSION_MAX_AGE}s`).sign(key());
 }
 
 export async function verifySession(token: string | undefined): Promise<Session | null> {

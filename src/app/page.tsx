@@ -31,7 +31,9 @@ export default async function Home() {
 
   const wrap = menu.find((m) => m.name === "Paneer Tikka Wrap");
   const coffee = menu.find((m) => m.name === "Cold Coffee");
-  const lines = [wrap && { name: `1 × ${wrap.name}`, price: wrap.price }, coffee && { name: `2 × ${coffee.name}`, price: coffee.price * 2 }].filter(Boolean) as { name: string; price: number }[];
+  const lines = [wrap && { name: `1 × ${wrap.name}`, price: wrap.price }, coffee && { name: `2 × ${coffee.name}`, price: coffee.price * 2 }].filter(
+    Boolean,
+  ) as { name: string; price: number }[];
   const subtotal = lines.reduce((s, l) => s + l.price, 0);
   const total = barPrice(silver, subtotal);
 
@@ -71,11 +73,26 @@ export default async function Home() {
       <Reviews />
       <Faq
         items={[
-          { q: "Do I need a membership to play?", a: `No. Walk-ins can book any free slot at the walk-in rate (${inr(tennis?._min.walkInRate ?? 0)} an hour for tennis). Members pay their plan’s court rate.` },
-          { q: "How many sessions can I book in a day?", a: `Members can book up to ${MAX_BOOKINGS_PER_DAY} one-hour sessions a day, so everyone gets a fair turn.` },
-          { q: "What is Friday social play?", a: "On Friday evenings a court is opened for social play. Join on your own and get matched with other players. If it’s full, join the waitlist and you’re offered the next free place." },
-          { q: "How do member discounts work?", a: "Give your phone number at the shop counter or bar, or order from the member app, and your plan’s discount is applied automatically." },
-          { q: "Can I book from my phone?", a: "Yes. Members sign in with their phone number and member code to book courts up to 7 days ahead and order café food to their table." },
+          {
+            q: "Do I need a membership to play?",
+            a: `No. Walk-ins can book any free slot at the walk-in rate (${inr(tennis?._min.walkInRate ?? 0)} an hour for tennis). Members pay their plan’s court rate.`,
+          },
+          {
+            q: "How many sessions can I book in a day?",
+            a: `Members can book up to ${MAX_BOOKINGS_PER_DAY} one-hour sessions a day, so everyone gets a fair turn.`,
+          },
+          {
+            q: "What is Friday social play?",
+            a: "On Friday evenings a court is opened for social play. Join on your own and get matched with other players. If it’s full, join the waitlist and you’re offered the next free place.",
+          },
+          {
+            q: "How do member discounts work?",
+            a: "Give your phone number at the shop counter or bar, or order from the member app, and your plan’s discount is applied automatically.",
+          },
+          {
+            q: "Can I book from my phone?",
+            a: "Yes. Members sign in with their phone number and member code to book courts up to 7 days ahead and order café food to their table.",
+          },
           { q: "Do you offer corporate or family plans?", a: "Yes. Send us a message below and the desk will follow up with a quote." },
         ]}
       />

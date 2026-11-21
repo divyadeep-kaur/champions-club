@@ -7,7 +7,7 @@ export const DEMO_PASSWORD = "champions123";
 
 let s = 42;
 const rand = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
-const pick = <T,>(a: readonly T[]) => a[Math.floor(rand() * a.length)];
+const pick = <T>(a: readonly T[]) => a[Math.floor(rand() * a.length)];
 
 const day = 24 * 60 * 60 * 1000;
 const now = new Date();
@@ -50,18 +50,38 @@ async function main() {
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   if (adminEmail && process.env.ADMIN_PASSWORD && adminEmail !== "owner@champions.club") {
     await db.staff.create({
-      data: { name: process.env.ADMIN_NAME?.trim() || "Club admin", email: adminEmail, passwordHash: await bcrypt.hash(process.env.ADMIN_PASSWORD, 10), role: "owner", monthlySalary: 0 },
+      data: {
+        name: process.env.ADMIN_NAME?.trim() || "Club admin",
+        email: adminEmail,
+        passwordHash: await bcrypt.hash(process.env.ADMIN_PASSWORD, 10),
+        role: "owner",
+        monthlySalary: 0,
+      },
     });
   }
 
   const gold = await db.plan.create({
-    data: { name: "Gold", monthlyFee: 3999, courtRate: 0, shopDiscount: 15, barDiscount: 20, description: "Unlimited court time, priority booking, best discounts" },
+    data: {
+      name: "Gold",
+      monthlyFee: 3999,
+      courtRate: 0,
+      shopDiscount: 15,
+      barDiscount: 20,
+      description: "Unlimited court time, priority booking, best discounts",
+    },
   });
   const silver = await db.plan.create({
     data: { name: "Silver", monthlyFee: 2499, courtRate: 300, shopDiscount: 10, barDiscount: 10, description: "Member court rates and shop and bar discounts" },
   });
   const junior = await db.plan.create({
-    data: { name: "Junior", monthlyFee: 1499, courtRate: 150, shopDiscount: 10, barDiscount: 0, description: "For players under 18, discounted courts and coaching days" },
+    data: {
+      name: "Junior",
+      monthlyFee: 1499,
+      courtRate: 150,
+      shopDiscount: 10,
+      barDiscount: 0,
+      description: "For players under 18, discounted courts and coaching days",
+    },
   });
 
   const courts = await Promise.all(
@@ -140,7 +160,7 @@ async function main() {
   const products = await Promise.all(
     [
       ["RKT-001", "Pro Tour Racket", "rackets", 7499, 6],
-      ["RKT-002", "Junior Racket 25\"", "rackets", 2299, 3],
+      ["RKT-002", 'Junior Racket 25"', "rackets", 2299, 3],
       ["BAL-001", "Tennis Balls (can of 3)", "balls", 499, 40],
       ["BAL-002", "Leather Cricket Ball", "balls", 899, 4],
       ["SHO-001", "Clay Court Shoes", "shoes", 5999, 8],
@@ -225,7 +245,9 @@ async function main() {
           paymentMethod: open ? null : method,
           openedAt,
           closedAt: open ? null : new Date(openedAt.getTime() + 50 * 60 * 1000),
-          items: { create: lines.map((l) => ({ menuItemId: l.item.id, qty: l.qty, unitPrice: l.item.price, createdAt: openedAt, status: open ? "new" : "served" })) },
+          items: {
+            create: lines.map((l) => ({ menuItemId: l.item.id, qty: l.qty, unitPrice: l.item.price, createdAt: openedAt, status: open ? "new" : "served" })),
+          },
         },
       });
       if (!open) await db.payment.create({ data: { source: "bar", refId: tab.id, amount: tab.total, method, createdAt: tab.closedAt! } });
@@ -234,13 +256,23 @@ async function main() {
 
   for (const m of members) {
     const plan = planOf(m);
-    await db.payment.create({ data: { source: "membership", refId: m.id, amount: plan.monthlyFee, method: pick(["card", "upi", "online"]), createdAt: m.startDate } });
+    await db.payment.create({
+      data: { source: "membership", refId: m.id, amount: plan.monthlyFee, method: pick(["card", "upi", "online"]), createdAt: m.startDate },
+    });
   }
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   await db.expense.createMany({
     data: [
-      { category: "rent", description: "Ground and clubhouse rent", vendor: "Landlord", amount: 85000, dueDate: new Date(monthStart.getTime() + 4 * day), paidAt: new Date(monthStart.getTime() + 3 * day), method: "bank" },
+      {
+        category: "rent",
+        description: "Ground and clubhouse rent",
+        vendor: "Landlord",
+        amount: 85000,
+        dueDate: new Date(monthStart.getTime() + 4 * day),
+        paidAt: new Date(monthStart.getTime() + 3 * day),
+        method: "bank",
+      },
       { category: "stock", description: "Rackets and shoes restock", vendor: "Pro Sports Distributors", amount: 42000, dueDate: at(6, 12) },
       { category: "stock", description: "Café supplies (weekly)", vendor: "FreshFarm Foods", amount: 9800, dueDate: at(2, 12) },
       { category: "utilities", description: "Electricity, floodlights", vendor: "PSPCL", amount: 23500, dueDate: at(9, 12) },
@@ -257,15 +289,40 @@ async function main() {
 
   await db.lead.createMany({
     data: [
-      { name: "Karan Arora", phone: "9811000001", interest: "trial", message: "Can I try a tennis session this weekend?", preferredAt: at(2, 18), status: "new" },
-      { name: "Simran Dhillon", phone: "9811000002", email: "simran@example.com", interest: "membership", message: "Family membership for two adults and a kid", status: "contacted", createdAt: at(-2, 12) },
-      { name: "Tech Park Pvt Ltd", phone: "9811000003", interest: "membership", message: "Corporate plan for 20 employees", status: "quoted", quoteAmount: 45000, createdAt: at(-5, 11) },
+      {
+        name: "Karan Arora",
+        phone: "9811000001",
+        interest: "trial",
+        message: "Can I try a tennis session this weekend?",
+        preferredAt: at(2, 18),
+        status: "new",
+      },
+      {
+        name: "Simran Dhillon",
+        phone: "9811000002",
+        email: "simran@example.com",
+        interest: "membership",
+        message: "Family membership for two adults and a kid",
+        status: "contacted",
+        createdAt: at(-2, 12),
+      },
+      {
+        name: "Tech Park Pvt Ltd",
+        phone: "9811000003",
+        interest: "membership",
+        message: "Corporate plan for 20 employees",
+        status: "quoted",
+        quoteAmount: 45000,
+        createdAt: at(-5, 11),
+      },
       { name: "Rahul Khanna", phone: "9811000004", interest: "trial", preferredAt: at(1, 7), status: "new", createdAt: at(0, 9) },
       { name: "Nidhi Saxena", phone: "9811000005", interest: "membership", status: "won", createdAt: at(-9, 15) },
     ],
   });
 
-  console.log(`Seeded: 3 staff (${owner.email}, ${desk.email}, ${bar.email}), ${members.length} members, ${courts.length} courts, ${products.length} products, ${menu.length} menu items.`);
+  console.log(
+    `Seeded: 3 staff (${owner.email}, ${desk.email}, ${bar.email}), ${members.length} members, ${courts.length} courts, ${products.length} products, ${menu.length} menu items.`,
+  );
 }
 
 main()

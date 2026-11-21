@@ -34,7 +34,14 @@ export default async function PayrollPage() {
             </span>
             <label className="flex items-center gap-1">
               <span className="text-muted">₹</span>
-              <input name="amount" type="number" min={0} defaultValue={s.monthlySalary} aria-label={`${s.name} monthly salary`} className="min-h-10 w-full border border-[#b5aa98] bg-white px-2 text-right tabular-nums" />
+              <input
+                name="amount"
+                type="number"
+                min={0}
+                defaultValue={s.monthlySalary}
+                aria-label={`${s.name} monthly salary`}
+                className="min-h-10 w-full border border-[#b5aa98] bg-white px-2 text-right tabular-nums"
+              />
             </label>
           </form>
         ))}
@@ -50,14 +57,18 @@ export default async function PayrollPage() {
             </button>
           </form>
         </div>
-        {slips.length === 0 && <p className="text-muted">Payroll hasn’t been run for this month yet. Running it adds each salary as a bill due on the last day of the month.</p>}
+        {slips.length === 0 && (
+          <p className="text-muted">Payroll hasn’t been run for this month yet. Running it adds each salary as a bill due on the last day of the month.</p>
+        )}
         {slips.map((e) => (
           <div key={e.id} className="flex items-center justify-between gap-3 border-t border-line py-2.5 text-[14.5px]">
             <span>{e.vendor}</span>
             <span className="flex items-center gap-3">
               <strong className="tabular-nums">{inr(e.amount)}</strong>
               {e.paidAt ? (
-                <span className="text-[13px] font-semibold text-[#4d7a12]">Paid {e.paidAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                <span className="text-[13px] font-semibold text-[#4d7a12]">
+                  Paid {e.paidAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                </span>
               ) : (
                 <form action={payExpense}>
                   <input type="hidden" name="expenseId" value={e.id} />

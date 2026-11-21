@@ -40,9 +40,33 @@ export function NewInvoiceForm() {
         <legend className="mb-1 text-[14px] font-semibold">Lines (prices before GST)</legend>
         {lines.map((l, i) => (
           <div key={i} className="grid grid-cols-[minmax(0,1fr)_60px_90px_70px] gap-2">
-            <input name={`d${i}`} value={l.d} onChange={(e) => set(i, "d", e.target.value)} placeholder="Description" aria-label={`Line ${i + 1} description`} className={fieldCls} />
-            <input name={`q${i}`} value={l.q} onChange={(e) => set(i, "q", e.target.value)} type="number" min={1} aria-label={`Line ${i + 1} quantity`} className={fieldCls} />
-            <input name={`p${i}`} value={l.p} onChange={(e) => set(i, "p", e.target.value)} type="number" min={0} placeholder="₹" aria-label={`Line ${i + 1} unit price`} className={fieldCls} />
+            <input
+              name={`d${i}`}
+              value={l.d}
+              onChange={(e) => set(i, "d", e.target.value)}
+              placeholder="Description"
+              aria-label={`Line ${i + 1} description`}
+              className={fieldCls}
+            />
+            <input
+              name={`q${i}`}
+              value={l.q}
+              onChange={(e) => set(i, "q", e.target.value)}
+              type="number"
+              min={1}
+              aria-label={`Line ${i + 1} quantity`}
+              className={fieldCls}
+            />
+            <input
+              name={`p${i}`}
+              value={l.p}
+              onChange={(e) => set(i, "p", e.target.value)}
+              type="number"
+              min={0}
+              placeholder="₹"
+              aria-label={`Line ${i + 1} unit price`}
+              className={fieldCls}
+            />
             <select name={`g${i}`} value={l.g} onChange={(e) => set(i, "g", e.target.value)} aria-label={`Line ${i + 1} GST rate`} className={fieldCls}>
               {[0, 5, 12, 18, 28].map((r) => (
                 <option key={r} value={r}>

@@ -15,7 +15,12 @@ export default async function MemberShop() {
   const plan = membershipStatus(member.endDate).status === "expired" ? null : member.plan;
   const [products, orders] = await Promise.all([
     db.product.findMany({ orderBy: [{ category: "asc" }, { price: "desc" }] }),
-    db.order.findMany({ where: { memberId: member.id, channel: "online" }, include: { items: { include: { product: true } } }, orderBy: { createdAt: "desc" }, take: 4 }),
+    db.order.findMany({
+      where: { memberId: member.id, channel: "online" },
+      include: { items: { include: { product: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+    }),
   ]);
 
   return (
@@ -39,7 +44,9 @@ export default async function MemberShop() {
                   {o.fulfilment === "delivery" ? "Delivery" : "Collect at desk"} · {inr(o.total)}
                 </div>
               </div>
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[12.5px] font-bold ${o.status === "ready" ? "bg-ball text-forest-deep" : o.status === "pending" ? "bg-[#f6e7b8] text-[#5f4605]" : "bg-[#ece5d6] text-muted"}`}>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[12.5px] font-bold ${o.status === "ready" ? "bg-ball text-forest-deep" : o.status === "pending" ? "bg-[#f6e7b8] text-[#5f4605]" : "bg-[#ece5d6] text-muted"}`}
+              >
                 {o.status === "ready" && o.fulfilment === "pickup" ? "Ready to collect" : (status[o.status] ?? o.status)}
               </span>
             </div>
@@ -48,7 +55,14 @@ export default async function MemberShop() {
       )}
 
       <ShopOrder
-        products={products.map((p) => ({ id: p.id, name: p.name, category: p.category, price: p.price, stock: p.stock, memberPrice: shopPrice(plan, p.price) }))}
+        products={products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          stock: p.stock,
+          memberPrice: shopPrice(plan, p.price),
+        }))}
         plan={plan ? { name: plan.name, shopDiscount: plan.shopDiscount, courtRate: plan.courtRate, barDiscount: plan.barDiscount } : null}
       />
     </main>

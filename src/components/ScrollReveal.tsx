@@ -5,10 +5,13 @@ import { useEffect } from "react";
 
 const BLOCKS = "h1, h2, h3, p, img, video, figure, li, tr, details, blockquote, [data-reveal]";
 const CARD = /\b(rounded|border)\b|\brounded-|\bborder-line\b/;
-const SKIP = "header, nav, aside[aria-label], dialog, [role='dialog'], [data-no-reveal], .cc-landing > section:first-of-type, .cc-cal-cell, td, th, button, label, option";
+const SKIP =
+  "header, nav, aside[aria-label], dialog, [role='dialog'], [data-no-reveal], .cc-landing > section:first-of-type, .cc-cal-cell, td, th, button, label, option";
 
 function isCard(el: Element) {
-  return el.tagName === "ARTICLE" || el.tagName === "SECTION" ? false : CARD.test(el.getAttribute("class") ?? "") && el.children.length > 0 && el.getBoundingClientRect().height > 60;
+  return el.tagName === "ARTICLE" || el.tagName === "SECTION"
+    ? false
+    : CARD.test(el.getAttribute("class") ?? "") && el.children.length > 0 && el.getBoundingClientRect().height > 60;
 }
 
 function candidates(root: Element) {

@@ -31,14 +31,24 @@ export default async function NewMemberPage({ searchParams }: { searchParams: Pr
       </Link>
       <PageHeader
         title={lead ? `Sign up ${lead.name}` : "New member"}
-        description={lead ? `From their enquiry on ${lead.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}${lead.quoteAmount ? `. Quoted ${lead.plan} at ₹${lead.quoteAmount.toLocaleString("en-IN")}` : ""}. Their trial moves into their member history.` : "Sign up at the front desk. The first period's fee is recorded as paid."}
+        description={
+          lead
+            ? `From their enquiry on ${lead.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}${lead.quoteAmount ? `. Quoted ${lead.plan} at ₹${lead.quoteAmount.toLocaleString("en-IN")}` : ""}. Their trial moves into their member history.`
+            : "Sign up at the front desk. The first period's fee is recorded as paid."
+        }
       />
       <NewMemberForm
         plans={plans}
         visit={visit}
         defaults={
           lead
-            ? { leadId: String(lead.id), name: lead.name, phone: lead.phone, email: lead.email ?? "", planId: String(plans.find((p) => p.name === lead.plan)?.id ?? "") }
+            ? {
+                leadId: String(lead.id),
+                name: lead.name,
+                phone: lead.phone,
+                email: lead.email ?? "",
+                planId: String(plans.find((p) => p.name === lead.plan)?.id ?? ""),
+              }
             : undefined
         }
       />

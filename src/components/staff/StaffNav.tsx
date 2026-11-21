@@ -54,7 +54,10 @@ function Links({ items, onNavigate }: { items: Item[]; onNavigate?: () => void }
               <Icon className="size-[18px] lg:hidden" strokeWidth={1.9} />
               {label}
               {badge ? (
-                <span className={`ml-auto rounded-full px-2 py-0.5 text-[12px] font-bold tabular-nums ${active ? "bg-forest-deep text-ball" : "bg-clay text-white"}`} aria-label={`${badge} new`}>
+                <span
+                  className={`ml-auto rounded-full px-2 py-0.5 text-[12px] font-bold tabular-nums ${active ? "bg-forest-deep text-ball" : "bg-clay text-white"}`}
+                  aria-label={`${badge} new`}
+                >
                   {badge}
                 </span>
               ) : null}
@@ -85,7 +88,11 @@ function User({ name, role, logout }: { name: string; role: string; logout: () =
         <p className="text-[14px] capitalize text-cream/75">{role === "desk" ? "Front desk" : role}</p>
       </div>
       <form action={logout}>
-        <button type="submit" aria-label="Sign out" className="grid size-9 place-items-center text-cream/70 transition-colors hover:bg-white/10 hover:text-cream">
+        <button
+          type="submit"
+          aria-label="Sign out"
+          className="grid size-9 place-items-center text-cream/70 transition-colors hover:bg-white/10 hover:text-cream"
+        >
           <LogOut className="size-[18px]" />
         </button>
       </form>
