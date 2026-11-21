@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { menuPhoto } from "@/lib/menuPhotos";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
@@ -126,9 +128,16 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
                   <input type="hidden" name="menuItemId" value={m.id} />
                   <input type="hidden" name="tabId" value={selectedTab?.id ?? ""} />
                   <input type="hidden" name="tableId" value={selectedTable?.id ?? ""} />
-                  <button type="submit" disabled={!label} className="min-h-[60px] w-full border border-line bg-cream p-3 text-left hover:border-forest disabled:opacity-50">
-                    <span className="block font-semibold">{m.name}</span>
-                    <span className="text-[13.5px] tabular-nums text-muted">{inr(m.price)}</span>
+                  <button type="submit" disabled={!label} className="group w-full overflow-hidden border border-line bg-cream text-left hover:border-forest disabled:opacity-50">
+                    {menuPhoto(m.name) && (
+                      <span className="relative block aspect-[4/3] overflow-hidden bg-forest-deep">
+                        <Image src={menuPhoto(m.name)!} alt="" fill unoptimized sizes="200px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                      </span>
+                    )}
+                    <span className="block p-3">
+                      <span className="block font-semibold">{m.name}</span>
+                      <span className="text-[13.5px] tabular-nums text-muted">{inr(m.price)}</span>
+                    </span>
                   </button>
                 </form>
               ))}
