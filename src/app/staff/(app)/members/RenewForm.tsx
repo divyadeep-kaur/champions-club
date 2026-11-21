@@ -7,17 +7,17 @@ import { renewMember, type FormState } from "./actions";
 
 type Plan = { id: number; name: string; monthlyFee: number; durationDays: number };
 
-const select = "w-full border border-line bg-paper px-3 py-2.5 text-[15px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+const select = "min-h-11 w-full border border-[#b5aa98] bg-white px-3 py-2.5 text-[15px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 
 export function RenewForm({ memberId, currentPlanId, plans }: { memberId: number; currentPlanId: number; plans: Plan[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(renewMember, {});
 
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} className="flex flex-wrap items-end gap-3">
       <input type="hidden" name="memberId" value={memberId} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="contents">
         <label className="block">
-          <span className="text-[13px] font-semibold text-muted">Plan</span>
+          <span className="text-[14px] font-semibold">Plan</span>
           <select name="planId" defaultValue={currentPlanId} className={`mt-1 ${select}`}>
             {plans.map((p) => (
               <option key={p.id} value={p.id}>
@@ -27,7 +27,7 @@ export function RenewForm({ memberId, currentPlanId, plans }: { memberId: number
           </select>
         </label>
         <label className="block">
-          <span className="text-[13px] font-semibold text-muted">Paid by</span>
+          <span className="text-[14px] font-semibold">Paid by</span>
           <select name="method" defaultValue="upi" className={`mt-1 ${select}`}>
             <option value="upi">UPI</option>
             <option value="card">Card</option>
@@ -43,10 +43,10 @@ export function RenewForm({ memberId, currentPlanId, plans }: { memberId: number
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center gap-2 bg-forest px-5 py-2.5 text-[15px] font-semibold text-cream transition-colors hover:bg-forest-deep disabled:opacity-70"
+        className="inline-flex min-h-11 items-center gap-2 bg-forest px-[18px] py-3 font-bold text-cream hover:bg-forest-deep disabled:opacity-70"
       >
         {pending && <Loader2 className="size-4 animate-spin" />}
-        Renew membership
+        Renew for 30 days
       </button>
     </form>
   );
