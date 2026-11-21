@@ -152,6 +152,7 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
                           </button>
                         </form>
                         {i.qty} × {i.menuItem.name}
+                        {i.status !== "new" && <span className={`text-[12px] font-semibold ${i.status === "ready" ? "text-[#4d7a12]" : "text-muted"}`}>{i.status}</span>}
                       </span>
                       <span className="tabular-nums">{inr(i.unitPrice * i.qty)}</span>
                     </div>

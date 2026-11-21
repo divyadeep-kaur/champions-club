@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   CalendarDays,
+  ChefHat,
   Coffee,
   LayoutDashboard,
   LogOut,
@@ -23,6 +24,7 @@ const icons: Record<string, LucideIcon> = {
   bookings: CalendarDays,
   shop: ShoppingBag,
   bar: Coffee,
+  kitchen: ChefHat,
   leads: UserPlus,
 };
 

@@ -52,7 +52,7 @@ export async function addItem(formData: FormData) {
         tabId = (await tx.tab.create({ data: { tableId, guestName: "Guest", shiftId: shift?.id } })).id;
       }
     }
-    const line = await tx.tabItem.findFirst({ where: { tabId, menuItemId, createdAt: { gte: new Date(Date.now() - 10 * 60_000) } } });
+    const line = await tx.tabItem.findFirst({ where: { tabId, menuItemId, status: "new", createdAt: { gte: new Date(Date.now() - 10 * 60_000) } } });
     if (line) await tx.tabItem.update({ where: { id: line.id }, data: { qty: { increment: 1 } } });
     else await tx.tabItem.create({ data: { tabId, menuItemId, qty: 1, unitPrice: item.price } });
     await recomputeTab(tx, tabId);
