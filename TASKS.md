@@ -27,7 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- (nothing yet)
+- Jashan: desktop layout for the member app (`src/app/me/(app)`)
 
 ## Next up
 
