@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CLOSE_HOUR, OPEN_HOUR, SLOT_MINUTES } from "@/lib/constants";
+import { SLOT_MINUTES } from "@/lib/constants";
 import { hhmm, isoDate } from "@/lib/dates";
 import { overlaps, sessionEnd } from "@/lib/bookings";
 
@@ -15,15 +15,27 @@ type GridBooking = {
   players: number;
 };
 
-const ROWS = ((CLOSE_HOUR - OPEN_HOUR) * 60) / SLOT_MINUTES;
-const rowOf = (d: Date) => ((d.getHours() - OPEN_HOUR) * 60 + d.getMinutes()) / SLOT_MINUTES + 2;
+export const WINDOWS = {
+  morning: { label: "Morning", from: 6, to: 12 },
+  afternoon: { label: "Afternoon", from: 12, to: 17 },
+  evening: { label: "Evening", from: 17, to: 23 },
+} as const;
+export type GridWindow = keyof typeof WINDOWS;
+
+export function defaultWindow(now: Date, day: Date): GridWindow {
+  if (now.toDateString() !== day.toDateString()) return "evening";
+  const h = now.getHours();
+  return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+}
 
 function tone(b: GridBooking) {
-  if (b.type === "social") return "bg-[#e4f2bf] text-[#2f4a08] border-[#b9d97a]";
-  if (b.type === "trial") return "bg-[#f6e7b8] text-[#5f4605] border-[#e3cd85]";
-  if (b.plan) return "bg-forest text-cream border-forest";
-  return "bg-clay-soft text-[#7c2f12] border-[#e9bfa9]";
+  if (b.type === "social") return "bg-clay";
+  if (b.type === "trial") return "bg-[#4d7a12]";
+  if (b.plan) return "bg-forest";
+  return "bg-[#8a6d3b]";
 }
+
+const label = (d: Date) => d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).replace(/ ?(am|pm)$/i, "");
 
 export function BookingGrid({
   day,
@@ -31,6 +43,7 @@ export function BookingGrid({
   bookings,
   now,
   selected,
+  window: win,
   extraQuery = "",
 }: {
   day: Date;
@@ -38,85 +51,77 @@ export function BookingGrid({
   bookings: GridBooking[];
   now: Date;
   selected: { bookingId?: number; courtId?: number; time?: string };
+  window: GridWindow;
   extraQuery?: string;
 }) {
   const date = isoDate(day);
-  const rows = Array.from({ length: ROWS }, (_, i) => new Date(day.getFullYear(), day.getMonth(), day.getDate(), OPEN_HOUR, i * SLOT_MINUTES));
-  const nowRow = now.toDateString() === day.toDateString() && now.getHours() >= OPEN_HOUR && now.getHours() < CLOSE_HOUR ? rowOf(now) + (now.getMinutes() % SLOT_MINUTES) / SLOT_MINUTES : null;
+  const { from, to } = WINDOWS[win];
+  const cols = ((to - from) * 60) / SLOT_MINUTES;
+  const times = Array.from({ length: cols }, (_, i) => new Date(day.getFullYear(), day.getMonth(), day.getDate(), from, i * SLOT_MINUTES));
+  const winStart = times[0];
+  const winEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), to, 0);
+  const colOf = (d: Date) => Math.round((d.getTime() - winStart.getTime()) / (SLOT_MINUTES * 60_000)) + 2;
+  const closing = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 0);
 
   return (
     <div className="overflow-x-auto border border-line bg-paper">
-      <div
-        className="relative grid min-w-[760px]"
-        style={{ gridTemplateColumns: `64px repeat(${courts.length}, minmax(112px, 1fr))`, gridTemplateRows: `44px repeat(${ROWS}, 30px)` }}
-      >
-        <div className="sticky left-0 z-20 border-b border-line bg-paper" style={{ gridRow: 1, gridColumn: 1 }} />
-        {courts.map((c, i) => (
-          <div key={c.id} className="flex items-center border-b border-l border-line px-3 text-[13px] font-semibold text-ink" style={{ gridRow: 1, gridColumn: i + 2 }}>
+      <div className="grid min-w-[820px] text-[13.5px]" style={{ gridTemplateColumns: `150px repeat(${cols}, minmax(0, 1fr))` }}>
+        <div className="border-b border-line p-2.5" style={{ gridRow: 1, gridColumn: 1 }} />
+        {times.map((t, i) => (
+          <div key={i} className="border-b border-l border-line border-l-[#ece5d6] px-1 py-2.5 text-muted" style={{ gridRow: 1, gridColumn: i + 2 }}>
+            {t.getMinutes() === 0 ? label(t) : ""}
+          </div>
+        ))}
+
+        {courts.map((c, ri) => (
+          <div key={c.id} className="border-b border-[#ece5d6] px-2.5 py-3.5 font-semibold" style={{ gridRow: ri + 2, gridColumn: 1 }}>
             {c.name}
           </div>
         ))}
 
-        {rows.map((r, ri) => (
-          <div
-            key={ri}
-            className={`sticky left-0 z-10 bg-paper pr-2 text-right text-[12px] tabular-nums text-muted ${r.getMinutes() === 0 ? "border-t border-line" : "border-t border-dashed border-line/60"}`}
-            style={{ gridRow: ri + 2, gridColumn: 1 }}
-          >
-            {r.getMinutes() === 0 && <span className="relative -top-2 bg-paper px-1">{r.toLocaleTimeString("en-IN", { hour: "numeric", hour12: true })}</span>}
-          </div>
-        ))}
-
-        {courts.map((c, ci) =>
-          rows.map((r, ri) => {
-            const span = { start: r, end: sessionEnd(r) };
-            const lastStart = ri <= ROWS - 2;
-            const past = span.end <= now;
-            const free = lastStart && !past && !bookings.some((b) => b.courtId === c.id && overlaps(b, span));
-            const isSelected = selected.courtId === c.id && selected.time === hhmm(r);
-            const cls = `border-l border-t ${r.getMinutes() === 0 ? "border-line" : "border-dashed border-line/60"}`;
+        {courts.map((c, ri) =>
+          times.map((t, ci) => {
+            const span = { start: t, end: sessionEnd(t) };
+            const free = span.end <= closing && span.end > now && !bookings.some((b) => b.courtId === c.id && overlaps(b, span));
             const style = { gridRow: ri + 2, gridColumn: ci + 2 };
-            if (!free) return <div key={`${c.id}-${ri}`} className={`${cls} ${past ? "bg-[repeating-linear-gradient(135deg,transparent,transparent_6px,rgba(85,99,92,0.06)_6px,rgba(85,99,92,0.06)_7px)]" : ""}`} style={style} />;
+            const base = "min-h-[54px] border-b border-l border-[#ece5d6]";
+            if (!free) return <div key={`${c.id}-${ci}`} className={`${base} ${span.end <= now ? "bg-[#f1ece2]" : ""}`} style={style} />;
+            const on = selected.courtId === c.id && selected.time === hhmm(t);
             return (
               <Link
-                key={`${c.id}-${ri}`}
-                href={`/staff/bookings?date=${date}&court=${c.id}&time=${hhmm(r)}${extraQuery}`}
+                key={`${c.id}-${ci}`}
+                href={`/staff/bookings?date=${date}&w=${win}&court=${c.id}&time=${hhmm(t)}${extraQuery}`}
                 scroll={false}
-                aria-label={`Book ${c.name} at ${r.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}`}
-                className={`group ${cls} ${isSelected ? "bg-ball/40" : "hover:bg-ball/20"}`}
+                aria-label={`Book ${c.name} at ${t.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}`}
+                className={`group ${base} ${on ? "bg-ball/50" : "hover:bg-ball/25"}`}
                 style={style}
               >
-                <span className={`block px-2 text-[12px] font-semibold leading-[29px] text-forest ${isSelected ? "" : "opacity-0 group-hover:opacity-100"}`}>
-                  + {hhmm(r)}
-                </span>
+                <span className={`block pt-4 text-center text-[12px] font-bold text-forest ${on ? "" : "opacity-0 group-hover:opacity-100"}`}>+</span>
               </Link>
             );
           }),
         )}
 
         {bookings.map((b) => {
-          const ci = courts.findIndex((c) => c.id === b.courtId);
-          if (ci < 0) return null;
-          const span = Math.round((b.end.getTime() - b.start.getTime()) / (SLOT_MINUTES * 60_000));
+          const ri = courts.findIndex((c) => c.id === b.courtId);
+          if (ri < 0 || b.end <= winStart || b.start >= winEnd) return null;
+          const s = b.start < winStart ? winStart : b.start;
+          const e = b.end > winEnd ? winEnd : b.end;
+          const startCol = colOf(s);
+          const span = Math.max(1, colOf(e) - startCol);
           return (
             <Link
               key={b.id}
-              href={`/staff/bookings?date=${date}&booking=${b.id}`}
+              href={`/staff/bookings?date=${date}&w=${win}&booking=${b.id}`}
               scroll={false}
-              className={`relative z-[5] m-[2px] overflow-hidden border px-2 py-1 text-[12.5px] leading-tight transition-shadow hover:shadow-md ${tone(b)} ${selected.bookingId === b.id ? "ring-2 ring-ink ring-offset-1" : ""}`}
-              style={{ gridRow: `${rowOf(b.start)} / span ${span}`, gridColumn: ci + 2 }}
+              className={`relative z-[2] mx-[3px] my-1.5 overflow-hidden px-2 py-1.5 text-[12.5px] leading-[1.3] text-paper hover:brightness-110 ${tone(b)} ${selected.bookingId === b.id ? "ring-2 ring-ink ring-offset-1" : ""}`}
+              style={{ gridRow: ri + 2, gridColumn: `${startCol} / span ${span}` }}
             >
-              <span className="block truncate font-semibold">{b.label}</span>
-              <span className="block truncate opacity-80">
-                {b.type === "social" ? `Social · ${b.players}/${b.capacity}` : b.type === "trial" ? "Trial" : (b.plan ?? "Walk-in")}
-              </span>
+              <strong className="block truncate">{b.label}</strong>
+              <span className="block truncate opacity-90">{b.type === "social" ? `${b.players} of ${b.capacity} places` : b.type === "trial" ? "Trial" : (b.plan ?? "Walk-in")}</span>
             </Link>
           );
         })}
-
-        {nowRow !== null && (
-          <div aria-hidden="true" className="pointer-events-none relative z-[6] border-t-2 border-clay" style={{ gridRow: Math.floor(nowRow), gridColumn: `2 / span ${courts.length}`, top: `${(nowRow % 1) * 30}px` }} />
-        )}
       </div>
     </div>
   );
