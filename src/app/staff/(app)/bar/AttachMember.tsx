@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { attachMember, type TabState } from "./actions";
 
-export function AttachMember({ tabId, members }: { tabId: number; members: { code: string; name: string; plan: string }[] }) {
+export function AttachMember({ tabId }: { tabId: number }) {
   const [state, action, pending] = useActionState<TabState, FormData>(attachMember, {});
   return (
     <form action={action} className="grid gap-1.5">
@@ -25,13 +25,6 @@ export function AttachMember({ tabId, members }: { tabId: number; members: { cod
           Apply
         </button>
       </div>
-      <datalist id="bar-members">
-        {members.map((m) => (
-          <option key={m.code} value={`${m.code} · ${m.name}`}>
-            {m.plan}
-          </option>
-        ))}
-      </datalist>
       {(state.error || state.ok) && <p className={`text-[13.5px] ${state.error ? "text-clay" : "text-[#4d7a12]"}`}>{state.error ?? state.ok}</p>}
     </form>
   );

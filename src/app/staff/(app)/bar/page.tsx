@@ -8,6 +8,7 @@ import { requireStaff } from "@/lib/session";
 import { AttachMember } from "./AttachMember";
 import { AddMenuItemTile } from "./menu/MenuForms";
 import { CafeTeam } from "./CafeTeam";
+import { TabTools } from "./TabTools";
 import { addItem, closeShift, removeItem, settleTab, startShift } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -199,14 +200,25 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
                         {selectedTab.member.name} · {selectedTab.member.plan.name} member
                         {selectedTab.discount ? ` · ${Math.round((selectedTab.discount / Math.max(1, selectedTab.subtotal)) * 100)}% off` : ""}
                       </>
+                    ) : selectedTab.guestName && selectedTab.guestName !== "Guest" ? (
+                      `${selectedTab.guestName} · walk-in guest`
                     ) : (
                       "Walk-in guest"
                     )}
                     <span className="block text-[13px] text-muted">Opened {fmtTime(selectedTab.openedAt)}</span>
                   </div>
-                  {!selectedTab.member && (
-                    <AttachMember tabId={selectedTab.id} members={members.map((m) => ({ code: m.code, name: m.name, plan: m.plan.name }))} />
-                  )}
+                  {!selectedTab.member && <AttachMember tabId={selectedTab.id} />}
+                  <TabTools
+                    key={selectedTab.id}
+                    tabId={selectedTab.id}
+                    where={label}
+                    hasMember={!!selectedTab.member}
+                    guestName={selectedTab.guestName}
+                    madeItems={selectedTab.items.filter((i) => i.status !== "new").reduce((n, i) => n + i.qty, 0)}
+                    isOwner={staff.role === "owner"}
+                    freeTables={tables.filter((t) => !openTabs.some((o) => o.tableId === t.id)).map((t) => ({ id: t.id, label: t.label }))}
+                    onTable={!!selectedTab.tableId}
+                  />
                   {selectedTab.items.map((i) => (
                     <div key={i.id} className="flex items-center justify-between gap-2 border-b border-[#ece5d6] py-2 text-[15px]">
                       <span className="flex items-center gap-2">
@@ -275,6 +287,13 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
         </aside>
       </div>
       <CafeTeam />
+      <datalist id="bar-members">
+        {members.map((m) => (
+          <option key={m.code} value={`${m.code} · ${m.name}`}>
+            {m.plan.name}
+          </option>
+        ))}
+      </datalist>
     </div>
   );
 }

@@ -123,3 +123,82 @@ export async function settleTab(formData: FormData) {
   refresh();
   redirect(`/staff/bar?paid=${encodeURIComponent(`${tab.table?.label ?? "Counter"} paid ${inr(settled)} by ${method.toUpperCase()}`)}`);
 }
+
+async function openTab(tabId: number) {
+  const tab = await db.tab.findUnique({ where: { id: tabId }, include: { table: true, items: true } });
+  return tab && tab.status === "open" ? tab : null;
+}
+
+// Puts a different member or a walk-in guest on the tab. Prices are worked out again for the new person.
+export async function changeTabPerson(_: TabState, formData: FormData): Promise<TabState> {
+  await requireStaff(["owner", "bar"]);
+  const tab = await openTab(Number(formData.get("tabId")));
+  if (!tab) return { error: "This tab is already closed" };
+  const who = String(formData.get("who"));
+
+  if (who === "guest") {
+    const guestName =
+      String(formData.get("guestName") ?? "")
+        .trim()
+        .slice(0, 60) || "Guest";
+    await db.$transaction(async (tx) => {
+      await tx.tab.update({ where: { id: tab.id }, data: { memberId: null, guestName } });
+      await recomputeTab(tx, tab.id);
+    });
+    refresh();
+    return { ok: `Now on ${guestName === "Guest" ? "a walk-in guest" : guestName}, walk-in prices` };
+  }
+
+  const ref = String(formData.get("member") ?? "").trim();
+  const code = ref.match(/CC-\d{4}/i)?.[0]?.toUpperCase();
+  const digits = ref.replace(/\D/g, "");
+  const member = code
+    ? await db.member.findUnique({ where: { code } })
+    : digits.length === 10
+      ? await db.member.findUnique({ where: { phone: digits } })
+      : null;
+  if (!member) return { error: "No member found. Use their code or 10-digit phone" };
+  if (member.id === tab.memberId) return { error: `${member.name} is already on this tab` };
+  const other = await db.tab.findFirst({ where: { memberId: member.id, status: "open", id: { not: tab.id } }, include: { table: true } });
+  if (other) return { error: `${member.name} already has an open tab at ${other.table?.label ?? "the counter"}` };
+  await db.$transaction(async (tx) => {
+    await tx.tab.update({ where: { id: tab.id }, data: { memberId: member.id, guestName: null } });
+    await recomputeTab(tx, tab.id);
+  });
+  refresh();
+  return { ok: `Now on ${member.name}, member prices applied` };
+}
+
+// Moves the whole tab to a free table, or to the counter.
+export async function moveTab(_: TabState, formData: FormData): Promise<TabState> {
+  await requireStaff(["owner", "bar"]);
+  const tab = await openTab(Number(formData.get("tabId")));
+  if (!tab) return { error: "This tab is already closed" };
+  const to = String(formData.get("tableId") ?? "");
+  const tableId = to === "counter" ? null : Number(to) || 0;
+  if (tableId === 0) return { error: "Pick where to move it" };
+  if (tableId === tab.tableId) return { error: "The tab is already there" };
+  if (tableId) {
+    const table = await db.barTable.findUnique({ where: { id: tableId } });
+    if (!table) return { error: "Table not found" };
+    const busy = await db.tab.findFirst({ where: { tableId, status: "open" } });
+    if (busy) return { error: `${table.label} already has an open tab` };
+  }
+  await db.tab.update({ where: { id: tab.id }, data: { tableId } });
+  refresh();
+  redirect(`/staff/bar?tab=${tab.id}`);
+}
+
+// Clears the table without taking payment: the tab is voided and kept on record, nothing is charged.
+export async function voidTab(_: TabState, formData: FormData): Promise<TabState> {
+  const staff = await requireStaff(["owner", "bar"]);
+  const tab = await openTab(Number(formData.get("tabId")));
+  if (!tab) return { error: "This tab is already closed" };
+  const served = tab.items.some((i) => i.status !== "new");
+  if (served && staff.role !== "owner") return { error: "Food is already made or served. Ask the owner to clear this tab, or take payment." };
+  const done = await db.tab.updateMany({ where: { id: tab.id, status: "open" }, data: { status: "void", closedAt: new Date(), paymentMethod: null } });
+  if (!done.count) return { error: "This tab is already closed" };
+  refresh();
+  revalidatePath("/staff/kitchen");
+  redirect(`/staff/bar?paid=${encodeURIComponent(`${tab.table?.label ?? "Counter"} cleared, nothing charged`)}`);
+}

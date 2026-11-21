@@ -28,7 +28,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 ## In progress
 
 - Jashan: step-by-step member court booking: sport, court, then time (`src/app/me/(app)/book`)
-- Divyadeep: café tab tools: change the person, move table, clear a table (`src/app/staff/(app)/bar`)
 
 ## Next up
 
@@ -36,6 +35,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Café tabs: change the person, move to another table, clear a table without charging (Divyadeep)
 - Member app menu moved to a left olive sidebar on desktop, phones keep bottom tabs (Divyadeep)
 - Kitchen: cooking stage, prep list, today's numbers, sold out switches, café team on shift (Divyadeep)
 - Trial form: plan picker for membership, Other option removed (Divyadeep)
