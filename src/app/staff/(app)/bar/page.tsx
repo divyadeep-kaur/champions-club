@@ -77,8 +77,25 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
         <div className="grid min-w-0 flex-[999_1_520px] gap-5">
           <section aria-label="Tables" className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
             {tables.map((t) => {
-              const tab = openTabs.find((o) => o.tableId === t.id);
+              const tabs = openTabs.filter((o) => o.tableId === t.id);
               const on = selectedTable?.id === t.id;
+              if (tabs.length > 1) {
+                return (
+                  <div key={t.id} className={`min-h-[88px] p-3.5 ${on ? "border-2 border-forest bg-forest text-cream" : "border border-line bg-paper text-ink"}`}>
+                    <span className="flex items-baseline justify-between font-serif text-[22px]">
+                      {t.label}
+                      <span className="font-sans text-[12px] font-bold">{tabs.length} tabs</span>
+                    </span>
+                    {tabs.map((tab) => (
+                      <Link key={tab.id} href={`/staff/bar?tab=${tab.id}`} aria-current={selectedTab?.id === tab.id ? "true" : undefined} className={`flex justify-between gap-2 text-[13.5px] hover:underline ${selectedTab?.id === tab.id ? "font-bold" : ""}`}>
+                        <span className="truncate">{tab.member?.name ?? tab.guestName ?? "Guest"}</span>
+                        <span className="tabular-nums">{inr(tab.total)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                );
+              }
+              const tab = tabs[0];
               return (
                 <Link
                   key={t.id}
