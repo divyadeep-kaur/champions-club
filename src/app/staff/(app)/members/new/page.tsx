@@ -12,7 +12,7 @@ export default async function NewMemberPage({ searchParams }: { searchParams: Pr
   const { lead: leadId } = await searchParams;
   const lead = leadId ? await db.lead.findUnique({ where: { id: Number(leadId) || 0 } }) : null;
   const [plans, court, balls, drink] = await Promise.all([
-    db.plan.findMany({ orderBy: { monthlyFee: "desc" } }),
+    db.plan.findMany({ where: { active: true }, orderBy: { monthlyFee: "desc" } }),
     db.court.findFirst({ where: { sport: "tennis" }, orderBy: { walkInRate: "asc" } }),
     db.product.findFirst({ where: { category: "balls" }, orderBy: { price: "asc" } }),
     db.menuItem.findFirst({ where: { category: "drinks", active: true }, orderBy: { price: "desc" }, skip: 1 }),

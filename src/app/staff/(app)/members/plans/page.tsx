@@ -6,6 +6,7 @@ import { getDefaultPolicy } from "@/lib/membershipService";
 import { requireStaff } from "@/lib/session";
 import { PlanForm } from "./PlanForm";
 import { PolicyForm } from "./PolicyForm";
+import { setPlanOpen } from "../membershipActions";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,10 @@ export default async function PlansPage() {
         {plans.map((p) => (
           <section key={p.id} className="border border-line bg-paper p-5">
             <div className="flex items-baseline justify-between gap-2">
-              <h2 className="font-serif text-[26px] font-semibold text-forest">{p.name}</h2>
+              <h2 className="font-serif text-[26px] font-semibold text-forest">
+                {p.name}
+                {!p.active && <span className="ml-2 align-middle bg-[#ebe5d8] px-2 py-0.5 font-sans text-[12.5px] font-semibold text-muted">Closed</span>}
+              </h2>
               <span className="text-[13.5px] text-muted">{p._count.members} active</span>
             </div>
             <p className="mt-1 font-serif text-[30px] leading-tight">
@@ -48,6 +52,16 @@ export default async function PlansPage() {
               ))}
             </dl>
             {p.name === "Junior" && <p className="mt-2 text-[13px] text-muted">Only for players under 18 on the day they join, renew or switch.</p>}
+            {!p.active && <p className="mt-2 text-[13px] text-muted">Closed: no new sign-ups or switches to {p.name}. Current members keep it and can renew it.</p>}
+            {owner && (
+              <form action={setPlanOpen} className="mt-3">
+                <input type="hidden" name="planId" value={p.id} />
+                <input type="hidden" name="open" value={p.active ? "0" : "1"} />
+                <button className="text-[13.5px] font-semibold text-muted underline underline-offset-4 hover:text-forest">
+                  {p.active ? "Close to new sign-ups and plan changes" : "Reopen for sign-ups and changes"}
+                </button>
+              </form>
+            )}
             {owner && (
               <details className="mt-3">
                 <summary className="cursor-pointer text-[14px] font-semibold text-forest">Edit price and benefits</summary>

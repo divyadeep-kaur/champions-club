@@ -62,6 +62,7 @@ export async function changePlan(_: ActionState, formData: FormData): Promise<Ac
   ]);
   if (!member || !next) return { error: "Member or plan not found" };
   if (next.id === member.planId) return { error: "That is their current plan. Use Renew or Extend instead." };
+  if (!next.active) return { error: `${next.name} is closed to new sign-ups and plan changes` };
   const age = juniorAgeError(next.name, member.birthDate);
   if (age) return { error: age };
   const effective = toDate(f.effective);
@@ -118,6 +119,7 @@ export async function renewMembership(_: ActionState, formData: FormData): Promi
   const age = juniorAgeError(plan.name, member.birthDate);
   if (age) return { error: age };
   if (member.suspendedAt) return { error: "Reactivate the membership before renewing it" };
+  if (!plan.active && plan.id !== member.planId) return { error: `${plan.name} is closed. Members can only renew it if they are already on it` };
   const renewalDate = toDate(f.renewalDate);
   if (renewalDate > new Date(Date.now() + 31 * 86_400_000)) return { error: "The renewal date is too far ahead" };
 
@@ -328,4 +330,18 @@ export async function setChangePolicy(_: ActionState, formData: FormData): Promi
   });
   refresh();
   return { ok: "Default saved", at: Date.now() };
+}
+
+export async function setPlanOpen(formData: FormData) {
+  const owner = await requireStaff(["owner"]);
+  const planId = Number(formData.get("planId"));
+  const open = formData.get("open") === "1";
+  const plan = await db.plan.findUnique({ where: { id: planId } });
+  if (!plan || plan.active === open) return;
+  await db.$transaction([
+    db.plan.update({ where: { id: planId }, data: { active: open } }),
+    db.planAudit.create({ data: { planId, changes: open ? "Reopened for sign-ups and plan changes" : "Closed to new sign-ups and plan changes", staffId: owner.id } }),
+  ]);
+  refresh();
+  revalidatePath("/staff/members/new");
 }

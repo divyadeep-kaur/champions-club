@@ -101,6 +101,7 @@ model Plan {
   barDiscount  Int
   durationDays Int      @default(30)
   description  String
+  active       Boolean  @default(true)
   members      Member[]
   changesFrom  MembershipChange[] @relation("ChangeFrom")
   changesTo    MembershipChange[] @relation("ChangeTo")

@@ -34,6 +34,7 @@ export async function createMember(_: FormState, formData: FormData): Promise<Fo
 
   const plan = await db.plan.findUnique({ where: { id: data.planId } });
   if (!plan) return { error: "Choose a plan", fields };
+  if (!plan.active) return { error: `${plan.name} is closed to new sign-ups`, fields };
 
   const birthDate = data.birthDate ? new Date(`${data.birthDate}T00:00:00`) : null;
   if (birthDate && (isNaN(birthDate.getTime()) || birthDate > new Date())) return { error: "Enter a valid date of birth", fields };
