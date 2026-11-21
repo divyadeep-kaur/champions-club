@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { balanceDue, gstFromInclusive, invoiceTotals, nextInvoiceNumber, gstSummary, monthRange, profitAndLoss, refundable } from "./money";
+import { balanceDue, gstFromInclusive, invoiceTotals, nextInvoiceNumber, gstSummary, monthRange, profitAndLoss, refundable, cashCloseSummary } from "./money";
 
 describe("gstFromInclusive", () => {
   it("splits a GST-inclusive price into taxable value and tax", () => {
@@ -104,5 +104,27 @@ describe("balances and refunds", () => {
     expect(refundable(400)).toBe(400);
     expect(refundable(800, 200)).toBe(200);
     expect(refundable(-50)).toBe(0);
+  });
+});
+
+describe("cashCloseSummary", () => {
+  const pays = [
+    { method: "cash", amount: 1200 },
+    { method: "cash", amount: -300 },
+    { method: "upi", amount: 2500 },
+    { method: "card", amount: 900 },
+    { method: "bank", amount: 4000 },
+  ];
+  it("works out expected cash after refunds and cash paid out", () => {
+    const s = cashCloseSummary(pays, [
+      { method: "cash", amount: 150 },
+      { method: "bank", amount: 5000 },
+    ]);
+    expect(s).toMatchObject({ cashIn: 900, cashOut: 150, expectedCash: 750, upi: 2500, card: 900, other: 4000, total: 8300, variance: null });
+  });
+  it("reports a shortfall or surplus against the counted cash", () => {
+    expect(cashCloseSummary(pays, [], 850).variance).toBe(-50);
+    expect(cashCloseSummary(pays, [], 1000).variance).toBe(100);
+    expect(cashCloseSummary(pays, [], 900).variance).toBe(0);
   });
 });

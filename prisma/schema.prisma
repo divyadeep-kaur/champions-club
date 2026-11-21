@@ -429,3 +429,17 @@ model ClubSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model CashClose {
+  id           Int      @id @default(autoincrement())
+  day          String   @unique
+  expectedCash Int
+  countedCash  Int
+  variance     Int
+  upi          Int      @default(0)
+  card         Int      @default(0)
+  other        Int      @default(0)
+  note         String?
+  staffName    String
+  createdAt    DateTime @default(now())
+}

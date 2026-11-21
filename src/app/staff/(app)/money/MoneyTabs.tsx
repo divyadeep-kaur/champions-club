@@ -10,6 +10,8 @@ const tabs = [
   { href: "/staff/money/invoices", label: "Invoices" },
   { href: "/staff/money/staff-invoices", label: "Staff invoices" },
   { href: "/staff/money/gst", label: "GST" },
+  { href: "/staff/money/close", label: "Daily close" },
+  { href: "/staff/money/checks", label: "Books check" },
 ];
 
 export function MoneyTabs() {

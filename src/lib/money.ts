@@ -75,3 +75,21 @@ export function profitAndLoss(income: { source: string; amount: number; gst?: nu
     staffShare: netRevenue > 0 ? Math.round((staffCost / netRevenue) * 1000) / 10 : 0,
   };
 }
+
+export function cashCloseSummary(payments: { method: string; amount: number }[], paidOut: { method: string | null; amount: number }[], counted?: number) {
+  const by = (m: string) => payments.filter((p) => p.method === m).reduce((s, p) => s + p.amount, 0);
+  const cashIn = by("cash");
+  const cashOut = paidOut.filter((e) => e.method === "cash").reduce((s, e) => s + e.amount, 0);
+  const expectedCash = cashIn - cashOut;
+  const other = payments.filter((p) => !["cash", "upi", "card"].includes(p.method)).reduce((s, p) => s + p.amount, 0);
+  return {
+    cashIn,
+    cashOut,
+    expectedCash,
+    upi: by("upi"),
+    card: by("card"),
+    other,
+    total: payments.reduce((s, p) => s + p.amount, 0),
+    variance: counted === undefined ? null : counted - expectedCash,
+  };
+}
