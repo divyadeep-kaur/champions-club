@@ -1,8 +1,11 @@
 import { PrismaClient, type Member } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 import { payslip, statutoryDue } from "../src/lib/payroll";
 
-const db = new PrismaClient();
+const db = process.env.TURSO_DATABASE_URL
+  ? new PrismaClient({ adapter: new PrismaLibSQL({ url: process.env.TURSO_DATABASE_URL, authToken: process.env.TURSO_AUTH_TOKEN }) })
+  : new PrismaClient();
 
 export const DEMO_PASSWORD = "champions123";
 

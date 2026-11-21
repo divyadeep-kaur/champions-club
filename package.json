@@ -12,15 +12,19 @@
     "postinstall": "prisma generate",
     "test": "vitest run",
     "db:push": "prisma db push",
-    "build:check": "cross-env NEXT_DIST_DIR=.next-check next build"
+    "build:check": "cross-env NEXT_DIST_DIR=.next-check next build",
+    "turso:schema": "node --env-file=.env.turso prisma/turso-schema.mjs",
+    "turso:seed": "tsx --env-file=.env.turso prisma/seed.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "@prisma/adapter-libsql": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.43.0",
     "jose": "^6.2.18",
     "lucide-react": "^0.544.0",
-    "next": "15.5.4",
+    "next": "15.5.29",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zod": "^3.25.76"
@@ -33,7 +37,7 @@
     "@types/react-dom": "^19",
     "cross-env": "^7.0.3",
     "eslint": "^9",
-    "eslint-config-next": "15.5.4",
+    "eslint-config-next": "15.5.29",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
