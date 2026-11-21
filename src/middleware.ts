@@ -8,7 +8,7 @@ export async function middleware(req: NextRequest) {
 
   if (!session && !onLogin) {
     const url = new URL("/staff/login", req.url);
-    url.searchParams.set("next", pathname);
+    url.searchParams.set("next", pathname + req.nextUrl.search);
     return NextResponse.redirect(url);
   }
   if (session && onLogin) return NextResponse.redirect(new URL("/staff", req.url));
