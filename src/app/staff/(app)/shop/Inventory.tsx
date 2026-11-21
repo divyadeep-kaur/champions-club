@@ -5,6 +5,7 @@ import { Camera, Loader2, Pencil, Plus, X } from "lucide-react";
 import { inr } from "@/lib/constants";
 import type { ProductPhoto } from "@/lib/productPhotos";
 import { fieldCls, labelCls } from "@/components/staff/ui";
+import { CategoryField } from "@/components/staff/CategoryField";
 import { PhotoPicker } from "@/components/staff/PhotoPicker";
 import { addProduct, restockProduct, setProductPhoto, updateProduct, type InventoryState } from "./actions";
 
@@ -94,7 +95,6 @@ export function AddProduct({ categories, onClose, framed = true }: { categories:
   // React clears a form after every submit, so the photo box starts fresh each time too.
   const [round, setRound] = useState(0);
   useEffect(() => setRound((r) => r + 1), [state]);
-  const [category, setCategory] = useState(categories[0] ?? "");
   const ref = useRef<HTMLFormElement>(null);
   const f = state.fields ?? {};
   useEffect(() => {
@@ -117,25 +117,7 @@ export function AddProduct({ categories, onClose, framed = true }: { categories:
           Product name
           <input name="name" defaultValue={f.name} placeholder="e.g. Padel Balls (can of 3)" required className={fieldCls} />
         </label>
-        <label className={labelCls}>
-          Category
-          <select name="category" value={category} onChange={(e) => setCategory(e.target.value)} className={fieldCls}>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c[0]!.toUpperCase() + c.slice(1)}
-              </option>
-            ))}
-            <option value="">New category…</option>
-          </select>
-        </label>
-        {category === "" ? (
-          <label className={labelCls}>
-            New category name
-            <input name="newCategory" defaultValue={f.newCategory} placeholder="e.g. bags" className={fieldCls} />
-          </label>
-        ) : (
-          <span className="hidden sm:block" />
-        )}
+        <CategoryField key={round} categories={categories} initial={f.category} newCategory={f.newCategory} placeholder="e.g. bags" />
         <label className={labelCls}>
           Price (₹)
           <input name="price" type="number" min={1} defaultValue={f.price} required className={fieldCls} />
@@ -217,7 +199,9 @@ function PhotoCell({ item }: { item: Item }) {
 // Edits a product's name, category, price, stock alert and photo. Stock itself changes only through Restock.
 function EditProduct({ item, categories, onDone }: { item: Item; categories: string[]; onDone: (msg: string) => void }) {
   const [state, action, pending] = useActionState<InventoryState, FormData>(updateProduct, {});
-  const [category, setCategory] = useState(item.category);
+  // React clears a form after every submit; remounting the fields keeps the category right.
+  const [round, setRound] = useState(0);
+  useEffect(() => setRound((r) => r + 1), [state]);
   const f = state.fields ?? {};
   useEffect(() => {
     if (state.ok) onDone(state.ok);
@@ -230,31 +214,13 @@ function EditProduct({ item, categories, onDone }: { item: Item; categories: str
         <h3 className="text-[16.5px] font-semibold">Edit {item.name}</h3>
         <span className="text-[13px] text-muted">Code {item.sku} stays the same</span>
       </div>
-      <PhotoPicker current={item.photo?.src} label="Product photo" />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <PhotoPicker key={round} current={item.photo?.src} label="Product photo" />
+      <div key={round} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className={`${labelCls} sm:col-span-2`}>
           Product name
           <input name="name" defaultValue={f.name ?? item.name} required className={fieldCls} />
         </label>
-        <label className={labelCls}>
-          Category
-          <select name="category" value={category} onChange={(e) => setCategory(e.target.value)} className={fieldCls}>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c[0]!.toUpperCase() + c.slice(1)}
-              </option>
-            ))}
-            <option value="">New category…</option>
-          </select>
-        </label>
-        {category === "" ? (
-          <label className={labelCls}>
-            New category name
-            <input name="newCategory" defaultValue={f.newCategory} placeholder="e.g. bags" className={fieldCls} />
-          </label>
-        ) : (
-          <span className="hidden sm:block" />
-        )}
+        <CategoryField key={round} categories={categories} initial={f.category ?? item.category} newCategory={f.newCategory} placeholder="e.g. bags" />
         <label className={labelCls}>
           Price (₹)
           <input name="price" type="number" min={1} defaultValue={f.price ?? item.price} required className={fieldCls} />

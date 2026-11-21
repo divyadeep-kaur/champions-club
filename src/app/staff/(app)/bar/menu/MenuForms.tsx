@@ -4,6 +4,7 @@ import { useActionState, useCallback, useEffect, useRef, useState } from "react"
 import { Loader2, Pencil } from "lucide-react";
 import { fieldCls, labelCls } from "@/components/staff/ui";
 import { AddTile } from "@/components/staff/AddTile";
+import { CategoryField } from "@/components/staff/CategoryField";
 import { PhotoPicker } from "@/components/staff/PhotoPicker";
 import { addMenuItem, editMenuItem, updateMenuItem, type MenuState } from "./actions";
 
@@ -14,7 +15,6 @@ export function AddItemForm({ categories, framed = true }: { categories: string[
   // React clears a form after every submit, so the photo box starts fresh each time too.
   const [round, setRound] = useState(0);
   useEffect(() => setRound((r) => r + 1), [state]);
-  const [category, setCategory] = useState(categories[0] ?? "");
   const ref = useRef<HTMLFormElement>(null);
   const f = state.fields ?? {};
   useEffect(() => {
@@ -31,29 +31,13 @@ export function AddItemForm({ categories, framed = true }: { categories: string[
         Item name
         <input name="name" defaultValue={f.name} placeholder="e.g. Mango Smoothie" required className={fieldCls} />
       </label>
-      <div className="grid grid-cols-2 gap-3">
-        <label className={labelCls}>
-          Category
-          <select name="category" value={category} onChange={(e) => setCategory(e.target.value)} className={fieldCls}>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c[0]!.toUpperCase() + c.slice(1)}
-              </option>
-            ))}
-            <option value="">New category…</option>
-          </select>
-        </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <CategoryField key={round} categories={categories} initial={f.category} newCategory={f.newCategory} placeholder="e.g. desserts" />
         <label className={labelCls}>
           Price (₹)
           <input name="price" type="number" min={1} defaultValue={f.price} required className={fieldCls} />
         </label>
       </div>
-      {category === "" && (
-        <label className={labelCls}>
-          New category name
-          <input name="newCategory" defaultValue={f.newCategory} placeholder="e.g. desserts" className={fieldCls} />
-        </label>
-      )}
       <button
         type="submit"
         disabled={pending}
@@ -72,7 +56,9 @@ type MenuRow = { id: number; name: string; category: string; price: number; acti
 
 function EditItemForm({ item, photo, categories, onDone }: { item: MenuRow; photo: string | null; categories: string[]; onDone: (msg: string) => void }) {
   const [state, action, pending] = useActionState<MenuState, FormData>(editMenuItem, {});
-  const [category, setCategory] = useState(item.category);
+  // React clears a form after every submit; remounting the fields keeps the category right.
+  const [round, setRound] = useState(0);
+  useEffect(() => setRound((r) => r + 1), [state]);
   const f = state.fields ?? {};
   useEffect(() => {
     if (state.ok) onDone(state.ok);
@@ -81,31 +67,13 @@ function EditItemForm({ item, photo, categories, onDone }: { item: MenuRow; phot
   return (
     <form action={action} className="grid gap-3 border-t border-dashed border-line bg-cream px-4 py-4" noValidate aria-label={`Edit ${item.name}`}>
       <input type="hidden" name="id" value={item.id} />
-      <PhotoPicker current={photo} label="Item photo" />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <PhotoPicker key={round} current={photo} label="Item photo" />
+      <div key={round} className="grid gap-3 sm:grid-cols-2">
         <label className={`${labelCls} sm:col-span-2`}>
           Item name
           <input name="name" defaultValue={f.name ?? item.name} required className={fieldCls} />
         </label>
-        <label className={labelCls}>
-          Category
-          <select name="category" value={category} onChange={(e) => setCategory(e.target.value)} className={fieldCls}>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c[0]!.toUpperCase() + c.slice(1)}
-              </option>
-            ))}
-            <option value="">New category…</option>
-          </select>
-        </label>
-        {category === "" ? (
-          <label className={labelCls}>
-            New category name
-            <input name="newCategory" defaultValue={f.newCategory} placeholder="e.g. desserts" className={fieldCls} />
-          </label>
-        ) : (
-          <span className="hidden sm:block" />
-        )}
+        <CategoryField key={round} categories={categories} initial={f.category ?? item.category} newCategory={f.newCategory} placeholder="e.g. desserts" />
         <label className={labelCls}>
           Price (₹)
           <input name="price" type="number" min={1} defaultValue={f.price ?? item.price} required className={fieldCls} />
