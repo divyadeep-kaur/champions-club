@@ -27,7 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: desktop layout for the member app (`src/app/me/(app)`)
+- (nothing yet)
 - Divyadeep: plan picker for membership on the trial form, remove the Other option (`src/app/trial`, `src/components/landing/Home.tsx`)
 - Divyadeep: kitchen fixes and new features, café team on shift (`src/app/staff/(app)/kitchen`, `src/app/staff/(app)/bar/page.tsx`)
 
@@ -37,6 +37,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Member app desktop layout and photo café menu (Jashan)
 - Finance audit: collect unpaid courts, double-payment guards, refunds by original method, exact invoice GST (Jashan)
 - Member management extras: close a plan, Payments due tab (Jashan)
 - Shop inventory, delivery, product and café item editing (Divyadeep)
