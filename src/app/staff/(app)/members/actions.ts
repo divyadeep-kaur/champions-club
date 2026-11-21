@@ -19,10 +19,11 @@ const newMemberSchema = z.object({
   planId: z.coerce.number({ message: "Choose a plan" }).int().positive("Choose a plan"),
   method,
   notes: z.string().trim().max(300).optional(),
+  leadId: z.string().optional(),
 });
 
 export async function createMember(_: FormState, formData: FormData): Promise<FormState> {
-  await requireStaff(["owner", "desk"]);
+  const staff = await requireStaff(["owner", "desk"]);
   const fields = Object.fromEntries(formData) as Record<string, string>;
   const parsed = newMemberSchema.safeParse(fields);
   if (!parsed.success) return { error: parsed.error.issues[0].message, fields };
@@ -43,6 +44,8 @@ export async function createMember(_: FormState, formData: FormData): Promise<Fo
   if (existing) return { error: `${existing.name} (${existing.code}) already uses this phone number`, fields };
 
   const last = await db.member.findFirst({ orderBy: { id: "desc" }, select: { code: true } });
+  const lead = data.leadId ? await db.lead.findUnique({ where: { id: Number(data.leadId) || 0 } }) : null;
+  const fee = lead?.quoteAmount != null && lead.plan === plan.name ? lead.quoteAmount : plan.monthlyFee;
   const { start, end } = renewalPeriod(new Date(), new Date(), plan.durationDays);
 
   const member = await db.$transaction(async (tx) => {
@@ -59,7 +62,12 @@ export async function createMember(_: FormState, formData: FormData): Promise<Fo
         notes: data.notes || null,
       },
     });
-    await tx.payment.create({ data: { source: "membership", refId: m.id, amount: plan.monthlyFee, method: data.method, note: `New ${plan.name} membership` } });
+    await tx.payment.create({ data: { source: "membership", refId: m.id, amount: fee, method: data.method, note: `New ${plan.name} membership${lead ? " (from enquiry)" : ""}` } });
+    if (lead && lead.status !== "won") {
+      await tx.lead.update({ where: { id: lead.id }, data: { status: "won", memberId: m.id } });
+      if (lead.bookingId) await tx.booking.update({ where: { id: lead.bookingId }, data: { memberId: m.id, guestName: null } });
+      await tx.leadActivity.create({ data: { leadId: lead.id, kind: "joined", text: `Joined as a ${plan.name} member (${m.code})`, staffName: staff.name } });
+    }
     return m;
   });
 

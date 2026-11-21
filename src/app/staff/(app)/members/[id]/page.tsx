@@ -45,6 +45,7 @@ export default async function MemberProfile({ params, searchParams }: { params: 
         bookings: { include: { court: true }, orderBy: { start: "desc" }, take: 8 },
         orders: { include: { items: { include: { product: true } } }, orderBy: { createdAt: "desc" }, take: 6 },
         tabs: { orderBy: { openedAt: "desc" }, take: 6 },
+        leads: { orderBy: { createdAt: "asc" }, take: 1 },
       },
     }),
     db.plan.findMany({ orderBy: { monthlyFee: "desc" } }),
@@ -77,6 +78,11 @@ export default async function MemberProfile({ params, searchParams }: { params: 
             <Badge tone={member.plan.name === "Gold" ? "gold" : "gray"}>{member.plan.name}</Badge>
             <StatusBadge endDate={member.endDate} />
             <span className="text-[14px] text-muted">Member since {fmtDate(member.createdAt)}</span>
+            {member.leads[0] && (
+              <Link href={`/staff/leads/${member.leads[0].id}`} className="text-[14px] font-semibold text-forest underline underline-offset-4">
+                Came from a {member.leads[0].interest} enquiry on {fmtDate(member.leads[0].createdAt)}
+              </Link>
+            )}
           </div>
         </div>
         <Link href={`/staff/bookings?member=${member.id}`} className="bg-forest px-5 py-2.5 text-[15px] font-semibold text-cream hover:bg-forest-deep">

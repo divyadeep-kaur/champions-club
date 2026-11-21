@@ -12,14 +12,15 @@ const input =
   "mt-1.5 w-full border border-line bg-paper px-3.5 py-2.5 text-[15.5px] text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
 const label = "text-[14px] font-semibold text-ink";
 
-export function NewMemberForm({ plans, visit }: { plans: Plan[]; visit: Visit }) {
+export function NewMemberForm({ plans, visit, defaults }: { plans: Plan[]; visit: Visit; defaults?: Record<string, string> }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createMember, {});
-  const f = state.fields ?? {};
+  const f = state.fields ?? defaults ?? {};
   const [planId, setPlanId] = useState<number>(Number(f.planId) || plans.find((p) => p.name === "Silver")?.id || plans[0]?.id);
   const selected = plans.find((p) => p.id === planId);
 
   return (
     <form action={action} className="space-y-8" noValidate>
+      <input type="hidden" name="leadId" value={f.leadId ?? ""} />
       <fieldset>
         <legend className="font-serif text-[22px] font-medium text-forest">Plan</legend>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
