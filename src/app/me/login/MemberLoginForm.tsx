@@ -1,38 +1,43 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { memberLogin, type MeState } from "../actions";
 
-const input =
-  "mt-1.5 w-full border border-line bg-paper px-4 py-3.5 text-[17px] text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
+const field = "min-h-12 rounded-xl border border-[#b5aa98] bg-white p-3 font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+const label = "grid gap-1.5 text-[14px] font-bold";
 
 export function MemberLoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<MeState, FormData>(memberLogin, {});
   return (
-    <form action={action} className="mt-8 space-y-5" noValidate>
+    <form action={action} className="grid gap-3.5 rounded-[22px] border border-white/60 bg-paper/85 p-6 backdrop-blur-xl" noValidate>
       <input type="hidden" name="next" value={next ?? ""} />
-      <label className="block">
-        <span className="text-[14px] font-semibold">Mobile number</span>
-        <input name="phone" inputMode="tel" autoComplete="tel" placeholder="98765 43210" className={input} />
+      <h1 className="text-[30px] font-extrabold text-forest">Member sign in</h1>
+      <p className="text-[15px] text-[#3c4a43]">Book courts and order from the café.</p>
+      <label className={label}>
+        Mobile number
+        <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="98765 43210" className={field} />
       </label>
-      <label className="block">
-        <span className="text-[14px] font-semibold">Member code</span>
-        <input name="code" autoCapitalize="characters" placeholder="CC-0001" className={`${input} uppercase`} />
-        <span className="mt-1.5 block text-[13px] text-muted">It’s on your welcome message from the front desk.</span>
+      <label className={label}>
+        Member code
+        <input name="code" autoCapitalize="characters" placeholder="CC-0001" className={`${field} uppercase`} />
       </label>
-      <p role="alert" aria-live="polite" className="min-h-5 text-[14px] font-medium text-clay">
-        {state.error}
-      </p>
-      <button
-        type="submit"
-        disabled={pending}
-        className="flex w-full items-center justify-center gap-2 bg-forest px-6 py-4 text-[17px] font-semibold text-cream transition-colors hover:bg-forest-deep disabled:opacity-70"
-      >
-        {pending ? <Loader2 className="size-4 animate-spin" /> : null}
-        {pending ? "Signing in" : "Sign in"}
-        {!pending && <ArrowRight className="size-4" />}
+      {state.error && (
+        <p role="alert" className="text-[14px] font-semibold text-clay">
+          {state.error}
+        </p>
+      )}
+      <button type="submit" disabled={pending} className="flex items-center justify-center gap-2 rounded-full bg-forest p-[15px] text-[17px] font-extrabold text-cream hover:bg-forest-deep disabled:opacity-70">
+        {pending && <Loader2 className="size-4 animate-spin" />}
+        Sign in
       </button>
+      <p className="text-center text-[13.5px] text-muted">
+        Lost your code? Ask at the front desk. Not a member?{" "}
+        <Link href="/trial" className="font-semibold text-forest underline underline-offset-4">
+          Book a free trial
+        </Link>
+      </p>
     </form>
   );
 }

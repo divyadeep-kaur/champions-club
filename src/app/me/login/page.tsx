@@ -1,5 +1,5 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Trophy } from "lucide-react";
 import { MemberLoginForm } from "./MemberLoginForm";
 
 export const metadata = { title: "Member sign in · The Champions Club" };
@@ -7,27 +7,14 @@ export const metadata = { title: "Member sign in · The Champions Club" };
 export default async function MemberLoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   return (
-    <main className="mx-auto flex min-h-screen max-w-[440px] flex-col px-5 py-8">
-      <Link href="/" className="flex items-center gap-2.5 text-forest">
-        <span className="grid size-9 place-items-center rounded-full bg-forest text-cream">
-          <Trophy className="size-[17px]" strokeWidth={1.8} />
-        </span>
-        <span className="font-serif text-[19px] font-medium">The Champions Club</span>
-      </Link>
-      <div className="flex flex-1 flex-col justify-center py-10">
-        <h1 className="font-serif text-[42px] font-semibold leading-[1] tracking-[-0.03em] text-forest">
-          Hello,
-          <br />
-          <em className="font-medium">member.</em>
-        </h1>
-        <p className="mt-3 text-[16px] text-muted">Book courts and order from the café on your phone.</p>
+    <main className="relative min-h-[100svh] overflow-hidden bg-forest-deep">
+      <Image src="/images/tennis-court.jpg" alt="" aria-hidden="true" fill priority unoptimized sizes="100vw" className="object-cover object-[45%_40%]" />
+      <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,42,29,0.15)_0%,rgba(11,42,29,0.75)_60%)]" />
+      <div className="relative mx-auto flex min-h-[100svh] max-w-[480px] flex-col justify-between gap-10 p-6">
+        <Link href="/" className="self-start rounded-full border border-white/35 bg-white/[0.18] px-3.5 py-2.5 text-[18px] font-extrabold text-white backdrop-blur-md">
+          Champions Club
+        </Link>
         <MemberLoginForm next={next} />
-        <p className="mt-8 text-[14px] text-muted">
-          Not a member yet?{" "}
-          <Link href="/" className="font-semibold text-forest underline underline-offset-4">
-            See plans and book a trial
-          </Link>
-        </p>
       </div>
     </main>
   );

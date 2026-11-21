@@ -1,14 +1,26 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { Loader2, Minus, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { inr } from "@/lib/constants";
 import { applyDiscount } from "@/lib/pricing";
 import { orderFood, type MeState } from "../../actions";
 
 type Item = { id: number; name: string; category: string; price: number };
 
-export function CafeMenu({ menu, tables, defaultTable, discount }: { menu: Item[]; tables: { id: number; label: string }[]; defaultTable?: number; discount: number }) {
+export function CafeMenu({
+  menu,
+  tables,
+  defaultTable,
+  discount,
+  openTab,
+}: {
+  menu: Item[];
+  tables: { id: number; label: string }[];
+  defaultTable?: number;
+  discount: number;
+  openTab: { subtotal: number } | null;
+}) {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [state, action, pending] = useActionState<MeState, FormData>(orderFood, {});
 
@@ -16,18 +28,21 @@ export function CafeMenu({ menu, tables, defaultTable, discount }: { menu: Item[
     if (state.ok) setCart({});
   }, [state]);
 
-  const lines = Object.entries(cart).filter(([, q]) => q > 0).map(([id, qty]) => ({ id: Number(id), qty }));
-  const subtotal = lines.reduce((s, l) => s + (menu.find((m) => m.id === l.id)?.price ?? 0) * l.qty, 0);
-  const total = applyDiscount(subtotal, discount);
-  const count = lines.reduce((n, l) => n + l.qty, 0);
+  const lines = Object.entries(cart)
+    .filter(([, q]) => q > 0)
+    .map(([id, qty]) => ({ id: Number(id), qty }));
+  const orderSub = lines.reduce((s, l) => s + (menu.find((m) => m.id === l.id)?.price ?? 0) * l.qty, 0);
+  const before = openTab?.subtotal ?? 0;
+  const after = applyDiscount(before + orderSub, discount);
+  const saved = before + orderSub - after;
   const change = (id: number, d: number) => setCart((c) => ({ ...c, [id]: Math.max(0, Math.min(20, (c[id] ?? 0) + d)) }));
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="grid gap-3.5">
       <input type="hidden" name="items" value={JSON.stringify(lines)} />
-      <label className="block">
-        <span className="text-[13px] font-semibold text-muted">Where are you sitting?</span>
-        <select name="tableId" defaultValue={defaultTable ?? ""} className="mt-1 w-full border border-line bg-paper px-3 py-3 text-[16px] outline-none focus:border-forest">
+      <label className="mx-4 grid gap-1.5 text-[14px] font-bold">
+        Your table
+        <select name="tableId" defaultValue={defaultTable ?? ""} className="min-h-12 rounded-xl border border-[#b5aa98] bg-white p-3 font-normal outline-none focus:border-forest">
           <option value="">At the counter</option>
           {tables.map((t) => (
             <option key={t.id} value={t.id}>
@@ -38,72 +53,55 @@ export function CafeMenu({ menu, tables, defaultTable, discount }: { menu: Item[
       </label>
 
       {(["drinks", "food"] as const).map((cat) => (
-        <section key={cat}>
-          <h2 className="font-serif text-[22px] font-medium capitalize text-forest">{cat}</h2>
-          <ul className="mt-2 divide-y divide-line border border-line bg-paper">
-            {menu
-              .filter((m) => m.category === cat)
-              .map((m) => {
-                const qty = cart[m.id] ?? 0;
-                return (
-                  <li key={m.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="font-medium">{m.name}</p>
-                      <p className="text-[14px] tabular-nums text-muted">
-                        {discount ? (
-                          <>
-                            <span className="text-ink">{inr(applyDiscount(m.price, discount))}</span> <s>{inr(m.price)}</s>
-                          </>
-                        ) : (
-                          inr(m.price)
-                        )}
-                      </p>
+        <section key={cat} className="mx-4 grid gap-2">
+          <h2 className="mt-1 text-[17px] font-bold capitalize text-forest">{cat}</h2>
+          {menu
+            .filter((m) => m.category === cat)
+            .map((m) => {
+              const qty = cart[m.id] ?? 0;
+              return (
+                <div key={m.id} className="flex items-center justify-between gap-2.5 rounded-[14px] border border-line bg-paper px-3 py-2.5">
+                  <div>
+                    <strong className="text-[15px]">{m.name}</strong>
+                    <div className="text-[13.5px] tabular-nums text-muted">
+                      {inr(m.price)}
+                      {discount ? ` · ${inr(applyDiscount(m.price, discount))} for you` : ""}
                     </div>
-                    {qty === 0 ? (
-                      <button type="button" onClick={() => change(m.id, 1)} className="border border-forest px-4 py-1.5 text-[14px] font-semibold text-forest">
-                        Add
-                      </button>
-                    ) : (
-                      <div className="flex items-center border border-forest">
-                        <button type="button" aria-label={`One less ${m.name}`} onClick={() => change(m.id, -1)} className="grid size-9 place-items-center text-forest">
-                          <Minus className="size-4" />
-                        </button>
-                        <span className="w-7 text-center font-semibold tabular-nums" aria-live="polite">
-                          {qty}
-                        </span>
-                        <button type="button" aria-label={`One more ${m.name}`} onClick={() => change(m.id, 1)} className="grid size-9 place-items-center text-forest">
-                          <Plus className="size-4" />
-                        </button>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-          </ul>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" aria-label={`Remove one ${m.name}`} disabled={qty === 0} onClick={() => change(m.id, -1)} className="size-11 rounded-full border-[1.5px] border-forest text-[20px] text-forest disabled:opacity-35">
+                      −
+                    </button>
+                    <span className="min-w-4 text-center font-extrabold tabular-nums" aria-live="polite">
+                      {qty}
+                    </span>
+                    <button type="button" aria-label={`Add one ${m.name}`} onClick={() => change(m.id, 1)} className="size-11 rounded-full bg-forest text-[20px] text-cream">
+                      +
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
         </section>
       ))}
 
-      <p role="status" aria-live="polite" className={`min-h-5 text-[14.5px] font-medium ${state.error ? "text-clay" : "text-[#4d7a12]"}`}>
-        {state.error ?? state.ok}
-      </p>
-
-      {count > 0 && (
-        <div className="fixed inset-x-0 bottom-[64px] z-20 mx-auto max-w-[560px] px-3">
-          <div className="flex items-center justify-between gap-3 border border-forest bg-forest p-3 pl-4 text-cream shadow-[0_-12px_40px_-12px_rgba(11,42,29,0.5)]">
-            <div>
-              <p className="text-[13px] text-cream/75">
-                {count} {count === 1 ? "item" : "items"}
-                {discount ? ` · ${inr(subtotal - total)} off` : ""}
-              </p>
-              <p className="font-serif text-[22px] font-semibold leading-none">{inr(total)}</p>
-            </div>
-            <button type="submit" disabled={pending} className="inline-flex items-center gap-2 bg-cream px-5 py-3 text-[15.5px] font-semibold text-forest disabled:opacity-70">
-              {pending && <Loader2 className="size-4 animate-spin" />}
-              Add to my tab
-            </button>
-          </div>
+      <div className="sticky bottom-[68px] z-20 mx-3 grid gap-2 rounded-[20px] bg-forest-deep/90 px-4 py-3.5 text-white">
+        <div className="flex justify-between gap-2 text-[14px]">
+          <span>
+            Open tab {inr(before)} + this order {inr(orderSub)}
+          </span>
+          {saved > 0 && <span className="text-ball">−{inr(saved)}</span>}
         </div>
-      )}
+        {(state.ok || state.error) && (
+          <p role="status" className={`rounded-[10px] px-2.5 py-2 text-[14px] ${state.error ? "bg-clay-soft text-[#7a2f14]" : "bg-[#e3efc7] text-[#2f4a0a]"}`}>
+            {state.error ?? state.ok}
+          </p>
+        )}
+        <button type="submit" disabled={pending || lines.length === 0} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-60">
+          {pending && <Loader2 className="size-4 animate-spin" />}
+          Send to kitchen · tab {inr(after)}
+        </button>
+      </div>
     </form>
   );
 }

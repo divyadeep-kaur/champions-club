@@ -6,38 +6,35 @@ import { Loader2, X } from "lucide-react";
 import { inr } from "@/lib/constants";
 import { memberBook, type MeState } from "../../actions";
 
-export function ConfirmBooking(props: { courtId: number; courtName: string; date: string; time: string; label: string; price: number; walkIn: number; closeHref: string }) {
+export function ConfirmBooking(props: { courtId: number; courtName: string; date: string; time: string; label: string; plan: string; price: number; walkIn: number; closeHref: string }) {
   const [state, action, pending] = useActionState<MeState, FormData>(memberBook, {});
   return (
-    <div className="fixed inset-x-0 bottom-[64px] z-20 mx-auto max-w-[560px] px-3">
-      <form action={action} className="border border-forest bg-paper p-4 shadow-[0_-12px_40px_-12px_rgba(11,42,29,0.4)]">
+    <div className="fixed inset-x-0 bottom-[68px] z-20 mx-auto max-w-[560px] px-3">
+      <form action={action} className="grid gap-2.5 rounded-[20px] bg-forest-deep/[0.88] p-4 text-white backdrop-blur-xl">
         <input type="hidden" name="courtId" value={props.courtId} />
         <input type="hidden" name="date" value={props.date} />
         <input type="hidden" name="time" value={props.time} />
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-semibold">{props.courtName}</p>
-            <p className="text-[14px] text-muted">{props.label} · 1 hour</p>
-          </div>
-          <Link href={props.closeHref} scroll={false} aria-label="Close" className="grid size-8 place-items-center text-muted">
-            <X className="size-4" />
-          </Link>
+        <div className="flex items-start justify-between gap-2">
+          <strong>{props.courtName}</strong>
+          <span className="flex items-center gap-2">
+            {props.label}
+            <Link href={props.closeHref} scroll={false} aria-label="Close" className="grid size-7 place-items-center rounded-full bg-white/15">
+              <X className="size-3.5" />
+            </Link>
+          </span>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div>
-            <p className="font-serif text-[24px] font-semibold leading-none text-forest">{props.price === 0 ? "Included" : inr(props.price)}</p>
-            {props.price < props.walkIn && <p className="mt-1 text-[12.5px] text-[#4d7a12]">you save {inr(props.walkIn - props.price)}</p>}
-          </div>
-          <button type="submit" disabled={pending} className="inline-flex items-center gap-2 bg-forest px-5 py-3 text-[15.5px] font-semibold text-cream disabled:opacity-70">
-            {pending && <Loader2 className="size-4 animate-spin" />}
-            Confirm
-          </button>
+        <div className="text-[14px] opacity-90">
+          1 hour · {props.price === 0 ? `included in ${props.plan}` : `${props.plan} rate ${inr(props.price)}`} (walk-in {inr(props.walkIn)}) · pay at the desk
         </div>
         {state.error && (
-          <p role="alert" className="mt-2 text-[14px] font-medium text-clay">
+          <p role="alert" className="rounded-[10px] bg-clay-soft p-2.5 text-[14px] text-[#7a2f14]">
             {state.error}
           </p>
         )}
+        <button type="submit" disabled={pending} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-70">
+          {pending && <Loader2 className="size-4 animate-spin" />}
+          Confirm booking
+        </button>
       </form>
     </div>
   );
