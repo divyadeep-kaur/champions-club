@@ -132,7 +132,7 @@ export function StaffNav({ items, name, role, logout }: { items: Item[]; name: s
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
         {open && (
-          <div className="absolute inset-x-0 top-14 space-y-4 bg-forest px-4 pb-5 pt-2 shadow-xl">
+          <div className="cc-drop absolute inset-x-0 top-14 max-h-[calc(100dvh-3.5rem)] space-y-4 overflow-y-auto bg-forest px-4 pb-5 pt-2 shadow-xl">
             <Links items={items} onNavigate={() => setOpen(false)} />
             <User name={name} role={role} logout={logout} />
           </div>

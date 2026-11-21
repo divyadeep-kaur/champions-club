@@ -23,6 +23,13 @@ body {
   background: var(--color-cream);
   color: var(--color-ink);
   font-family: var(--font-body), system-ui, sans-serif;
+  overflow-x: clip;
+}
+
+@layer base {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 ::selection {
@@ -67,9 +74,34 @@ summary,
 input,
 select,
 textarea {
-  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
   transition-duration: 180ms;
   transition-timing-function: ease-out;
+}
+
+@keyframes cc-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cc-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.cc-skeleton {
+  background: linear-gradient(90deg, #ece5d6 25%, #f6f1e7 50%, #ece5d6 75%);
+  background-size: 200% 100%;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -78,7 +110,46 @@ textarea {
   }
 
   .cc-page-in {
-    animation: cc-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: cc-fade 260ms ease-out both;
+  }
+
+  .cc-page-in > * > :nth-child(-n + 8) {
+    animation: cc-rise 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .cc-page-in > * > :nth-child(2) {
+    animation-delay: 50ms;
+  }
+  .cc-page-in > * > :nth-child(3) {
+    animation-delay: 100ms;
+  }
+  .cc-page-in > * > :nth-child(4) {
+    animation-delay: 150ms;
+  }
+  .cc-page-in > * > :nth-child(n + 5) {
+    animation-delay: 200ms;
+  }
+
+  button:not(:disabled):active,
+  a[class*="min-h-"]:active {
+    transform: scale(0.97);
+  }
+
+  main a[class*="border-line"][class*="bg-paper"]:hover,
+  main a[class*="border"][class*="p-4"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -14px rgb(18 56 40 / 0.35);
+  }
+
+  .cc-drop {
+    animation: cc-drop 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .cc-skeleton {
+    animation: cc-shimmer 1.4s linear infinite;
+  }
+
+  tbody tr {
+    transition: background-color 160ms ease-out;
   }
 
   .cc-page-fade {
