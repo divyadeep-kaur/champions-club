@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: redesign the landing footer, agreed with the user (`src/components/landing/Footer.tsx`)
 
 ## Next up
 
