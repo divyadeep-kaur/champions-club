@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: redesign the landing footer, agreed with the user (`src/components/landing/Footer.tsx`)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Landing footer redesign (Jashan)
 - Income: books check, daily cash close, money given away, owed ageing, owner check on every income page (Jashan)
 - Member court booking in steps with 30 min to 2 hour sessions (Jashan)
 - Café tabs: change the person, move to another table, clear a table without charging (Divyadeep)
