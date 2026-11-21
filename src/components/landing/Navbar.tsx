@@ -36,7 +36,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <a
-            href="#"
+            href="/staff/login"
             className="group hidden items-center gap-1.5 text-[14.5px] font-medium text-ink transition-colors hover:text-forest sm:flex"
           >
             Staff sign in
@@ -69,7 +69,7 @@ export function Navbar() {
                 {link}
               </a>
             ))}
-            <a href="#" className="mt-1 flex items-center justify-between border-t border-line px-4 py-3 text-[15px] font-medium text-forest sm:hidden">
+            <a href="/staff/login" className="mt-1 flex items-center justify-between border-t border-line px-4 py-3 text-[15px] font-medium text-forest sm:hidden">
               Staff sign in
               <ArrowUpRight className="size-4" />
             </a>
