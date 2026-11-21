@@ -7,6 +7,7 @@ import { fmtTime } from "@/lib/dates";
 import { requireStaff } from "@/lib/session";
 import { AttachMember } from "./AttachMember";
 import { AddMenuItemTile } from "./menu/MenuForms";
+import { CafeTeam } from "./CafeTeam";
 import { addItem, closeShift, removeItem, settleTab, startShift } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -221,7 +222,9 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
                         </form>
                         {i.qty} × {i.menuItem.name}
                         {i.status !== "new" && (
-                          <span className={`text-[12px] font-semibold ${i.status === "ready" ? "text-[#4d7a12]" : "text-muted"}`}>{i.status}</span>
+                          <span className={`text-[12px] font-semibold ${i.status === "ready" ? "text-[#4d7a12]" : "text-muted"}`}>
+                            {i.status === "preparing" ? "cooking" : i.status}
+                          </span>
                         )}
                       </span>
                       <span className="tabular-nums">{inr(i.unitPrice * i.qty)}</span>
@@ -271,6 +274,7 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
           )}
         </aside>
       </div>
+      <CafeTeam />
     </div>
   );
 }

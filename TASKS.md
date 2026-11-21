@@ -29,7 +29,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 - Jashan: step-by-step member court booking: sport, court, then time (`src/app/me/(app)/book`)
 - Divyadeep: member app menu back to a left olive sidebar on desktop, asked by Divyadeep (`src/app/me/(app)/layout.tsx`, `MemberTopBar.tsx`)
-- Divyadeep: kitchen fixes and new features, café team on shift (`src/app/staff/(app)/kitchen`, `src/app/staff/(app)/bar/page.tsx`)
 
 ## Next up
 
@@ -37,6 +36,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Kitchen: cooking stage, prep list, today's numbers, sold out switches, café team on shift (Divyadeep)
 - Trial form: plan picker for membership, Other option removed (Divyadeep)
 - Member app desktop layout and photo café menu (Jashan)
 - Finance audit: collect unpaid courts, double-payment guards, refunds by original method, exact invoice GST (Jashan)
