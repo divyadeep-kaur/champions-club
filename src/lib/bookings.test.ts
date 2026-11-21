@@ -65,3 +65,28 @@ describe("bookingError", () => {
     expect(bookingError({ ...base, start: t("07:00"), end: t("08:00"), member: null }, { existing: [], memberBookingsThatDay: 0 })).toMatch(/passed/);
   });
 });
+
+describe("session lengths", () => {
+  const day = new Date(2030, 0, 7);
+  it("ends the session after the chosen length", () => {
+    expect(sessionEnd(new Date(2030, 0, 7, 10, 0), 90)).toEqual(new Date(2030, 0, 7, 11, 30));
+  });
+  it("only offers start times where the whole session fits before closing", () => {
+    expect(slotStarts(day, 120).at(-1)).toEqual(new Date(2030, 0, 7, 21, 0));
+    expect(slotStarts(day, 30).at(-1)).toEqual(new Date(2030, 0, 7, 22, 30));
+  });
+  it("accepts the four lengths and rejects others", () => {
+    const base = { courtId: 1, member: null, now: new Date(2030, 0, 1) };
+    const ctx = { existing: [], memberBookingsThatDay: 0 };
+    const at = (m: number) => ({ ...base, start: new Date(2030, 0, 7, 10, 0), end: new Date(2030, 0, 7, 10, m) });
+    expect(bookingError(at(90), ctx)).toBeNull();
+    expect(bookingError({ ...base, start: new Date(2030, 0, 7, 10, 0), end: new Date(2030, 0, 7, 12, 0) }, ctx)).toBeNull();
+    expect(bookingError(at(45), ctx)).toMatch(/30 minutes/);
+  });
+  it("lets a 30 minute session fit in a 30 minute gap but not a 1 hour one", () => {
+    const existing = [{ courtId: 1, memberId: null, start: new Date(2030, 0, 7, 10, 30), end: new Date(2030, 0, 7, 11, 30) }];
+    const base = { courtId: 1, member: null, now: new Date(2030, 0, 1), start: new Date(2030, 0, 7, 10, 0) };
+    expect(bookingError({ ...base, end: new Date(2030, 0, 7, 10, 30) }, { existing, memberBookingsThatDay: 0 })).toBeNull();
+    expect(bookingError({ ...base, end: new Date(2030, 0, 7, 11, 0) }, { existing, memberBookingsThatDay: 0 })).toMatch(/already booked/);
+  });
+});

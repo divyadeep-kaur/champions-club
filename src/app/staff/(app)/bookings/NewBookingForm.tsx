@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { inr } from "@/lib/constants";
 import { courtPrice } from "@/lib/pricing";
+import { DURATIONS, durationLabel } from "@/lib/bookings";
 import { createBooking, type BookingState } from "./actions";
 
 export type MemberOption = {
@@ -44,10 +45,12 @@ export function NewBookingForm({
   const [who, setWho] = useState<"member" | "walkin">(defaultMember ? "member" : "member");
   const [type, setType] = useState<"regular" | "trial" | "social">("regular");
   const [memberRef, setMemberRef] = useState(defaultMember ?? "");
+  const [minutes, setMinutes] = useState(60);
 
   const code = memberRef.match(/CC-\d{4}/i)?.[0]?.toUpperCase();
   const member = members.find((m) => m.code === code);
-  const price = type !== "regular" ? 0 : who === "member" ? (member ? courtPrice(member, court.walkInRate) : null) : court.walkInRate;
+  const hourly = type !== "regular" ? 0 : who === "member" ? (member ? courtPrice(member, court.walkInRate) : null) : court.walkInRate;
+  const price = hourly === null ? null : Math.round((hourly * (type === "regular" ? minutes : 60)) / 60);
 
   return (
     <form action={action} className="space-y-4">
@@ -144,6 +147,19 @@ export function NewBookingForm({
 
       {type === "regular" && (
         <label className="block">
+          <span className={lbl}>Length</span>
+          <select name="minutes" value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} className={input}>
+            {DURATIONS.map((m) => (
+              <option key={m} value={m}>
+                {durationLabel(m)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {type === "regular" && (
+        <label className="block">
           <span className={lbl}>Payment</span>
           <select name="method" defaultValue="upi" className={input}>
             <option value="upi">UPI</option>
@@ -159,7 +175,7 @@ export function NewBookingForm({
           <p className="text-[13px] text-muted">Price</p>
           <p className="font-serif text-[26px] font-semibold leading-none text-forest">{price === null ? "—" : price === 0 ? "Free" : inr(price)}</p>
           {type === "regular" && who === "member" && member && member.courtRate < court.walkInRate && (
-            <p className="mt-1 text-[12.5px] text-[#4d7a12]">saves {inr(court.walkInRate - member.courtRate)} on walk-in</p>
+            <p className="mt-1 text-[12.5px] text-[#4d7a12]">saves {inr(Math.round(((court.walkInRate - member.courtRate) * minutes) / 60))} on walk-in</p>
           )}
         </div>
         <button

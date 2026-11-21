@@ -1,6 +1,6 @@
 import type { Member, Plan, Prisma } from "@prisma/client";
 import { bookingError, sessionEnd } from "./bookings";
-import { courtPrice } from "./pricing";
+import { courtPriceFor } from "./pricing";
 import { benefitPlan } from "./membership";
 
 type Tx = Prisma.TransactionClient;
@@ -30,11 +30,13 @@ export async function placeBooking(
     type: "regular" | "trial" | "social";
     capacity?: number;
     method: "cash" | "card" | "upi" | "later";
+    minutes?: number;
   },
 ) {
   const court = await tx.court.findUnique({ where: { id: req.courtId } });
   if (!court) throw new Error("Court not found");
-  const end = sessionEnd(req.start);
+  const minutes = req.type === "regular" ? (req.minutes ?? 60) : 60;
+  const end = sessionEnd(req.start, minutes);
 
   const existing = await tx.booking.findMany({
     where: { status: "booked", start: { lt: end }, end: { gt: req.start } },
@@ -53,7 +55,7 @@ export async function placeBooking(
   if (error) throw new Error(error);
 
   const social = req.type === "social";
-  const price = social || req.type === "trial" ? 0 : courtPrice(benefitPlan(req.member), court.walkInRate);
+  const price = social || req.type === "trial" ? 0 : courtPriceFor(benefitPlan(req.member), court.walkInRate, minutes);
   const booking = await tx.booking.create({
     data: {
       courtId: court.id,

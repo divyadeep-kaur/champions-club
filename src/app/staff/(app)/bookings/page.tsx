@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { addDays, fmtDate, fmtTime, isoDate, parseIsoDate } from "@/lib/dates";
-import { sessionEnd } from "@/lib/bookings";
 import { requireStaff } from "@/lib/session";
 import { Badge } from "@/components/staff/ui";
 import { BookingGrid, defaultWindow, WINDOWS, type GridWindow } from "./BookingGrid";
@@ -295,7 +294,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
                 court={court}
                 date={date}
                 time={sp.time!}
-                timeLabel={`${fmtDate(slotStart)} · ${fmtTime(slotStart)} – ${fmtTime(sessionEnd(slotStart))}`}
+                timeLabel={`${fmtDate(slotStart)} · starts ${fmtTime(slotStart)}`}
                 members={memberOptions}
                 defaultMember={preMember ? `${preMember.code} · ${preMember.name}` : undefined}
                 socialAllowed={slotStart.getDay() === 5 && slotStart.getHours() >= 18}

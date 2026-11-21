@@ -4,6 +4,9 @@ export const applyDiscount = (amount: number, percent: number) => amount - Math.
 
 export const courtPrice = (plan: Pick<PlanPricing, "courtRate"> | null, walkInRate: number) => (plan ? plan.courtRate : walkInRate);
 
+export const courtPriceFor = (plan: Pick<PlanPricing, "courtRate"> | null, walkInRate: number, minutes: number) =>
+  Math.round((courtPrice(plan, walkInRate) * minutes) / 60);
+
 export const shopPrice = (plan: PlanPricing | null, amount: number) => applyDiscount(amount, plan?.shopDiscount ?? 0);
 
 export const barPrice = (plan: PlanPricing | null, amount: number) => applyDiscount(amount, plan?.barDiscount ?? 0);

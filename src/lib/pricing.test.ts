@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyDiscount, courtPrice, sampleVisit } from "./pricing";
+import { applyDiscount, courtPrice, sampleVisit, courtPriceFor } from "./pricing";
 
 const silver = { name: "Silver", courtRate: 300, shopDiscount: 10, barDiscount: 10 };
 const gold = { name: "Gold", courtRate: 0, shopDiscount: 15, barDiscount: 20 };
@@ -21,5 +21,15 @@ describe("pricing", () => {
     expect(sampleVisit(null, visit)).toEqual({ court: 800, shop: 499, bar: 180, total: 1479 });
     expect(sampleVisit(silver, visit)).toEqual({ court: 300, shop: 449, bar: 162, total: 911 });
     expect(sampleVisit(gold, visit)).toEqual({ court: 0, shop: 424, bar: 144, total: 568 });
+  });
+});
+
+describe("courtPriceFor", () => {
+  it("scales the hourly rate by the session length", () => {
+    const silver = { courtRate: 300 };
+    expect(courtPriceFor(silver, 800, 30)).toBe(150);
+    expect(courtPriceFor(silver, 800, 90)).toBe(450);
+    expect(courtPriceFor(null, 800, 120)).toBe(1600);
+    expect(courtPriceFor({ courtRate: 0 }, 800, 120)).toBe(0);
   });
 });

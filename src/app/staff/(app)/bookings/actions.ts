@@ -33,6 +33,10 @@ const schema = z.object({
   guestPhone: z.string().trim().optional(),
   method: z.enum(["cash", "card", "upi", "later"]).default("upi"),
   capacity: z.coerce.number().int().min(2).max(16).optional(),
+  minutes: z.coerce
+    .number()
+    .refine((m) => [30, 60, 90, 120].includes(m))
+    .default(60),
 });
 
 export async function createBooking(_: BookingState, formData: FormData): Promise<BookingState> {
@@ -67,6 +71,7 @@ export async function createBooking(_: BookingState, formData: FormData): Promis
         type: f.type,
         capacity: f.capacity,
         method: f.method,
+        minutes: f.minutes,
       });
       return booking.id;
     });
@@ -92,7 +97,13 @@ export async function cancelBooking(formData: FormData) {
     const refund = refundable(await paidSoFar(tx, "court", id));
     if (refund > 0)
       await tx.payment.create({
-        data: { source: "court", refId: id, amount: -refund, method: await refundMethod(tx, "court", id), note: `Refund for cancelled ${booking.court.name} booking` },
+        data: {
+          source: "court",
+          refId: id,
+          amount: -refund,
+          method: await refundMethod(tx, "court", id),
+          note: `Refund for cancelled ${booking.court.name} booking`,
+        },
       });
   });
 
