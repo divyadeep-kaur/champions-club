@@ -1,21 +1,20 @@
 import Link from "next/link";
-import { Trophy } from "lucide-react";
 
 const cols = [
   {
     title: "Play",
     links: [
-      { href: "/courts", label: "Courts this week" },
-      { href: "/trial", label: "Book a trial" },
-      { href: "/#memberships", label: "Memberships" },
+      { href: "/courts", label: "Free slots" },
+      { href: "/#sports", label: "Tennis & cricket" },
+      { href: "/trial", label: "Free trial" },
     ],
   },
   {
-    title: "At the club",
+    title: "Club",
     links: [
-      { href: "/#shop", label: "Gear shop" },
+      { href: "/#memberships", label: "Memberships" },
+      { href: "/#shop", label: "Shop" },
       { href: "/#cafe", label: "Café & bar" },
-      { href: "/trial?interest=other", label: "Events and coaching" },
     ],
   },
   {
@@ -30,34 +29,27 @@ const cols = [
 
 export function Footer() {
   return (
-    <footer className="bg-forest text-cream">
-      <div className="mx-auto grid max-w-[1320px] gap-10 px-4 py-14 sm:px-8 lg:grid-cols-[1.2fr_repeat(3,1fr)]">
-        <div>
-          <Link href="/" className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-full bg-cream text-forest">
-              <Trophy className="size-[19px]" strokeWidth={1.8} />
-            </span>
-            <span className="font-serif text-[22px] font-medium">The Champions Club</span>
-          </Link>
-          <p className="mt-4 max-w-[300px] text-[15px] leading-relaxed text-cream/75">Tennis, cricket nets, a gear shop and a café. Open every day, 6 am to 11 pm.</p>
+    <footer className="bg-forest-deep text-cream">
+      <div className="mx-auto grid max-w-[1280px] grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-8 px-4 pb-8 pt-16 text-[15px] sm:px-8">
+        <div className="grid content-start gap-3">
+          <span className="text-[20px] font-extrabold text-ball">Champions Club</span>
+          <span className="leading-relaxed opacity-80">Courts, memberships, shop and café, all in one place.</span>
+          <span className="opacity-80">Open 6am–11pm daily</span>
         </div>
         {cols.map((c) => (
-          <nav key={c.title} aria-label={c.title}>
-            <h2 className="text-[12.5px] font-semibold uppercase tracking-[0.1em] text-cream/60">{c.title}</h2>
-            <ul className="mt-4 space-y-2.5 text-[15px]">
-              {c.links.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="text-cream/90 underline-offset-4 hover:text-cream hover:underline">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          <nav key={c.title} aria-label={c.title} className="grid content-start gap-2.5">
+            <strong>{c.title}</strong>
+            {c.links.map((l) => (
+              <Link key={l.href} href={l.href} className="text-cream opacity-85 hover:underline hover:opacity-100">
+                {l.label}
+              </Link>
+            ))}
           </nav>
         ))}
       </div>
-      <div className="border-t border-white/10">
-        <p className="mx-auto max-w-[1320px] px-4 py-5 text-[13px] text-cream/55 sm:px-8">© {new Date().getFullYear()} The Champions Club</p>
+      <div className="mx-auto flex max-w-[1280px] flex-wrap justify-between gap-4 border-t border-cream/15 px-4 pb-8 pt-5 text-[13.5px] opacity-75 sm:px-8">
+        <span>© {new Date().getFullYear()} The Champions Club</span>
+        <span>Privacy · Terms</span>
       </div>
     </footer>
   );

@@ -2,21 +2,31 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, ChevronDown, Menu, ShieldCheck, Trophy, UserRound, UsersRound, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 const links = [
   { href: "/courts", label: "Courts" },
   { href: "/#memberships", label: "Memberships" },
+  { href: "/#sports", label: "Sports" },
   { href: "/#shop", label: "Shop" },
-  { href: "/#cafe", label: "Café & Bar" },
+  { href: "/#reviews", label: "Reviews" },
 ];
 
 const signIns = [
-  { href: "/me/login", label: "Member", hint: "Book courts, order from the café", icon: UserRound },
-  { href: "/staff/login", label: "Staff", hint: "Front desk and bar", icon: UsersRound },
-  { href: "/staff/login?as=admin", label: "Admin", hint: "Owner: reports and everything else", icon: ShieldCheck },
+  { href: "/me/login", label: "Member", hint: "Book courts, order from the café" },
+  { href: "/staff/login", label: "Staff", hint: "Front desk and bar" },
+  { href: "/staff/login?as=admin", label: "Admin", hint: "Owner: reports and everything else" },
 ];
+
+export function TrophyMark({ size = 38 }: { size?: number }) {
+  return (
+    <span className="grid shrink-0 place-items-center rounded-full bg-forest text-ball" style={{ width: size, height: size }}>
+      <svg width={size * 0.47} height={size * 0.47} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" />
+      </svg>
+    </span>
+  );
+}
 
 function SignInMenu() {
   const [open, setOpen] = useState(false);
@@ -36,42 +46,29 @@ function SignInMenu() {
   }, [open]);
 
   return (
-    <div ref={ref} className="relative hidden sm:block">
+    <div ref={ref} className="relative">
       <button
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 bg-forest px-4 py-2.5 text-[14.5px] font-semibold text-cream transition-colors hover:bg-forest-deep"
+        className="min-h-11 rounded-full border-[1.5px] border-line px-4 py-2.5 text-[15px] font-bold text-ink transition-colors hover:border-forest"
       >
-        Sign in
-        <ChevronDown className={`size-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        Sign in ▾
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            role="menu"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.16 }}
-            className="absolute right-0 top-[calc(100%+8px)] w-[290px] origin-top-right border border-forest/20 bg-paper p-1.5 shadow-[0_18px_40px_-18px_rgba(11,42,29,0.45)]"
-          >
-            {signIns.map(({ href, label, hint, icon: Icon }) => (
-              <Link key={label} role="menuitem" href={href} className="group flex items-center gap-3 px-3 py-2.5 hover:bg-cream">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-forest/10 text-forest">
-                  <Icon className="size-[18px]" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-ink">{label}</span>
-                  <span className="block text-[13px] text-muted">{hint}</span>
-                </span>
-                <ArrowUpRight className="size-4 text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-forest" />
-              </Link>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-[52px] z-10 grid w-[290px] rounded-2xl border border-line bg-paper/90 p-2 text-left shadow-[0_20px_50px_rgba(11,42,29,0.18)] backdrop-blur-xl"
+        >
+          {signIns.map((s) => (
+            <Link key={s.label} role="menuitem" href={s.href} className="rounded-[10px] p-3 text-ink hover:bg-cream">
+              <strong className="block text-forest">{s.label}</strong>
+              <span className="text-[13.5px] text-muted">{s.hint}</span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -80,71 +77,71 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="relative z-30 mx-auto max-w-[1320px] px-4 sm:px-8">
-      <div className="flex h-[76px] items-center justify-between border-b-[1.5px] border-forest">
-        <Link href="/" className="flex items-center gap-3.5" aria-label="The Champions Club home">
-          <span className="grid size-10 place-items-center rounded-full bg-forest text-cream">
-            <Trophy className="size-[19px]" strokeWidth={1.8} />
-          </span>
-          <span className="h-8 w-px bg-forest/40" aria-hidden="true" />
-          <span className="font-serif text-[22px] font-medium tracking-[-0.01em] text-forest sm:text-[24px]">
-            The Champions Club
-          </span>
+    <header className="sticky top-0 z-30 border-b border-line bg-cream/95 backdrop-blur">
+      <div className="mx-auto flex min-h-[72px] max-w-[1280px] flex-wrap items-center justify-between gap-4 px-4 sm:px-8">
+        <Link href="/" className="flex items-center gap-3">
+          <TrophyMark />
+          <span className="text-[20px] font-extrabold tracking-[-0.01em] text-forest">Champions Club</span>
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-10 lg:flex">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="relative py-1 text-[15.5px] font-medium text-ink after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:scale-x-0 after:bg-forest after:transition-transform after:duration-300 hover:after:scale-x-100"
-            >
-              {link.label}
+        <nav aria-label="Main" className="hidden flex-wrap gap-7 text-[15.5px] font-semibold lg:flex">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} className="text-ink hover:text-forest">
+              {l.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <SignInMenu />
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:block">
+            <SignInMenu />
+          </div>
+          <Link href="/trial" className="hidden rounded-full bg-ball px-5 py-3 text-[15px] font-bold text-forest-deep transition-colors hover:bg-[#b6dd45] sm:inline-block">
+            Book a free trial
+          </Link>
           <button
             type="button"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="ml-3 grid size-10 place-items-center rounded-full border border-forest/30 text-forest lg:hidden"
+            className="grid size-11 place-items-center rounded-full border-[1.5px] border-line text-forest lg:hidden"
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
         </div>
       </div>
 
-      <AnimatePresence>
-        {open && (
-          <motion.nav
-            aria-label="Mobile"
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18 }}
-            className="absolute inset-x-4 top-[84px] border border-forest/20 bg-paper p-2 shadow-[0_18px_40px_-20px_rgba(11,42,29,0.45)] sm:inset-x-8 lg:hidden"
-          >
-            {links.map((link) => (
-              <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="block px-4 py-3 text-[16px] font-medium text-ink hover:bg-cream">
-                {link.label}
-              </Link>
-            ))}
-            <p className="mt-1 border-t border-line px-4 pb-1 pt-3 text-[12.5px] font-semibold uppercase tracking-[0.08em] text-muted sm:hidden">Sign in as</p>
-            {signIns.map(({ href, label, hint }) => (
-              <Link key={label} href={href} className="flex items-center justify-between px-4 py-2.5 text-[15px] font-medium text-forest hover:bg-cream sm:hidden">
-                <span>
-                  {label} <span className="font-normal text-muted">· {hint}</span>
-                </span>
-                <ArrowUpRight className="size-4 shrink-0" />
-              </Link>
-            ))}
-          </motion.nav>
-        )}
-      </AnimatePresence>
+      {open && (
+        <nav aria-label="Mobile" className="border-t border-line bg-paper px-4 pb-4 pt-2 lg:hidden">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="block rounded-[10px] px-3 py-3 text-[16px] font-semibold text-ink hover:bg-cream">
+              {l.label}
+            </Link>
+          ))}
+          <p className="mt-2 border-t border-line px-3 pb-1 pt-3 text-[12.5px] font-bold uppercase tracking-[0.1em] text-muted">Sign in as</p>
+          {signIns.map((s) => (
+            <Link key={s.label} href={s.href} className="block rounded-[10px] px-3 py-2.5 text-[15px] hover:bg-cream">
+              <strong className="text-forest">{s.label}</strong> <span className="text-muted">· {s.hint}</span>
+            </Link>
+          ))}
+          <Link href="/trial" className="mt-3 block rounded-full bg-ball px-5 py-3 text-center text-[15px] font-bold text-forest-deep">
+            Book a free trial
+          </Link>
+        </nav>
+      )}
+    </header>
+  );
+}
+
+export function SubpageHeader({ right }: { right: React.ReactNode }) {
+  return (
+    <header className="border-b border-line">
+      <div className="mx-auto flex min-h-[72px] max-w-[1280px] flex-wrap items-center justify-between gap-4 px-4 sm:px-8">
+        <Link href="/" className="text-[20px] font-extrabold text-forest">
+          ← Champions Club
+        </Link>
+        <div className="flex items-center gap-3">{right}</div>
+      </div>
     </header>
   );
 }

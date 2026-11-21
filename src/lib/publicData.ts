@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { courtStatusAt, nextSlot } from "./availability";
+import { courtStatusAt, freeStarts, nextSlot } from "./availability";
 import { hhmm, isoDate } from "./dates";
 
 export type CourtRow = {
@@ -11,7 +11,7 @@ export type CourtRow = {
   href?: string;
 };
 
-export const courtLabel = (name: string) => name.replace(/^(Tennis|Cricket) /, "$1 · ");
+export const courtLabel = (name: string) => name.replace(/^Tennis Court /, "Tennis ");
 
 const time = (d: Date) => d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
 
@@ -36,4 +36,32 @@ export async function landingCourts(now = new Date()) {
   });
 
   return { rows, isToday: at.toDateString() === now.toDateString() };
+}
+
+const short = (d: Date) => d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).replace(/ ?(am|pm)$/i, "");
+
+export async function weekGlance(sport: "tennis" | "cricket", now = new Date()) {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Array.from({ length: 5 }, (_, i) => new Date(today.getTime() + i * 86_400_000));
+  const end = new Date(today.getTime() + 5 * 86_400_000);
+  const [courts, bookings] = await Promise.all([
+    db.court.findMany({ where: { sport } }),
+    db.booking.findMany({ where: { status: "booked", start: { gte: today, lt: end }, court: { sport } }, select: { courtId: true, start: true, end: true, type: true } }),
+  ]);
+  return days.map((d) => {
+    const starts = new Map<number, Date>();
+    for (const c of courts) for (const s of freeStarts(d, c.id, bookings, now)) starts.set(s.getTime(), s);
+    const sorted = [...starts.values()].sort((a, b) => a.getTime() - b.getTime());
+    const pick = (from: number, to: number) => {
+      const list = sorted.filter((s) => s.getHours() >= from && s.getHours() < to).slice(0, 2);
+      return list.length ? list.map(short).join(", ") : "Full";
+    };
+    const social = bookings.some((b) => b.type === "social" && b.start.toDateString() === d.toDateString());
+    return {
+      day: d.toLocaleDateString("en-IN", { weekday: "short" }),
+      am: pick(0, 12),
+      pm: pick(12, 17),
+      eve: social ? "Social play" : pick(17, 24),
+    };
+  });
 }
