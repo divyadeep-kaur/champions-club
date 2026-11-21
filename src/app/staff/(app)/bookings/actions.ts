@@ -5,28 +5,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { bookingError, sessionEnd } from "@/lib/bookings";
+import { placeBooking } from "@/lib/bookingService";
 import { normalizePhone } from "@/lib/members";
-import { courtPrice } from "@/lib/pricing";
 import { requireStaff } from "@/lib/session";
 
 export type BookingState = { error?: string };
 
 type Tx = Prisma.TransactionClient;
-
-const dayRange = (d: Date) => {
-  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  return { gte: start, lt: new Date(start.getTime() + 86_400_000) };
-};
-
-async function memberDayCount(tx: Tx, memberId: number, day: Date) {
-  const range = dayRange(day);
-  const [own, social] = await Promise.all([
-    tx.booking.count({ where: { memberId, status: "booked", start: range } }),
-    tx.socialPlayer.count({ where: { memberId, status: { in: ["confirmed", "offered"] }, booking: { status: "booked", start: range } } }),
-  ]);
-  return own + social;
-}
 
 async function findMember(tx: Tx, ref: string) {
   const code = ref.match(/CC-\d{4}/i)?.[0]?.toUpperCase();
@@ -54,15 +39,11 @@ export async function createBooking(_: BookingState, formData: FormData): Promis
   const f = parsed.data;
 
   const start = new Date(`${f.date}T${f.time}:00`);
-  const end = sessionEnd(start);
   if (f.type === "social" && (start.getDay() !== 5 || start.getHours() < 18)) return { error: "Social play runs on Friday evenings from 6 pm" };
 
   let created = 0;
   try {
     created = await db.$transaction(async (tx) => {
-      const court = await tx.court.findUnique({ where: { id: f.courtId } });
-      if (!court) throw new Error("Court not found");
-
       const isSocial = f.type === "social";
       const member = !isSocial && f.who === "member" ? await findMember(tx, f.member ?? "") : null;
       if (!isSocial && f.who === "member" && !member) throw new Error("Pick a member from the list");
@@ -74,33 +55,16 @@ export async function createBooking(_: BookingState, formData: FormData): Promis
         if (f.guestPhone && !guestPhone) throw new Error("Enter a 10-digit mobile number or leave it blank");
       }
 
-      const existing = await tx.booking.findMany({
-        where: { status: "booked", start: { lt: end }, end: { gt: start } },
-        select: { courtId: true, memberId: true, start: true, end: true },
+      const { booking } = await placeBooking(tx, {
+        courtId: f.courtId,
+        start,
+        member,
+        guestName: f.who === "walkin" ? f.guestName : null,
+        guestPhone,
+        type: f.type,
+        capacity: f.capacity,
+        method: f.method,
       });
-      const error = bookingError(
-        { courtId: court.id, start, end, now: new Date(), member: member ? { id: member.id, endDate: member.endDate } : null },
-        { existing, memberBookingsThatDay: member ? await memberDayCount(tx, member.id, start) : 0 },
-      );
-      if (error) throw new Error(error);
-
-      const price = isSocial || f.type === "trial" ? 0 : courtPrice(member?.plan ?? null, court.walkInRate);
-      const booking = await tx.booking.create({
-        data: {
-          courtId: court.id,
-          memberId: member?.id,
-          guestName: isSocial ? "Social play" : f.who === "walkin" ? f.guestName : null,
-          guestPhone,
-          start,
-          end,
-          type: f.type,
-          capacity: isSocial ? (f.capacity ?? 8) : 1,
-          price,
-        },
-      });
-      if (price > 0 && f.method !== "later") {
-        await tx.payment.create({ data: { source: "court", refId: booking.id, amount: price, method: f.method, note: `${court.name} booking` } });
-      }
       return booking.id;
     });
   } catch (e) {
