@@ -1,4 +1,6 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
+import { db } from "./db";
 import { redirect } from "next/navigation";
 import type { Role } from "./constants";
 import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession, type Session } from "./jwt";
@@ -21,9 +23,12 @@ export async function getSession() {
   return verifySession((await cookies()).get(SESSION_COOKIE)?.value);
 }
 
+const staffExists = cache(async (id: number) => !!(await db.staff.findUnique({ where: { id }, select: { id: true } })));
+
 export async function requireStaff(roles?: Role[]) {
   const session = await getSession();
   if (!session) redirect("/staff/login");
+  if (!(await staffExists(session.id))) redirect("/staff/signout");
   if (roles && !roles.includes(session.role)) redirect("/staff");
   return session;
 }

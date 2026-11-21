@@ -21,6 +21,6 @@ export async function requireMember() {
   const session = await verifyMember((await cookies()).get(MEMBER_COOKIE)?.value);
   if (!session) redirect("/me/login");
   const member = await db.member.findUnique({ where: { id: session.memberId }, include: { plan: true } });
-  if (!member) redirect("/me/login");
+  if (!member) redirect("/me/signout");
   return member;
 }

@@ -14,6 +14,7 @@ function guard(req: NextRequest, signedIn: boolean, loginPath: string, homePath:
 }
 
 export async function middleware(req: NextRequest) {
+  if (req.nextUrl.pathname === "/me/signout" || req.nextUrl.pathname === "/staff/signout") return NextResponse.next();
   if (req.nextUrl.pathname.startsWith("/me")) {
     const member = await verifyMember(req.cookies.get(MEMBER_COOKIE)?.value);
     return guard(req, !!member, "/me/login", "/me");
