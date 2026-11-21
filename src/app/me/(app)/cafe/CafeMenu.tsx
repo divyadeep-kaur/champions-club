@@ -96,7 +96,10 @@ export function CafeMenu({
                         <span className="grid h-full place-items-center font-serif text-[30px] text-cream/80">{m.name.slice(0, 1)}</span>
                       )}
                       {qty > 0 && (
-                        <span className="absolute top-2 right-2 grid size-8 place-items-center rounded-full bg-ball text-[14px] font-extrabold text-forest-deep shadow">
+                        <span
+                          key={qty}
+                          className="cc-pop-in absolute top-2 right-2 grid size-8 place-items-center rounded-full bg-ball text-[14px] font-extrabold text-forest-deep shadow"
+                        >
                           {qty}
                         </span>
                       )}

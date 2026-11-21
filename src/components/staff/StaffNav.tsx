@@ -54,11 +54,17 @@ function Links({ items, onNavigate }: { items: Item[]; onNavigate?: () => void }
               href={href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 p-3 text-[15px] transition-colors ${
-                active ? "bg-ball font-semibold text-forest-deep" : "text-cream hover:bg-white/5"
+              className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-[background-color,color,transform] duration-200 ${
+                active
+                  ? "bg-ball font-semibold text-forest-deep shadow-[0_8px_20px_-10px_rgba(168,210,52,0.7)]"
+                  : "text-cream/85 hover:translate-x-0.5 hover:bg-white/[0.07] hover:text-cream"
               }`}
             >
-              <Icon className="size-[18px] lg:hidden" strokeWidth={1.9} />
+              <span
+                className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${active ? "bg-forest-deep/10" : "bg-white/[0.06] group-hover:bg-white/[0.12]"}`}
+              >
+                <Icon className="size-[17px]" strokeWidth={1.9} />
+              </span>
               {label}
               {badge ? (
                 <span
@@ -112,7 +118,7 @@ export function StaffNav({ items, name, role, logout }: { items: Item[]; name: s
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col bg-forest px-4 py-6 lg:flex print:hidden">
+      <aside className="cc-sidebar sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col overflow-y-auto bg-forest px-3.5 py-6 lg:flex print:hidden">
         <Brand />
         <nav aria-label="Staff" className="mt-5 flex-1">
           <Links items={items} />

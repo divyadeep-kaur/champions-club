@@ -45,7 +45,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </div>
 
       <div className="relative hidden lg:block">
-        <Image src="/court.webp" alt="" fill unoptimized priority className="object-cover" sizes="50vw" />
+        <Image src="/court.webp" alt="" fill unoptimized priority className="cc-kenburns object-cover" sizes="50vw" />
       </div>
     </main>
   );

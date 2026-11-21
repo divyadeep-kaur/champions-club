@@ -73,7 +73,7 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
 
         <section
           aria-label="Membership card"
-          className="relative flex min-h-[200px] flex-col justify-between gap-5 overflow-hidden rounded-[22px] p-5 text-white"
+          className="cc-holo cc-tilt relative flex min-h-[200px] flex-col justify-between gap-5 overflow-hidden rounded-[22px] p-5 text-white shadow-[0_24px_50px_-28px_rgba(11,42,29,0.8)]"
         >
           <Image
             src="/images/shop-rackets.jpg"

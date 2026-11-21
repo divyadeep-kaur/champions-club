@@ -18,7 +18,7 @@ const links = [
 export function MemberSidebar({ name, plan, code }: { name: string; plan: string; code: string }) {
   const pathname = usePathname();
   return (
-    <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col bg-forest px-4 py-6 lg:flex">
+    <aside className="cc-sidebar sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col bg-forest px-4 py-6 lg:flex">
       <Link href="/me" className="flex items-center gap-2.5 px-3 text-cream">
         <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-white p-1">
           <Image src="/brand/logo-mark.png" alt="" width={48} height={48} unoptimized />

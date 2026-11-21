@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: deploy to Vercel with a Turso database for the live site; local dev.db unchanged (`src/lib/db.ts`, `prisma/seed.ts`, `package.json`)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Live on Vercel with Turso; animations and polish across landing, staff and member screens (Jashan)
 - Landing footer redesign (Jashan)
 - Income: books check, daily cash close, money given away, owed ageing, owner check on every income page (Jashan)
 - Member court booking in steps with 30 min to 2 hour sessions (Jashan)
