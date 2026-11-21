@@ -4,14 +4,14 @@ import Link from "next/link";
 type Coach = { name: string; role: string; quote: string; img: string; w: number; h: number; pos: string };
 
 const small: Coach[] = [
-  { name: "Gurpreet Sandhu", role: "Head tennis coach", quote: "Footwork first. The power comes later.", img: "/images/shop-rackets.jpg", w: 1100, h: 1650, pos: "object-[50%_45%]" },
-  { name: "Neha Bhatia", role: "Junior programme lead", quote: "Every junior gets a plan, not just a net session.", img: "/images/junior-cricket.jpg", w: 1100, h: 733, pos: "object-[45%_30%]" },
-  { name: "Rohit Verma", role: "Friday social host", quote: "Friday nights are for meeting people, not keeping score.", img: "/images/doubles.jpg", w: 1300, h: 635, pos: "object-[30%_35%]" },
+  { name: "Gurpreet Sandhu", role: "Head tennis coach", quote: "Footwork first. The power comes later.", img: "/images/coaches/tennis-head.jpg", w: 720, h: 900, pos: "object-[50%_18%]" },
+  { name: "Imran Qureshi", role: "Junior programme lead", quote: "Every junior gets a plan, not just a net session.", img: "/images/coaches/cricket-nets.jpg", w: 720, h: 900, pos: "object-[62%_18%]" },
+  { name: "Rohit Verma", role: "Friday social host", quote: "Friday nights are for meeting people, not keeping score.", img: "/images/coaches/social.jpg", w: 720, h: 900, pos: "object-[50%_15%]" },
 ];
 
 const big: Coach[] = [
-  { name: "Harjot Gill", role: "Head cricket coach", quote: "We film every net session so you can see what we see.", img: "/images/cricket-drive.jpg", w: 1100, h: 733, pos: "object-[48%_40%]" },
-  { name: "Simran Kaur", role: "Trial session coach", quote: "Most beginners leave their first hour asking for a second.", img: "/images/tennis-court.jpg", w: 1200, h: 1600, pos: "object-[50%_60%]" },
+  { name: "Harjot Gill", role: "Head cricket coach", quote: "We film every net session so you can see what we see.", img: "/images/coaches/cricket-head.jpg", w: 720, h: 900, pos: "object-[50%_12%]" },
+  { name: "Simran Kaur", role: "Trial session coach", quote: "Most beginners leave their first hour asking for a second.", img: "/images/coaches/tennis-women.jpg", w: 720, h: 900, pos: "object-[60%_28%]" },
 ];
 
 const fade = "[mask-image:linear-gradient(to_right,transparent_0%,black_45%)]";
