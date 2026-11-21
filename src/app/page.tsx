@@ -35,7 +35,7 @@ export default async function Home() {
   const order = ["RKT-001", "BAL-001", "SHO-002", "APP-001"];
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
+    <main className="cc-landing min-h-screen overflow-x-hidden">
       <Navbar />
       <HomeHero courts={courts} />
       <PerksStrip
