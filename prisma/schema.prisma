@@ -8,26 +8,26 @@ datasource db {
 }
 
 model Staff {
-  id            Int            @id @default(autoincrement())
+  id            Int                @id @default(autoincrement())
   name          String
-  email         String         @unique
+  email         String             @unique
   passwordHash  String
   role          String
-  monthlySalary Int            @default(0)
-  code          String?        @unique
-  jobTitle      String         @default("")
-  department    String         @default("management")
+  monthlySalary Int                @default(0)
+  code          String?            @unique
+  jobTitle      String             @default("")
+  department    String             @default("management")
   phone         String?
-  joinedAt      DateTime       @default(now())
-  active        Boolean        @default(true)
-  createdAt     DateTime       @default(now())
+  joinedAt      DateTime           @default(now())
+  active        Boolean            @default(true)
+  createdAt     DateTime           @default(now())
   shifts        Shift[]
-  leaves        LeaveRequest[] @relation("LeaveStaff")
-  decisions     LeaveRequest[] @relation("LeaveDecider")
+  leaves        LeaveRequest[]     @relation("LeaveStaff")
+  decisions     LeaveRequest[]     @relation("LeaveDecider")
   payslips      Payslip[]
   invoices      StaffInvoice[]
-  queries       StaffQuery[]   @relation("QueryStaff")
-  replies       StaffQuery[]   @relation("QueryReplier")
+  queries       StaffQuery[]       @relation("QueryStaff")
+  replies       StaffQuery[]       @relation("QueryReplier")
   memberChanges MembershipChange[]
   planAudits    PlanAudit[]
 }
@@ -93,15 +93,15 @@ model StaffQuery {
 }
 
 model Plan {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
+  id           Int                @id @default(autoincrement())
+  name         String             @unique
   monthlyFee   Int
   courtRate    Int
   shopDiscount Int
   barDiscount  Int
-  durationDays Int      @default(30)
+  durationDays Int                @default(30)
   description  String
-  active       Boolean  @default(true)
+  active       Boolean            @default(true)
   members      Member[]
   changesFrom  MembershipChange[] @relation("ChangeFrom")
   changesTo    MembershipChange[] @relation("ChangeTo")
@@ -109,27 +109,27 @@ model Plan {
 }
 
 model Member {
-  id        Int            @id @default(autoincrement())
-  code      String         @unique
-  name      String
-  phone     String         @unique
-  email     String?
-  birthDate DateTime?
-  planId    Int
-  plan      Plan           @relation(fields: [planId], references: [id])
-  startDate DateTime
-  endDate   DateTime
-  notes     String?
+  id            Int                @id @default(autoincrement())
+  code          String             @unique
+  name          String
+  phone         String             @unique
+  email         String?
+  birthDate     DateTime?
+  planId        Int
+  plan          Plan               @relation(fields: [planId], references: [id])
+  startDate     DateTime
+  endDate       DateTime
+  notes         String?
   photo         String?
   suspendedAt   DateTime?
   suspendReason String?
-  createdAt DateTime       @default(now())
-  bookings  Booking[]
-  players   SocialPlayer[]
-  orders    Order[]
-  tabs      Tab[]
-  leads     Lead[]
-  changes   MembershipChange[]
+  createdAt     DateTime           @default(now())
+  bookings      Booking[]
+  players       SocialPlayer[]
+  orders        Order[]
+  tabs          Tab[]
+  leads         Lead[]
+  changes       MembershipChange[]
 }
 
 model Court {
@@ -153,6 +153,7 @@ model Booking {
   type       String         @default("regular")
   capacity   Int            @default(1)
   price      Int
+  paidAt     DateTime?
   status     String         @default("booked")
   createdAt  DateTime       @default(now())
   players    SocialPlayer[]
@@ -162,16 +163,17 @@ model Booking {
 }
 
 model SocialPlayer {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   bookingId Int
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   memberId  Int?
-  member    Member?  @relation(fields: [memberId], references: [id])
+  member    Member?   @relation(fields: [memberId], references: [id])
   name      String
   phone     String?
-  status    String   @default("confirmed")
-  price     Int      @default(0)
-  createdAt DateTime @default(now())
+  status    String    @default("confirmed")
+  price     Int       @default(0)
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model Product {
@@ -283,6 +285,7 @@ model Lead {
   phone       String
   email       String?
   interest    String
+  sport       String?
   message     String?
   preferredAt DateTime?
   status      String         @default("new")
@@ -308,16 +311,18 @@ model LeadActivity {
 }
 
 model Payment {
-  id        Int      @id @default(autoincrement())
-  source    String
-  refId     Int?
-  amount    Int
-  method    String
-  note      String?
-  createdAt DateTime @default(now())
+  id               Int               @id @default(autoincrement())
+  source           String
+  refId            Int?
+  amount           Int
+  method           String
+  note             String?
+  gst              Int?
+  createdAt        DateTime          @default(now())
   membershipChange MembershipChange?
 
   @@index([createdAt])
+  @@index([source, refId])
 }
 
 model Expense {

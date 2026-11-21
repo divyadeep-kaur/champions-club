@@ -8,6 +8,9 @@ import { db } from "@/lib/db";
 import { placeBooking } from "@/lib/bookingService";
 import { normalizePhone } from "@/lib/members";
 import { requireStaff } from "@/lib/session";
+import { collectBooking, paidSoFar, refundMethod } from "@/lib/ledger";
+import { refundable } from "@/lib/money";
+import { collectPlayer } from "@/lib/socialService";
 
 export type BookingState = { error?: string };
 
@@ -80,23 +83,42 @@ export async function cancelBooking(formData: FormData) {
   await requireStaff(["owner", "desk"]);
   const id = Number(formData.get("bookingId"));
   const booking = await db.booking.findUnique({ where: { id }, include: { court: true } });
-  if (!booking || booking.status !== "booked") return;
+  if (!booking || booking.status !== "booked" || booking.end <= new Date()) return;
 
-  const paid = await db.payment.aggregate({ where: { source: "court", refId: id }, _sum: { amount: true } });
-  const refund = paid._sum.amount ?? 0;
-  await db.$transaction([
-    db.booking.update({ where: { id }, data: { status: "cancelled" } }),
-    ...(refund > 0
-      ? [
-          db.payment.create({
-            data: { source: "court", refId: id, amount: -refund, method: "cash", note: `Refund for cancelled ${booking.court.name} booking` },
-          }),
-        ]
-      : []),
-  ]);
+  await db.$transaction(async (tx) => {
+    const claimed = await tx.booking.updateMany({ where: { id, status: "booked" }, data: { status: "cancelled" } });
+    if (!claimed.count) return;
+    if (booking.type === "social") await tx.socialPlayer.deleteMany({ where: { bookingId: id } });
+    const refund = refundable(await paidSoFar(tx, "court", id));
+    if (refund > 0)
+      await tx.payment.create({
+        data: { source: "court", refId: id, amount: -refund, method: await refundMethod(tx, "court", id), note: `Refund for cancelled ${booking.court.name} booking` },
+      });
+  });
 
   const d = booking.start;
   revalidatePath("/staff/bookings");
   revalidatePath("/staff");
   redirect(`/staff/bookings?date=${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}&booking=${id}`);
+}
+
+const collectSchema = z.object({
+  bookingId: z.coerce.number().int().positive().optional(),
+  playerId: z.coerce.number().int().positive().optional(),
+  method: z.enum(["cash", "card", "upi"]),
+  back: z.string().optional(),
+});
+
+export async function collectCourtPayment(formData: FormData) {
+  await requireStaff(["owner", "desk"]);
+  const parsed = collectSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success || (!parsed.data.bookingId && !parsed.data.playerId)) return;
+  const { bookingId, playerId, method } = parsed.data;
+  try {
+    await db.$transaction((tx) => (bookingId ? collectBooking(tx, bookingId, method) : collectPlayer(tx, playerId!, method)));
+  } catch {
+    return;
+  }
+  for (const p of ["/staff/bookings", "/staff", "/me", "/staff/money"]) revalidatePath(p);
+  revalidatePath("/staff/money", "layout");
 }

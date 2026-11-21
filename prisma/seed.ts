@@ -181,6 +181,7 @@ async function main() {
         const member = rand() < 0.75 ? pick(members) : null;
         const start = at(d, hour, rand() < 0.5 ? 0 : 30);
         const price = member ? planOf(member).courtRate : court.walkInRate;
+        const paid = price > 0 && (d < 0 || (d === 0 && rand() < 0.7));
         const booking = await db.booking.create({
           data: {
             courtId: court.id,
@@ -190,9 +191,10 @@ async function main() {
             start,
             end: new Date(start.getTime() + 60 * 60 * 1000),
             price,
+            paidAt: price === 0 || paid ? start : null,
           },
         });
-        if (price > 0 && d <= 0) {
+        if (paid) {
           await db.payment.create({
             data: { source: "court", refId: booking.id, amount: price, method: pick(["cash", "card", "upi", "upi"]), createdAt: start },
           });

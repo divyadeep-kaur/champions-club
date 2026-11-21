@@ -65,6 +65,7 @@ export async function placeBooking(
       type: req.type,
       capacity: social ? (req.capacity ?? 8) : 1,
       price,
+      paidAt: price === 0 || req.method !== "later" ? new Date() : null,
     },
   });
   if (price > 0 && req.method !== "later") {

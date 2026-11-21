@@ -2,6 +2,7 @@ import type { Member, Plan, Prisma } from "@prisma/client";
 import { overlaps } from "./bookings";
 import { MAX_BOOKINGS_PER_DAY } from "./constants";
 import { courtPrice } from "./pricing";
+import { refundable } from "./money";
 
 type Tx = Prisma.TransactionClient;
 type Payer = "cash" | "card" | "upi" | null;
@@ -43,8 +44,10 @@ export async function joinSession(tx: Tx, bookingId: number, who: { member: (Mem
   const status = taken < booking.capacity ? "confirmed" : "waitlist";
   const price = socialShare(member?.plan ?? null, booking.court.walkInRate);
   const name = member?.name ?? who.guestName ?? "Guest";
-  await tx.socialPlayer.create({ data: { bookingId, memberId: member?.id, name, status, price } });
-  if (status === "confirmed" && price > 0 && method) {
+  if (booking.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) throw new Error(`Someone called ${name} is already on this roster. Add a surname`);
+  const paysNow = status === "confirmed" && price > 0 && !!method;
+  await tx.socialPlayer.create({ data: { bookingId, memberId: member?.id, name, status, price, paidAt: price === 0 || paysNow ? new Date() : null } });
+  if (paysNow) {
     await tx.payment.create({ data: { source: "court", refId: bookingId, amount: price, method, note: paymentNote(name) } });
   }
   return { status, name, position: taken + 1, capacity: booking.capacity, price };
@@ -58,10 +61,11 @@ async function offerNext(tx: Tx, bookingId: number) {
 export async function leaveSession(tx: Tx, playerId: number) {
   const player = await tx.socialPlayer.findUnique({ where: { id: playerId } });
   if (!player) return null;
-  const paid = await paidAmount(tx, player.bookingId, player.name);
+  const paid = refundable(await paidAmount(tx, player.bookingId, player.name), player.price);
+  const back = await tx.payment.findFirst({ where: { source: "court", refId: player.bookingId, note: paymentNote(player.name), amount: { gt: 0 } }, orderBy: { createdAt: "desc" } });
   await tx.socialPlayer.delete({ where: { id: player.id } });
   if (paid > 0)
-    await tx.payment.create({ data: { source: "court", refId: player.bookingId, amount: -paid, method: "cash", note: `Refund, social play: ${player.name}` } });
+    await tx.payment.create({ data: { source: "court", refId: player.bookingId, amount: -paid, method: back?.method ?? "cash", note: `Refund, social play: ${player.name}` } });
   if (player.status !== "waitlist") await offerNext(tx, player.bookingId);
   return player;
 }
@@ -70,7 +74,7 @@ export async function answerOffer(tx: Tx, playerId: number, accept: boolean, met
   const player = await tx.socialPlayer.findUnique({ where: { id: playerId } });
   if (!player || player.status !== "offered") return null;
   if (accept) {
-    await tx.socialPlayer.update({ where: { id: player.id }, data: { status: "confirmed" } });
+    await tx.socialPlayer.update({ where: { id: player.id }, data: { status: "confirmed", ...(player.price === 0 || method ? { paidAt: new Date() } : {}) } });
     if (player.price > 0 && method)
       await tx.payment.create({ data: { source: "court", refId: player.bookingId, amount: player.price, method, note: paymentNote(player.name) } });
   } else {
@@ -78,4 +82,14 @@ export async function answerOffer(tx: Tx, playerId: number, accept: boolean, met
     await offerNext(tx, player.bookingId);
   }
   return player;
+}
+
+export async function collectPlayer(tx: Tx, playerId: number, method: "cash" | "card" | "upi") {
+  const player = await tx.socialPlayer.findUnique({ where: { id: playerId }, include: { booking: true } });
+  if (!player || player.status !== "confirmed" || player.booking.status !== "booked") throw new Error("This player can’t take a payment");
+  const due = Math.max(0, player.price - (await paidAmount(tx, player.bookingId, player.name)));
+  const claimed = await tx.socialPlayer.updateMany({ where: { id: player.id, paidAt: null }, data: { paidAt: new Date() } });
+  if (!claimed.count) throw new Error("Already paid");
+  if (due > 0) await tx.payment.create({ data: { source: "court", refId: player.bookingId, amount: due, method, note: paymentNote(player.name) } });
+  return due;
 }

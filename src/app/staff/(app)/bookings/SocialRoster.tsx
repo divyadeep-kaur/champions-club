@@ -3,8 +3,9 @@ import { Badge } from "@/components/staff/ui";
 import type { MemberOption } from "./NewBookingForm";
 import { JoinSocialForm } from "./JoinSocialForm";
 import { answerOffer, leaveSocial } from "./social";
+import { CollectForm } from "./CollectForm";
 
-type Player = { id: number; name: string; status: string; price: number; member: { code: string } | null };
+type Player = { id: number; name: string; status: string; price: number; paidAt: Date | null; member: { code: string } | null };
 
 export function SocialRoster({
   booking,
@@ -70,7 +71,11 @@ export function SocialRoster({
                 </>
               ) : (
                 <>
-                  <span className="text-[13px] tabular-nums text-muted">{p.price ? inr(p.price) : "Free"}</span>
+                  <span className="text-[13px] tabular-nums text-muted">
+                    {p.price ? inr(p.price) : "Free"}
+                    {p.price > 0 && (p.paidAt ? " · paid" : "")}
+                  </span>
+                  {p.price > 0 && !p.paidAt && booking.status === "booked" && <CollectForm playerId={p.id} amount={p.price} compact />}
                   {open && (
                     <form action={leaveSocial}>
                       <input type="hidden" name="playerId" value={p.id} />

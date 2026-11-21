@@ -10,6 +10,9 @@ import { BookingGrid, defaultWindow, WINDOWS, type GridWindow } from "./BookingG
 import { NewBookingForm, type MemberOption } from "./NewBookingForm";
 import { SocialRoster } from "./SocialRoster";
 import { cancelBooking } from "./actions";
+import { CollectForm } from "./CollectForm";
+import { courtDues, paidSoFar } from "@/lib/ledger";
+import { balanceDue } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +59,8 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
     today: counts.get(m.id) ?? 0,
   }));
 
+  const [selectedPaid, dues] = await Promise.all([selectedBooking ? paidSoFar(db, "court", selectedBooking.id) : 0, courtDues(db, dayEnd)]);
+  const selectedDue = selectedBooking && selectedBooking.type === "regular" && selectedBooking.status === "booked" && !selectedBooking.paidAt ? balanceDue(selectedBooking.price, selectedPaid) : 0;
   const court = sp.court ? courts.find((c) => c.id === Number(sp.court)) : undefined;
   const slotStart = court && sp.time?.match(/^\d{2}:\d{2}$/) ? new Date(`${date}T${sp.time}:00`) : null;
   const win: GridWindow =
@@ -103,6 +108,44 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
           </form>
         </div>
       </div>
+
+      {dues.total > 0 && (
+        <details className="group border-[1.5px] border-clay/60 bg-paper">
+          <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-3 text-[14.5px]">
+            <span>
+              <strong className="text-clay">{inr(dues.total)} to collect</strong> from {dues.courts.length + dues.players.length} court booking
+              {dues.courts.length + dues.players.length === 1 ? "" : "s"} up to {fmtDate(day)} (booked in the app or as pay later)
+            </span>
+            <span className="text-[13.5px] font-semibold text-forest group-open:hidden">Show</span>
+            <span className="hidden text-[13.5px] font-semibold text-forest group-open:inline">Hide</span>
+          </summary>
+          <ul className="border-t border-line">
+            {dues.courts.map((b) => (
+              <li key={`b${b.id}`} className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-[14px] first:border-t-0">
+                <Link href={`/staff/bookings?date=${isoDate(b.start)}&booking=${b.id}`} className="min-w-0 hover:text-forest">
+                  <strong>{b.member?.name ?? b.guestName ?? "Walk-in"}</strong> · {b.court.name} · {fmtDate(b.start)} {fmtTime(b.start)}
+                  {b.start < now && <span className="ml-1.5 text-[12.5px] font-semibold text-clay">played</span>}
+                </Link>
+                <span className="flex items-center gap-2">
+                  <span className="font-semibold tabular-nums">{inr(b.due)}</span>
+                  <CollectForm bookingId={b.id} amount={b.due} compact />
+                </span>
+              </li>
+            ))}
+            {dues.players.map((p) => (
+              <li key={`p${p.id}`} className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-[14px]">
+                <Link href={`/staff/bookings?date=${isoDate(p.booking.start)}&booking=${p.bookingId}`} className="min-w-0 hover:text-forest">
+                  <strong>{p.name}</strong> · social play · {fmtDate(p.booking.start)} {fmtTime(p.booking.start)}
+                </Link>
+                <span className="flex items-center gap-2">
+                  <span className="font-semibold tabular-nums">{inr(p.price)}</span>
+                  <CollectForm playerId={p.id} amount={p.price} compact />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-4 text-[13.5px] text-muted">
@@ -220,16 +263,28 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
                       <dt className="text-muted">Status</dt>
                       <dd>{selectedBooking.status === "booked" ? <Badge tone="green">Booked</Badge> : <Badge>Cancelled</Badge>}</dd>
                     </div>
+                    {selectedBooking.price > 0 && (
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-muted">Payment</dt>
+                        <dd>{selectedDue > 0 ? <Badge tone="clay">{inr(selectedDue)} due</Badge> : selectedPaid > 0 ? <Badge tone="green">Paid {inr(selectedPaid)}</Badge> : <Badge>Nothing paid</Badge>}</dd>
+                      </div>
+                    )}
                   </dl>
+                )}
+                {selectedDue > 0 && (
+                  <div className="grid gap-2 bg-clay-soft/60 p-3">
+                    <p className="text-[13.5px] text-[#7a2f14]">Not paid yet. Take payment at the desk:</p>
+                    <CollectForm bookingId={selectedBooking.id} amount={selectedDue} />
+                  </div>
                 )}
 
                 {selectedBooking.type === "social" && <SocialRoster booking={selectedBooking} members={memberOptions} />}
 
-                {selectedBooking.status === "booked" && sessionEnd(selectedBooking.start) > now && (
+                {selectedBooking.status === "booked" && selectedBooking.end > now && (
                   <form action={cancelBooking} className="border-t border-line pt-4">
                     <input type="hidden" name="bookingId" value={selectedBooking.id} />
                     <button type="submit" className="w-full border border-clay/50 px-4 py-2.5 text-[14.5px] font-semibold text-clay hover:bg-clay-soft">
-                      Cancel booking{selectedBooking.price ? ` and refund ${inr(selectedBooking.price)}` : ""}
+                      Cancel booking{selectedPaid > 0 ? ` and refund ${inr(selectedPaid)}` : ""}
                     </button>
                   </form>
                 )}

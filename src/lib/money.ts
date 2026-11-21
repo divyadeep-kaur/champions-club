@@ -1,4 +1,5 @@
 export const GST_RATE: Record<string, number> = { court: 18, membership: 18, shop: 12, bar: 5 };
+export const INCOME_SOURCES = ["court", "membership", "shop", "bar", "invoice"] as const;
 
 export const EXPENSE_CATEGORIES = [
   { key: "stock", label: "Stock purchases" },
@@ -15,12 +16,22 @@ export function gstFromInclusive(amount: number, rate: number) {
   return { taxable, gst: amount - taxable };
 }
 
-export function gstSummary(payments: { source: string; amount: number }[]) {
-  return Object.entries(GST_RATE).map(([source, rate]) => {
+export function gstSummary(payments: { source: string; amount: number; gst?: number | null }[]) {
+  const rows = Object.entries(GST_RATE).map(([source, rate]) => {
     const gross = payments.filter((p) => p.source === source).reduce((s, p) => s + p.amount, 0);
-    return { source, rate, gross, ...gstFromInclusive(gross, rate) };
+    return { source, rate: rate as number | null, gross, ...gstFromInclusive(gross, rate) };
   });
+  const invoiced = payments.filter((p) => p.source === "invoice");
+  if (invoiced.length) {
+    const gross = invoiced.reduce((s, p) => s + p.amount, 0);
+    const gst = invoiced.reduce((s, p) => s + (p.gst ?? 0), 0);
+    rows.push({ source: "invoice", rate: null, gross, taxable: gross - gst, gst });
+  }
+  return rows;
 }
+
+export const balanceDue = (price: number, paid: number) => Math.max(0, price - Math.max(0, paid));
+export const refundable = (paid: number, cap?: number) => Math.max(0, cap === undefined ? paid : Math.min(paid, cap));
 
 export function nextInvoiceNumber(last: string | null, year: number, prefix = "INV") {
   const m = last?.match(new RegExp(`^${prefix}-(\\d{4})-(\\d+)$`));
@@ -45,7 +56,7 @@ export function monthRange(month: string) {
 export const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 export const monthLabel = (d: Date) => d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 
-export function profitAndLoss(income: { source: string; amount: number }[], costs: { category: string; amount: number }[]) {
+export function profitAndLoss(income: { source: string; amount: number; gst?: number | null }[], costs: { category: string; amount: number }[]) {
   const gross = income.reduce((s, p) => s + p.amount, 0);
   const gst = gstSummary(income).reduce((s, r) => s + r.gst, 0);
   const netRevenue = gross - gst;
