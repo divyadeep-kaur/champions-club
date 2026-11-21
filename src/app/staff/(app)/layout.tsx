@@ -20,7 +20,13 @@ export default async function StaffLayout({ children }: { children: React.ReactN
         },
       })
     : 0;
-  const items = nav.map(({ href, label, icon }) => ({ href, label, icon, badge: href === "/staff/leads" ? newLeads : undefined }));
+  const openQueries = session.role === "owner" ? await db.staffQuery.count({ where: { status: "open" } }) : 0;
+  const items = nav.map(({ href, label, icon }) => ({
+    href,
+    label,
+    icon,
+    badge: href === "/staff/leads" ? newLeads : href === "/staff/queries" ? openQueries : undefined,
+  }));
 
   return (
     <div className="min-h-screen bg-cream lg:flex print:bg-white">

@@ -23,7 +23,7 @@ export async function getSession() {
   return verifySession((await cookies()).get(SESSION_COOKIE)?.value);
 }
 
-const staffExists = cache(async (id: number) => !!(await db.staff.findUnique({ where: { id }, select: { id: true } })));
+const staffExists = cache(async (id: number) => !!(await db.staff.findFirst({ where: { id, active: true }, select: { id: true } })));
 
 export async function requireStaff(roles?: Role[]) {
   const session = await getSession();

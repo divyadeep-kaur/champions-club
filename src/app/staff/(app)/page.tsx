@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { homeFor } from "@/lib/nav";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { addDays, fmtTime, startOfDay } from "@/lib/dates";
@@ -34,6 +36,7 @@ function Row({ left, right, tone }: { left: React.ReactNode; right: React.ReactN
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   const session = await requireStaff();
+  if (!["owner", "desk", "bar"].includes(session.role)) redirect(homeFor(session.role));
   const period = asPeriod((await searchParams).period);
   const now = new Date();
   const today = startOfDay(now);

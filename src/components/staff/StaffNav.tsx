@@ -4,9 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { ROLE_LABEL } from "@/lib/nav";
 import {
   CalendarDays,
   ChefHat,
+  IdCard,
+  MessageSquare,
+  Wallet,
   IndianRupee,
   CalendarOff,
   Coffee,
@@ -30,6 +34,9 @@ const icons: Record<string, LucideIcon> = {
   money: IndianRupee,
   leave: CalendarOff,
   leads: UserPlus,
+  team: IdCard,
+  pay: Wallet,
+  queries: MessageSquare,
 };
 
 type Item = { href: string; label: string; icon: string; badge?: number };
@@ -85,7 +92,7 @@ function User({ name, role, logout }: { name: string; role: string; logout: () =
     <div className="flex items-center justify-between gap-3 border-t border-cream/20 px-3 pt-5">
       <div className="min-w-0">
         <p className="truncate text-[14px] text-cream">{name}</p>
-        <p className="text-[14px] capitalize text-cream/75">{role === "desk" ? "Front desk" : role}</p>
+        <p className="text-[14px] text-cream/75">{ROLE_LABEL[role] ?? role}</p>
       </div>
       <form action={logout}>
         <button
