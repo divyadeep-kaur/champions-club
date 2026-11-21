@@ -77,8 +77,8 @@ export function Navbar() {
       <div className="mx-auto flex min-h-[72px] max-w-[1280px] flex-wrap items-center justify-between gap-4 px-4 sm:px-8">
         <Link href="/" className="flex items-center gap-3" aria-label="Champions Club home">
           <LogoMark size={44} />
-          <span className="text-[20px] font-extrabold italic tracking-[-0.01em] text-[#0f2147]">
-            CHAMPI<span className="text-[#1f66d8]">O</span>NS CLUB
+          <span className="text-[20px] font-extrabold italic tracking-[-0.01em] text-[#111111]">
+            CHAMPI<span className="text-[#5f6b3a]">O</span>NS CLUB
           </span>
         </Link>
 
