@@ -1,11 +1,12 @@
+import Image from "next/image";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { isoDate } from "@/lib/dates";
-import { Navbar } from "@/components/landing/Navbar";
-import { Footer } from "@/components/landing/Footer";
+import { SubpageHeader } from "@/components/landing/Navbar";
 import { TrialForm } from "./TrialForm";
 
 export const metadata = {
-  title: "Book a trial · The Champions Club",
+  title: "Book a free trial · The Champions Club",
   description: "Try an hour on court free, or ask us about Gold, Silver and Junior memberships.",
 };
 
@@ -17,41 +18,44 @@ export default async function TrialPage({ searchParams }: { searchParams: Promis
   const interest = sp.interest === "membership" || sp.interest === "other" ? sp.interest : "trial";
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
-      <Navbar />
-      <section className="mx-auto grid max-w-[1320px] gap-10 px-4 pb-20 pt-10 sm:px-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-16 lg:pt-14">
-        <div>
-          <h1 className="font-serif text-[52px] font-semibold leading-[0.95] tracking-[-0.035em] text-forest sm:text-[72px]">
-            {interest === "membership" ? (
-              <>
-                Join the
-                <br />
-                <em className="font-medium">club.</em>
-              </>
-            ) : (
-              <>
-                Your first hour
-                <br />
-                <em className="font-medium">is on us.</em>
-              </>
-            )}
-          </h1>
-          <p className="mt-6 max-w-[420px] text-[18px] leading-relaxed text-ink">
-            Tell us when you’d like to play. The front desk calls you back to confirm, sets you up with a coach and lends you a racket if you need one.
-          </p>
-          <ul className="mt-8 space-y-3 border-t border-line pt-6 text-[15.5px] text-ink">
-            <li>Open every day, 6 am to 11 pm</li>
-            <li>Tennis courts and cricket nets</li>
-            <li>Shop and café right by the courts</li>
-          </ul>
+    <div className="min-h-screen">
+      <SubpageHeader
+        right={
+          <Link href="/courts" className="font-semibold text-forest">
+            See free courts
+          </Link>
+        }
+      />
+      <main className="mx-auto grid max-w-[1280px] items-stretch gap-8 px-4 pb-20 pt-10 sm:px-8 lg:grid-cols-2">
+        <div className="relative flex min-h-[420px] items-end overflow-hidden rounded-3xl p-[22px] lg:min-h-[560px]">
+          <Image src="/images/tennis-court.jpg" alt="Floodlit tennis court with umpire chair" fill priority unoptimized sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover object-[50%_55%]" />
+          <div className="relative grid gap-3.5 rounded-[18px] border border-white/25 bg-forest-deep/55 p-7 text-white backdrop-blur-[14px]">
+            <h1 className="text-[clamp(36px,4vw,52px)] font-extrabold leading-[1.05] tracking-[-0.03em]">
+              {interest === "membership" ? (
+                <>
+                  Join the <span className="font-serif font-medium italic text-ball">club</span>
+                </>
+              ) : (
+                <>
+                  Your first hour is <span className="font-serif font-medium italic text-ball">on us</span>
+                </>
+              )}
+            </h1>
+            <ul className="grid gap-2.5 text-[16.5px]">
+              <li>✓ A free 1-hour session with equipment</li>
+              <li>✓ The desk calls you back within a day</li>
+              <li>✓ Help choosing a plan, family and corporate quotes too</li>
+            </ul>
+          </div>
         </div>
-        <TrialForm
-          defaults={{ interest, date: sp.date, time: sp.time, courtId: court ? String(court.id) : undefined, plan: sp.plan }}
-          courtName={court?.name}
-          minDate={isoDate(new Date())}
-        />
-      </section>
-      <Footer />
-    </main>
+        <div className="grid content-start gap-[18px] rounded-3xl border border-line bg-paper p-6 sm:p-9">
+          <TrialForm
+            defaults={{ interest, date: sp.date, time: sp.time, courtId: court ? String(court.id) : undefined, plan: sp.plan }}
+            courtName={court?.name}
+            minDate={isoDate(new Date())}
+          />
+        </div>
+      </main>
+    </div>
   );
 }
