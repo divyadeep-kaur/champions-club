@@ -18,7 +18,9 @@ export default async function MenuPage() {
       </Link>
       <div>
         <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Café menu</h1>
-        <p className="mt-1.5 text-muted">Add new items, change prices and hide what’s unavailable. Hidden items stay in old bills.</p>
+        <p className="mt-1.5 text-muted">
+          Add new items, edit names, prices, categories and photos, and hide what’s unavailable. Hidden items stay in old bills.
+        </p>
       </div>
       <div className="flex flex-wrap items-start gap-5">
         <div className="grid min-w-0 flex-[999_1_520px] gap-4">
@@ -35,7 +37,12 @@ export default async function MenuPage() {
                     </span>
                   </h2>
                   {list.map((i) => (
-                    <ItemRow key={i.id} item={{ id: i.id, name: i.name, price: i.price, active: i.active }} photo={menuPhoto(i)} />
+                    <ItemRow
+                      key={i.id}
+                      item={{ id: i.id, name: i.name, category: i.category, price: i.price, active: i.active }}
+                      photo={menuPhoto(i)}
+                      categories={categories}
+                    />
                   ))}
                 </section>
               );

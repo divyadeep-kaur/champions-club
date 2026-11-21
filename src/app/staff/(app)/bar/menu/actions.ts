@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { photoError } from "@/lib/membership";
+import { menuPhoto } from "@/lib/menuPhotos";
 import { requireStaff } from "@/lib/session";
 
 export type MenuState = { error?: string; ok?: string; at?: number; fields?: Record<string, string> };
@@ -71,4 +72,36 @@ export async function updateMenuItem(_: MenuState, formData: FormData): Promise<
   });
   refresh();
   return { ok: "Saved", at: Date.now() };
+}
+
+const editSchema = itemSchema.extend({ id: z.coerce.number().int().positive(), active: z.enum(["yes", "no"]) });
+
+// Edits everything about an item. Items already on a tab or bill keep the price they were added at.
+export async function editMenuItem(_: MenuState, formData: FormData): Promise<MenuState> {
+  await requireStaff(["owner", "bar"]);
+  const fields = Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")) as Record<string, string>;
+  const parsed = editSchema.safeParse(fields);
+  if (!parsed.success) return { error: parsed.error.issues[0].message, fields };
+  const f = parsed.data;
+  const category = (f.newCategory || f.category).toLowerCase();
+  if (category.length < 2) return { error: "Pick a category or type a new one", fields };
+  const item = await db.menuItem.findUnique({ where: { id: f.id } });
+  if (!item) return { error: "Item not found", fields };
+  const others = await db.menuItem.findMany({ where: { id: { not: item.id } }, select: { name: true } });
+  if (others.some((m) => m.name.toLowerCase() === f.name.toLowerCase())) return { error: "Another item already has that name", fields };
+  const { photo, error } = await readPhoto(formData);
+  if (error) return { error, fields };
+  // Built-in photos are matched by name, so keep the old one when an original item is renamed.
+  const kept = !photo && !item.photo && f.name !== item.name ? menuPhoto(item) : null;
+  try {
+    await db.menuItem.update({
+      where: { id: item.id },
+      data: { name: f.name, category, price: f.price, active: f.active === "yes", ...(photo || kept ? { photo: photo ?? kept } : {}) },
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return { error: "Another item already has that name", fields };
+    throw e;
+  }
+  refresh();
+  return { ok: `${f.name} saved`, at: Date.now() };
 }

@@ -265,3 +265,36 @@ export async function setProductPhoto(_: InventoryState, formData: FormData): Pr
   refresh();
   return { ok: "Photo updated", at: Date.now() };
 }
+
+const editSchema = productSchema.omit({ stock: true }).extend({ productId: z.coerce.number().int().positive() });
+
+// Edits a product's details. The product code and stock stay as they are (stock changes go through Restock),
+// and orders already placed keep the price they were sold at.
+export async function updateProduct(_: InventoryState, formData: FormData): Promise<InventoryState> {
+  await requireStaff(["owner", "desk", "shop"]);
+  const fields = Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")) as Record<string, string>;
+  const parsed = editSchema.safeParse(fields);
+  if (!parsed.success) return { error: parsed.error.issues[0].message, fields };
+  const f = parsed.data;
+  const category = (f.newCategory || f.category).toLowerCase();
+  if (category.length < 2) return { error: "Pick a category or type a new one", fields };
+  const product = await db.product.findUnique({ where: { id: f.productId } });
+  if (!product) return { error: "Product not found", fields };
+  const clash = await db.product.findMany({ where: { id: { not: product.id } }, select: { name: true } });
+  if (clash.some((p) => p.name.toLowerCase() === f.name.toLowerCase())) return { error: "Another product already has that name", fields };
+
+  let photo: string | undefined;
+  const file = formData.get("photo");
+  if (file instanceof File && file.size > 0) {
+    const problem = photoError(file);
+    if (problem) return { error: problem, fields };
+    photo = `data:${file.type};base64,${Buffer.from(await file.arrayBuffer()).toString("base64")}`;
+  }
+
+  await db.product.update({
+    where: { id: product.id },
+    data: { name: f.name, category, price: f.price, lowStockAt: f.lowStockAt, ...(photo ? { photo } : {}) },
+  });
+  refresh();
+  return { ok: `${f.name} saved`, at: Date.now() };
+}
