@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const cols = [
@@ -32,7 +33,9 @@ export function Footer() {
     <footer className="bg-forest-deep text-cream">
       <div className="mx-auto grid max-w-[1280px] grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-8 px-4 pb-8 pt-16 text-[15px] sm:px-8">
         <div className="grid content-start gap-3">
-          <span className="text-[20px] font-extrabold text-ball">Champions Club</span>
+          <span className="w-fit rounded-2xl bg-cream p-3">
+            <Image src="/brand/logo-full.png" alt="Champions Club: Play, Perform, Inspire" width={150} height={146} unoptimized />
+          </span>
           <span className="leading-relaxed opacity-80">Courts, memberships, shop and café, all in one place.</span>
           <span className="opacity-80">Open 6am–11pm daily</span>
         </div>

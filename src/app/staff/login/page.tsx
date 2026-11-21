@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Trophy } from "lucide-react";
 import { LoginForm } from "./LoginForm";
 
 export const metadata = { title: "Staff sign in · The Champions Club" };
@@ -13,10 +12,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="grid min-h-screen lg:grid-cols-[1fr_1.1fr]">
       <div className="flex flex-col px-6 py-8 sm:px-12">
         <Link href="/" className="flex items-center gap-3 text-forest">
-          <span className="grid size-9 place-items-center rounded-full bg-forest text-cream">
-            <Trophy className="size-[17px]" strokeWidth={1.8} />
+          <Image src="/brand/logo-mark.png" alt="" width={40} height={40} unoptimized />
+          <span className="text-[19px] font-extrabold italic text-[#0f2147]">
+            CHAMPI<span className="text-[#1f66d8]">O</span>NS CLUB
           </span>
-          <span className="font-serif text-[20px] font-medium">The Champions Club</span>
         </Link>
 
         <div className="mx-auto flex w-full max-w-[380px] flex-1 flex-col justify-center py-12">

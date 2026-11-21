@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -13,7 +14,6 @@ import {
   LogOut,
   Menu,
   ShoppingBag,
-  Trophy,
   UserPlus,
   Users,
   X,
@@ -69,7 +69,9 @@ function Links({ items, onNavigate }: { items: Item[]; onNavigate?: () => void }
 function Brand() {
   return (
     <Link href="/staff" className="flex items-center gap-2.5 px-3 text-cream">
-      <Trophy className="size-[18px] text-ball lg:hidden" strokeWidth={2} />
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white p-0.5">
+        <Image src="/brand/logo-mark.png" alt="" width={32} height={32} unoptimized />
+      </span>
       <span className="font-serif text-[21px] leading-tight">Champions Club</span>
     </Link>
   );

@@ -11,8 +11,9 @@ export default async function MemberLoginPage({ searchParams }: { searchParams: 
       <Image src="/images/tennis-court.jpg" alt="" aria-hidden="true" fill priority unoptimized sizes="100vw" className="object-cover object-[45%_40%]" />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,42,29,0.15)_0%,rgba(11,42,29,0.75)_60%)]" />
       <div className="relative mx-auto flex min-h-[100svh] max-w-[480px] flex-col justify-between gap-10 p-6">
-        <Link href="/" className="self-start rounded-full border border-white/35 bg-white/[0.18] px-3.5 py-2.5 text-[18px] font-extrabold text-white backdrop-blur-md">
-          Champions Club
+        <Link href="/" aria-label="Champions Club home" className="flex items-center gap-2 self-start rounded-full border border-white/50 bg-white/85 py-1.5 pl-1.5 pr-4 text-[16px] font-extrabold italic text-[#0f2147] backdrop-blur-md">
+          <Image src="/brand/logo-mark.png" alt="" width={36} height={36} unoptimized />
+          CHAMPI<span className="text-[#1f66d8]">O</span>NS CLUB
         </Link>
         <MemberLoginForm next={next} />
       </div>
