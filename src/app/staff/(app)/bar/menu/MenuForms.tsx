@@ -4,26 +4,29 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { fieldCls, labelCls } from "@/components/staff/ui";
 import { AddTile } from "@/components/staff/AddTile";
+import { PhotoPicker } from "@/components/staff/PhotoPicker";
 import { addMenuItem, updateMenuItem, type MenuState } from "./actions";
 
 const small = "min-h-10 border border-[#b5aa98] bg-white px-2.5 text-[14.5px] outline-none focus:border-forest";
 
 export function AddItemForm({ categories, framed = true }: { categories: string[]; framed?: boolean }) {
   const [state, action, pending] = useActionState<MenuState, FormData>(addMenuItem, {});
+  // React clears a form after every submit, so the photo box starts fresh each time too.
+  const [round, setRound] = useState(0);
+  useEffect(() => setRound((r) => r + 1), [state]);
   const [category, setCategory] = useState(categories[0] ?? "");
-  const [preview, setPreview] = useState<string | null>(null);
   const ref = useRef<HTMLFormElement>(null);
   const f = state.fields ?? {};
   useEffect(() => {
     if (state.ok) {
       ref.current?.reset();
-      setPreview(null);
     }
   }, [state.ok, state.at]);
 
   return (
     <form ref={ref} action={action} className={`grid gap-3 bg-paper p-5 ${framed ? "border border-line" : ""}`} noValidate>
       {framed && <h2 className="text-[18px] font-semibold">Add a new item</h2>}
+      <PhotoPicker key={round} label="Item photo" />
       <label className={labelCls}>
         Item name
         <input name="name" defaultValue={f.name} placeholder="e.g. Mango Smoothie" required className={fieldCls} />
@@ -51,28 +54,6 @@ export function AddItemForm({ categories, framed = true }: { categories: string[
           <input name="newCategory" defaultValue={f.newCategory} placeholder="e.g. desserts" className={fieldCls} />
         </label>
       )}
-      <div className="grid gap-1.5">
-        <label htmlFor="new-photo" className="text-[14px] font-semibold">
-          Photo <span className="font-normal text-muted">(optional, up to 1 MB)</span>
-        </label>
-        <div className="flex items-center gap-3">
-          {preview && (
-            // eslint-disable-next-line @next/next/no-img-element -- local preview
-            <img src={preview} alt="" className="size-14 border border-line object-cover" />
-          )}
-          <input
-            id="new-photo"
-            name="photo"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              setPreview(file ? URL.createObjectURL(file) : null);
-            }}
-            className="text-[14px] file:mr-3 file:min-h-10 file:cursor-pointer file:border-[1.5px] file:border-forest file:bg-transparent file:px-3 file:font-semibold file:text-forest"
-          />
-        </div>
-      </div>
       <button
         type="submit"
         disabled={pending}

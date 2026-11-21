@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Loader2, Plus, X } from "lucide-react";
+import { Camera, Loader2, Plus, X } from "lucide-react";
 import { inr } from "@/lib/constants";
 import type { ProductPhoto } from "@/lib/productPhotos";
 import { fieldCls, labelCls } from "@/components/staff/ui";
-import { addProduct, restockProduct, type InventoryState } from "./actions";
+import { PhotoPicker } from "@/components/staff/PhotoPicker";
+import { addProduct, restockProduct, setProductPhoto, type InventoryState } from "./actions";
 
 type Item = {
   id: number;
@@ -90,15 +91,14 @@ function Restock({ item }: { item: Item }) {
 
 export function AddProduct({ categories, onClose, framed = true }: { categories: string[]; onClose: () => void; framed?: boolean }) {
   const [state, action, pending] = useActionState<InventoryState, FormData>(addProduct, {});
+  // React clears a form after every submit, so the photo box starts fresh each time too.
+  const [round, setRound] = useState(0);
+  useEffect(() => setRound((r) => r + 1), [state]);
   const [category, setCategory] = useState(categories[0] ?? "");
-  const [preview, setPreview] = useState<string | null>(null);
   const ref = useRef<HTMLFormElement>(null);
   const f = state.fields ?? {};
   useEffect(() => {
-    if (state.ok) {
-      ref.current?.reset();
-      setPreview(null);
-    }
+    if (state.ok) ref.current?.reset();
   }, [state.ok, state.at]);
 
   return (
@@ -111,6 +111,7 @@ export function AddProduct({ categories, onClose, framed = true }: { categories:
           </button>
         </div>
       )}
+      <PhotoPicker key={round} label="Product photo" />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className={`${labelCls} sm:col-span-2`}>
           Product name
@@ -147,28 +148,6 @@ export function AddProduct({ categories, onClose, framed = true }: { categories:
           Warn when stock is at or below
           <input name="lowStockAt" type="number" min={0} defaultValue={f.lowStockAt ?? "5"} className={fieldCls} />
         </label>
-        <div className="grid gap-1.5">
-          <label htmlFor="product-photo" className="text-[14px] font-semibold">
-            Photo <span className="font-normal text-muted">(optional, up to 1 MB)</span>
-          </label>
-          <div className="flex items-center gap-3">
-            {preview && (
-              // eslint-disable-next-line @next/next/no-img-element -- local preview
-              <img src={preview} alt="" className="size-12 border border-line object-contain" />
-            )}
-            <input
-              id="product-photo"
-              name="photo"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                setPreview(file ? URL.createObjectURL(file) : null);
-              }}
-              className="text-[14px] file:mr-3 file:min-h-10 file:cursor-pointer file:border-[1.5px] file:border-forest file:bg-transparent file:px-3 file:font-semibold file:text-forest"
-            />
-          </div>
-        </div>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <button
@@ -183,6 +162,54 @@ export function AddProduct({ categories, onClose, framed = true }: { categories:
         </p>
       </div>
       <p className="text-[13px] text-muted">A product code is created automatically. The product appears at the counter and in the member app straight away.</p>
+    </form>
+  );
+}
+
+// Product photo in the inventory table. Picking a file saves it straight away.
+function PhotoCell({ item }: { item: Item }) {
+  const [state, action, pending] = useActionState<InventoryState, FormData>(setProductPhoto, {});
+  const form = useRef<HTMLFormElement>(null);
+  const id = `photo-${item.id}`;
+  return (
+    <form ref={form} action={action} className="grid shrink-0 justify-items-center gap-1">
+      <input type="hidden" name="productId" value={item.id} />
+      <label htmlFor={id} className="relative block size-12 cursor-pointer" title={item.photo ? "Change photo" : "Add photo"}>
+        {item.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element -- built-in or uploaded photo
+          <img
+            src={item.photo.src}
+            alt=""
+            className={`size-12 border border-line bg-white ${item.photo.fit === "cover" ? "object-cover" : "object-contain"}`}
+          />
+        ) : (
+          <span aria-hidden="true" className="grid size-12 place-items-center border border-dashed border-forest/40 text-forest">
+            <Camera className="size-5" />
+          </span>
+        )}
+        {pending && (
+          <span className="absolute inset-0 grid place-items-center bg-white/70">
+            <Loader2 className="size-4 animate-spin" />
+          </span>
+        )}
+      </label>
+      <label htmlFor={id} className="cursor-pointer text-[11.5px] font-semibold text-forest underline underline-offset-2">
+        {item.photo ? "Change" : "Add photo"}
+      </label>
+      <input
+        id={id}
+        name="photo"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        aria-label={`${item.photo ? "Change" : "Add"} photo for ${item.name}`}
+        className="sr-only"
+        onChange={(e) => e.target.files?.length && form.current?.requestSubmit()}
+      />
+      {state.error && (
+        <span role="alert" className="max-w-[120px] text-center text-[11.5px] font-semibold text-clay">
+          {state.error}
+        </span>
+      )}
     </form>
   );
 }
@@ -230,16 +257,7 @@ export function Inventory({ items }: { items: Item[] }) {
                 <tr key={i.id} className="align-top">
                   <td className="px-3.5 py-3">
                     <span className="flex items-center gap-3">
-                      {i.photo ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- built-in or uploaded photo
-                        <img
-                          src={i.photo.src}
-                          alt=""
-                          className={`size-12 shrink-0 border border-line bg-white ${i.photo.fit === "cover" ? "object-cover" : "object-contain"}`}
-                        />
-                      ) : (
-                        <span aria-hidden="true" className="size-12 shrink-0 border border-dashed border-line" />
-                      )}
+                      <PhotoCell item={i} />
                       <span>
                         <strong>{i.name}</strong>
                         <span className="block text-[12.5px] text-muted">{i.sku}</span>

@@ -250,3 +250,18 @@ export async function setShipping(_: InventoryState, formData: FormData): Promis
   refresh();
   return { ok: "Delivery charges saved", at: Date.now() };
 }
+
+// Adds or replaces the photo of an existing product.
+export async function setProductPhoto(_: InventoryState, formData: FormData): Promise<InventoryState> {
+  await requireStaff(["owner", "desk", "shop"]);
+  const id = Number(formData.get("productId"));
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) return { error: "Choose a photo" };
+  const problem = photoError(file);
+  if (problem) return { error: problem };
+  const photo = `data:${file.type};base64,${Buffer.from(await file.arrayBuffer()).toString("base64")}`;
+  const { count } = await db.product.updateMany({ where: { id }, data: { photo } });
+  if (!count) return { error: "Product not found" };
+  refresh();
+  return { ok: "Photo updated", at: Date.now() };
+}
