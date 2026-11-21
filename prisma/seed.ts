@@ -47,6 +47,13 @@ async function main() {
     db.staff.create({ data: { name: "Sana Sheikh", email: "bar@champions.club", passwordHash, role: "bar", monthlySalary: 18000 } }),
   ]);
 
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (adminEmail && process.env.ADMIN_PASSWORD && adminEmail !== "owner@champions.club") {
+    await db.staff.create({
+      data: { name: process.env.ADMIN_NAME?.trim() || "Club admin", email: adminEmail, passwordHash: await bcrypt.hash(process.env.ADMIN_PASSWORD, 10), role: "owner", monthlySalary: 0 },
+    });
+  }
+
   const gold = await db.plan.create({
     data: { name: "Gold", monthlyFee: 3999, courtRate: 0, shopDiscount: 15, barDiscount: 20, description: "Unlimited court time, priority booking, best discounts" },
   });
