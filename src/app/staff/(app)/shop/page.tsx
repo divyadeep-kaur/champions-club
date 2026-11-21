@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { requireStaff } from "@/lib/session";
+import { productPhoto } from "@/lib/productPhotos";
 import { CounterSale } from "./CounterSale";
 import { advanceOrder, cancelOrder, restock } from "./actions";
 
@@ -77,6 +78,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
             stock: p.stock,
             lowStockAt: p.lowStockAt,
             held: held.find((h) => h.productId === p.id)?._sum.qty ?? 0,
+            photo: productPhoto(p.sku),
           }))}
           members={members.map((m) => ({
             code: m.code,

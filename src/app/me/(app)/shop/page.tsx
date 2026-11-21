@@ -4,6 +4,7 @@ import { inr } from "@/lib/constants";
 import { membershipStatus } from "@/lib/members";
 import { requireMember } from "@/lib/memberSession";
 import { shopPrice } from "@/lib/pricing";
+import { productPhoto } from "@/lib/productPhotos";
 import { ShopOrder } from "./ShopOrder";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,7 @@ export default async function MemberShop() {
           price: p.price,
           stock: p.stock,
           memberPrice: shopPrice(plan, p.price),
+          photo: productPhoto(p.sku),
         }))}
         plan={plan ? { name: plan.name, shopDiscount: plan.shopDiscount, courtRate: plan.courtRate, barDiscount: plan.barDiscount } : null}
       />

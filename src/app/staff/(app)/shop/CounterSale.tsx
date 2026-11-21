@@ -4,9 +4,11 @@ import { useActionState, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { inr } from "@/lib/constants";
 import { cartTotals } from "@/lib/checkout";
+import type { ProductPhoto } from "@/lib/productPhotos";
+import { ProductImage } from "@/components/ProductImage";
 import { counterSale, type SaleState } from "./actions";
 
-type Product = { id: number; name: string; category: string; price: number; stock: number; lowStockAt: number; held: number };
+type Product = { id: number; name: string; category: string; price: number; stock: number; lowStockAt: number; held: number; photo: ProductPhoto | null };
 type MemberOpt = { code: string; name: string; plan: string; shopDiscount: number; courtRate: number; barDiscount: number; expired: boolean };
 
 const methods = [
@@ -50,7 +52,8 @@ export function CounterSale({ products, members }: { products: Product[]; member
           const left = p.stock - inCart;
           const low = p.stock <= p.lowStockAt;
           return (
-            <div key={p.id} className="grid gap-2 border border-line bg-paper p-4">
+            <div key={p.id} className="grid content-start gap-2 border border-line bg-paper p-4">
+              {p.photo && <ProductImage photo={p.photo} name={p.name} className="-mx-4 -mt-4 mb-1" />}
               <div className="text-[12.5px] font-bold uppercase tracking-[0.08em] text-[#8a6d3b]">{p.category}</div>
               <div className="min-h-[42px] font-semibold">{p.name}</div>
               <div className="flex justify-between text-[14.5px]">

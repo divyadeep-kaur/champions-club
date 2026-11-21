@@ -4,9 +4,11 @@ import { useActionState, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { inr } from "@/lib/constants";
 import { cartTotals } from "@/lib/checkout";
+import type { ProductPhoto } from "@/lib/productPhotos";
+import { ProductImage } from "@/components/ProductImage";
 import { placeOrder, type ShopState } from "./actions";
 
-type Product = { id: number; name: string; category: string; price: number; stock: number; memberPrice: number };
+type Product = { id: number; name: string; category: string; price: number; stock: number; memberPrice: number; photo: ProductPhoto | null };
 
 export function ShopOrder({
   products,
@@ -50,7 +52,16 @@ export function ShopOrder({
               const out = p.stock <= 0;
               return (
                 <div key={p.id} className="flex items-center justify-between gap-2.5 rounded-[14px] border border-line bg-paper px-3 py-2.5">
-                  <div className="min-w-0">
+                  {p.photo && (
+                    <ProductImage
+                      photo={p.photo}
+                      name={p.name}
+                      swatches={false}
+                      sizes="72px"
+                      className="w-[72px] shrink-0 overflow-hidden rounded-[10px] border border-line"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
                     <strong className="text-[15px]">{p.name}</strong>
                     <div className="text-[13.5px] tabular-nums text-muted">
                       {plan && p.memberPrice < p.price ? (
