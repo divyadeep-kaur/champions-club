@@ -155,7 +155,7 @@ const restockSchema = z.object({
   supplier: z.string().trim().max(80).optional(),
 });
 
-// Adds new stock. If a cost is given it is also recorded in Money as a paid stock purchase.
+// Adds new stock. If a cost is given it is also recorded in Income as a paid stock purchase.
 export async function restockProduct(_: InventoryState, formData: FormData): Promise<InventoryState> {
   const staff = await requireStaff(["owner", "desk", "shop"]);
   const parsed = restockSchema.safeParse(Object.fromEntries(formData));
@@ -183,7 +183,7 @@ export async function restockProduct(_: InventoryState, formData: FormData): Pro
   ]);
   refresh();
   revalidatePath("/staff/money", "layout");
-  return { ok: `+${qty} ${product.name}. Now ${product.stock + qty} in stock${cost ? `, ${inr(cost)} added to Money` : ""}.`, at: Date.now() };
+  return { ok: `+${qty} ${product.name}. Now ${product.stock + qty} in stock${cost ? `, ${inr(cost)} added to Income` : ""}.`, at: Date.now() };
 }
 
 const productSchema = z.object({

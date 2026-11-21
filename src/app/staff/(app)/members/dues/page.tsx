@@ -40,7 +40,7 @@ export default async function DuesPage() {
           </p>
         </div>
         <p className="border border-line bg-paper p-5 text-[14px] text-muted">
-          Plan changes, renewals and extensions saved without payment wait here. Recording the payment adds it to Money with a payment reference, so nothing is ever assumed
+          Plan changes, renewals and extensions saved without payment wait here. Recording the payment adds it to Income with a payment reference, so nothing is ever assumed
           paid.
         </p>
       </div>

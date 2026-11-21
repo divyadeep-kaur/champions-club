@@ -15,7 +15,7 @@ const tabs = [
 export function MoneyTabs() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Money" className="flex flex-wrap border-[1.5px] border-forest">
+    <nav aria-label="Income" className="flex flex-wrap border-[1.5px] border-forest">
       {tabs.map((t) => {
         const on = t.href === "/staff/money" ? pathname === t.href : pathname.startsWith(t.href);
         return (

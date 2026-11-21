@@ -8,7 +8,7 @@ export const staffNav: { href: string; label: string; icon: string; roles: Role[
   { href: "/staff/bar", label: "Café & Bar", icon: "bar", roles: ["owner", "bar"] },
   { href: "/staff/kitchen", label: "Kitchen", icon: "kitchen", roles: ["owner", "bar"] },
   { href: "/staff/leads", label: "Leads", icon: "leads", roles: ["owner", "desk"] },
-  { href: "/staff/money", label: "Money", icon: "money", roles: ["owner"] },
+  { href: "/staff/money", label: "Income", icon: "money", roles: ["owner"] },
   { href: "/staff/team", label: "Team", icon: "team", roles: ["owner"] },
   { href: "/staff/me", label: "My pay", icon: "pay", roles: ["desk", "bar", "shop", "coach", "staff"] },
   { href: "/staff/queries", label: "Queries", icon: "queries", roles: ["owner", "desk", "bar", "shop", "coach", "staff"] },

@@ -173,7 +173,7 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
             <span>Net profit · {pnl.margin}%</span>
             <span className="font-serif text-[20px] tabular-nums">{inr(pnl.profit)}</span>
           </div>
-          <h3 className="mt-5 mb-1 text-[15px] font-semibold">Money in by method</h3>
+          <h3 className="mt-5 mb-1 text-[15px] font-semibold">Income by payment method</h3>
           {methods
             .sort((a, b) => (b._sum.amount ?? 0) - (a._sum.amount ?? 0))
             .map((m) => (

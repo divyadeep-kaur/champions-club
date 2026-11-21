@@ -6,7 +6,7 @@ export default async function MoneyLayout({ children }: { children: React.ReactN
   return (
     <div className="grid content-start gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Money</h1>
+        <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Income</h1>
         <MoneyTabs />
       </div>
       {children}
