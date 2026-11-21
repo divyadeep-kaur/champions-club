@@ -6,7 +6,7 @@ import { Loader2, UserPlus } from "lucide-react";
 import { inr } from "@/lib/constants";
 import { bookTrial, logContact, markLost, sendQuote, type LeadState } from "./actions";
 
-const input = "mt-1 w-full border border-line bg-cream/40 px-3 py-2.5 text-[15px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+const input = "mt-1 w-full border border-[#b5aa98] bg-white px-3 py-2.5 text-[15px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 const lbl = "text-[13px] font-semibold text-muted";
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {

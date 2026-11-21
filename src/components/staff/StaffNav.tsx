@@ -41,11 +41,11 @@ function Links({ items, onNavigate }: { items: Item[]; onNavigate?: () => void }
               href={href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium transition-colors ${
-                active ? "bg-cream text-forest" : "text-cream/75 hover:bg-white/5 hover:text-cream"
+              className={`flex items-center gap-3 p-3 text-[15px] transition-colors ${
+                active ? "bg-ball font-semibold text-forest-deep" : "text-cream hover:bg-white/5"
               }`}
             >
-              <Icon className="size-[18px]" strokeWidth={1.9} />
+              <Icon className="size-[18px] lg:hidden" strokeWidth={1.9} />
               {label}
             </Link>
           </li>
@@ -57,21 +57,19 @@ function Links({ items, onNavigate }: { items: Item[]; onNavigate?: () => void }
 
 function Brand() {
   return (
-    <Link href="/staff" className="flex items-center gap-2.5 text-cream">
-      <span className="grid size-8 place-items-center rounded-full bg-cream text-forest">
-        <Trophy className="size-4" strokeWidth={2} />
-      </span>
-      <span className="font-serif text-[18px] font-medium leading-tight">The Champions Club</span>
+    <Link href="/staff" className="flex items-center gap-2.5 px-3 text-cream">
+      <Trophy className="size-[18px] text-ball lg:hidden" strokeWidth={2} />
+      <span className="font-serif text-[21px] leading-tight">Champions Club</span>
     </Link>
   );
 }
 
 function User({ name, role, logout }: { name: string; role: string; logout: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+    <div className="flex items-center justify-between gap-3 border-t border-cream/20 px-3 pt-5">
       <div className="min-w-0">
-        <p className="truncate text-[14px] font-semibold text-cream">{name}</p>
-        <p className="text-[12.5px] capitalize text-cream/60">{role === "desk" ? "Front desk" : role}</p>
+        <p className="truncate text-[14px] text-cream">{name}</p>
+        <p className="text-[14px] capitalize text-cream/75">{role === "desk" ? "Front desk" : role}</p>
       </div>
       <form action={logout}>
         <button type="submit" aria-label="Sign out" className="grid size-9 place-items-center text-cream/70 transition-colors hover:bg-white/10 hover:text-cream">
@@ -87,9 +85,9 @@ export function StaffNav({ items, name, role, logout }: { items: Item[]; name: s
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col bg-forest px-4 py-6 lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col bg-forest px-4 py-6 lg:flex">
         <Brand />
-        <nav aria-label="Staff" className="mt-9 flex-1">
+        <nav aria-label="Staff" className="mt-5 flex-1">
           <Links items={items} />
         </nav>
         <User name={name} role={role} logout={logout} />

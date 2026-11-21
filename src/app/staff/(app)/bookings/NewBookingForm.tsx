@@ -9,7 +9,7 @@ import { createBooking, type BookingState } from "./actions";
 
 export type MemberOption = { code: string; name: string; plan: string; courtRate: number; shopDiscount: number; barDiscount: number; expired: boolean; today: number };
 
-const input = "mt-1 w-full border border-line bg-cream/40 px-3 py-2.5 text-[15px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+const input = "mt-1 w-full border border-[#b5aa98] bg-white px-3 py-2.5 text-[15px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 const lbl = "text-[13px] font-semibold text-muted";
 
 export function NewBookingForm({

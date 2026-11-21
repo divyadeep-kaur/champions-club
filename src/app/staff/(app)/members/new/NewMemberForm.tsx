@@ -9,7 +9,7 @@ import { VisitPreview, type Visit } from "./VisitPreview";
 type Plan = { id: number; name: string; monthlyFee: number; courtRate: number; shopDiscount: number; barDiscount: number; durationDays: number; description: string };
 
 const input =
-  "mt-1.5 w-full border border-line bg-paper px-3.5 py-2.5 text-[15.5px] text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
+  "mt-1.5 w-full border border-[#b5aa98] bg-white px-3.5 py-2.5 text-[15.5px] text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
 const label = "text-[14px] font-semibold text-ink";
 
 export function NewMemberForm({ plans, visit, defaults }: { plans: Plan[]; visit: Visit; defaults?: Record<string, string> }) {

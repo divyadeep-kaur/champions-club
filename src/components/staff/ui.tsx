@@ -1,9 +1,9 @@
 export function PageHeader({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
+    <div className="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 className="font-serif text-[34px] font-semibold leading-none tracking-[-0.02em] text-forest sm:text-[40px]">{title}</h1>
-        {description && <p className="mt-2 text-[15px] text-muted">{description}</p>}
+        <h1 className="font-serif text-[32px] font-semibold leading-tight text-forest sm:text-[36px]">{title}</h1>
+        {description && <p className="mt-1.5 text-muted">{description}</p>}
       </div>
       {action}
     </div>
@@ -13,8 +13,8 @@ export function PageHeader({ title, description, action }: { title: string; desc
 export function Stat({ label, value, hint, tone = "default" }: { label: string; value: string; hint?: string; tone?: "default" | "warn" }) {
   return (
     <div className="border border-line bg-paper p-5">
-      <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">{label}</p>
-      <p className={`mt-2 font-serif text-[32px] font-semibold leading-none tracking-[-0.02em] ${tone === "warn" ? "text-clay" : "text-forest"}`}>{value}</p>
+      <p className="text-[14px] text-muted">{label}</p>
+      <p className={`mt-1.5 font-serif text-[30px] leading-tight ${tone === "warn" ? "text-clay" : "text-forest"}`}>{value}</p>
       {hint && <p className="mt-2 text-[13.5px] text-muted">{hint}</p>}
     </div>
   );
@@ -24,16 +24,16 @@ export function Table({ head, children, empty }: { head: string[]; children: Rea
   return (
     <div className="overflow-x-auto border border-line bg-paper">
       <table className="w-full min-w-[640px] text-left text-[14.5px]">
-        <thead className="border-b border-line bg-cream/60 text-[12.5px] font-semibold uppercase tracking-[0.06em] text-muted">
+        <thead className="text-[14.5px] text-muted">
           <tr>
             {head.map((h) => (
-              <th key={h} scope="col" className="px-4 py-3 font-semibold">
+              <th key={h} scope="col" className="px-3.5 py-3 font-semibold">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">{children}</tbody>
+        <tbody className="[&>tr]:border-t [&>tr]:border-line">{children}</tbody>
       </table>
       {empty && <p className="px-4 py-10 text-center text-muted">Nothing here yet.</p>}
     </div>
@@ -41,7 +41,7 @@ export function Table({ head, children, empty }: { head: string[]; children: Rea
 }
 
 export function Td({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 align-middle ${className}`}>{children}</td>;
+  return <td className={`px-3.5 py-3 align-middle ${className}`}>{children}</td>;
 }
 
 const badgeTones: Record<string, string> = {
@@ -67,3 +67,8 @@ export function ComingNext({ items }: { items: string[] }) {
     </div>
   );
 }
+
+export const fieldCls = "min-h-11 w-full border border-[#b5aa98] bg-white p-3 text-[15px] font-normal text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
+export const labelCls = "grid gap-1.5 text-[14px] font-semibold";
+export const btnPrimary = "inline-flex min-h-11 items-center justify-center gap-2 bg-forest px-4 py-2.5 font-semibold text-cream hover:bg-forest-deep disabled:opacity-70";
+export const btnOutline = "inline-flex min-h-11 items-center justify-center gap-2 border-[1.5px] border-forest px-4 py-2.5 font-semibold text-forest hover:bg-forest/5 disabled:opacity-70";

@@ -19,9 +19,9 @@ export function JoinSocialForm({ bookingId, members, full }: { bookingId: number
             list="social-members"
             placeholder="Member code or guest name"
             autoComplete="off"
-            className="min-w-0 flex-1 border border-line bg-cream/40 px-3 py-2 text-[14.5px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
+            className="min-w-0 flex-1 border border-[#b5aa98] bg-white px-3 py-2 text-[14.5px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15"
           />
-          <select name="method" defaultValue="upi" aria-label="Payment" className="border border-line bg-cream/40 px-2 text-[14px]">
+          <select name="method" defaultValue="upi" aria-label="Payment" className="border border-[#b5aa98] bg-white px-2 text-[14px]">
             <option value="upi">UPI</option>
             <option value="card">Card</option>
             <option value="cash">Cash</option>
