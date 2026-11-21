@@ -8,6 +8,8 @@ import { placeBooking } from "@/lib/bookingService";
 import { normalizePhone } from "@/lib/members";
 import { clearMemberSession, createMemberSession, requireMember } from "@/lib/memberSession";
 import { recomputeTab } from "@/lib/tabs";
+import { paidSoFar, refundMethod } from "@/lib/ledger";
+import { refundable } from "@/lib/money";
 import { answerOffer, joinSession, leaveSession } from "@/lib/socialService";
 
 export type MeState = { error?: string; ok?: string };
@@ -69,14 +71,13 @@ export async function memberCancel(formData: FormData) {
   const member = await requireMember();
   const booking = await db.booking.findUnique({ where: { id: Number(formData.get("bookingId")) } });
   if (!booking || booking.memberId !== member.id || booking.status !== "booked" || booking.start <= new Date()) return;
-  const paid = await db.payment.aggregate({ where: { source: "court", refId: booking.id }, _sum: { amount: true } });
-  const refund = paid._sum.amount ?? 0;
-  await db.$transaction([
-    db.booking.update({ where: { id: booking.id }, data: { status: "cancelled" } }),
-    ...(refund > 0
-      ? [db.payment.create({ data: { source: "court", refId: booking.id, amount: -refund, method: "cash", note: "Refund, cancelled by member" } })]
-      : []),
-  ]);
+  await db.$transaction(async (tx) => {
+    const claimed = await tx.booking.updateMany({ where: { id: booking.id, status: "booked" }, data: { status: "cancelled" } });
+    if (!claimed.count) return;
+    const refund = refundable(await paidSoFar(tx, "court", booking.id));
+    if (refund > 0)
+      await tx.payment.create({ data: { source: "court", refId: booking.id, amount: -refund, method: await refundMethod(tx, "court", booking.id), note: "Refund, cancelled by member" } });
+  });
   refreshCourts();
 }
 

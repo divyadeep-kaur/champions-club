@@ -9,6 +9,8 @@ import { benefitPlan, photoError } from "@/lib/membership";
 import { nextSku } from "@/lib/inventory";
 import { FREE_OVER_KEY, SHIPPING_FEE_KEY } from "@/lib/delivery";
 import { requireStaff } from "@/lib/session";
+import { paidSoFar } from "@/lib/ledger";
+import { refundable } from "@/lib/money";
 
 export type SaleState = { error?: string; ok?: string; at?: number };
 
@@ -94,22 +96,16 @@ export async function advanceOrder(formData: FormData) {
   const method = String(formData.get("method") ?? "");
   const needsPayment = finishing && !order.paymentMethod;
   if (needsPayment && !["cash", "card", "upi"].includes(method)) return;
-  await db.$transaction([
-    db.order.update({ where: { id: order.id }, data: { status: next[order.status], ...(needsPayment ? { paymentMethod: method } : {}) } }),
-    ...(needsPayment
-      ? [
-          db.payment.create({
-            data: {
-              source: "shop",
-              refId: order.id,
-              amount: order.total,
-              method,
-              note: `Online order #${order.id}: ${order.items.map((i) => i.product.name).join(", ")}`,
-            },
-          }),
-        ]
-      : []),
-  ]);
+  await db.$transaction(async (tx) => {
+    const claimed = await tx.order.updateMany({
+      where: { id: order.id, status: order.status },
+      data: { status: next[order.status], ...(needsPayment ? { paymentMethod: method } : {}) },
+    });
+    if (!claimed.count || !needsPayment) return;
+    await tx.payment.create({
+      data: { source: "shop", refId: order.id, amount: order.total, method, note: `Online order #${order.id}: ${order.items.map((i) => i.product.name).join(", ")}` },
+    });
+  });
   refresh();
 }
 
@@ -117,34 +113,17 @@ export async function cancelOrder(formData: FormData) {
   await requireStaff(["owner", "desk", "shop"]);
   const order = await db.order.findUnique({ where: { id: Number(formData.get("orderId")) }, include: { items: true } });
   if (!order || order.status === "completed" || order.status === "cancelled") return;
-  const paid = await db.payment.aggregate({ where: { source: "shop", refId: order.id }, _sum: { amount: true } });
-  await db.$transaction([
-    db.order.update({ where: { id: order.id }, data: { status: "cancelled" } }),
-    ...order.items.map((i) => db.product.update({ where: { id: i.productId }, data: { stock: { increment: i.qty } } })),
-    ...((paid._sum.amount ?? 0) > 0
-      ? [
-          db.payment.create({
-            data: {
-              source: "shop",
-              refId: order.id,
-              amount: -(paid._sum.amount ?? 0),
-              method: order.paymentMethod ?? "cash",
-              note: `Refund, cancelled order #${order.id}`,
-            },
-          }),
-        ]
-      : []),
-  ]);
+  await db.$transaction(async (tx) => {
+    const claimed = await tx.order.updateMany({ where: { id: order.id, status: { notIn: ["completed", "cancelled"] } }, data: { status: "cancelled" } });
+    if (!claimed.count) return;
+    for (const i of order.items) await tx.product.update({ where: { id: i.productId }, data: { stock: { increment: i.qty } } });
+    const refund = refundable(await paidSoFar(tx, "shop", order.id));
+    if (refund > 0)
+      await tx.payment.create({ data: { source: "shop", refId: order.id, amount: -refund, method: order.paymentMethod ?? "cash", note: `Refund, cancelled order #${order.id}` } });
+  });
   refresh();
 }
 
-export async function restock(formData: FormData) {
-  await requireStaff(["owner", "desk", "shop"]);
-  const id = Number(formData.get("productId"));
-  const qty = Math.min(200, Math.max(1, Number(formData.get("qty")) || 0));
-  await db.product.update({ where: { id }, data: { stock: { increment: qty } } });
-  refresh();
-}
 
 export type InventoryState = { error?: string; ok?: string; at?: number; fields?: Record<string, string> };
 
@@ -157,7 +136,7 @@ const restockSchema = z.object({
 
 // Adds new stock. If a cost is given it is also recorded in Income as a paid stock purchase.
 export async function restockProduct(_: InventoryState, formData: FormData): Promise<InventoryState> {
-  const staff = await requireStaff(["owner", "desk", "shop"]);
+  await requireStaff(["owner", "desk", "shop"]);
   const parsed = restockSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { productId, qty, cost, supplier } = parsed.data;

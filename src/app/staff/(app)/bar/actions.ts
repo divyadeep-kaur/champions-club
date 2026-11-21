@@ -101,18 +101,25 @@ export async function settleTab(formData: FormData) {
   const tab = await db.tab.findUnique({ where: { id: tabId }, include: { table: true, member: true, items: true } });
   if (!tab || tab.status !== "open" || tab.items.length === 0) return;
   const shift = await openShift(staff.id);
-  await db.$transaction([
-    db.tab.update({ where: { id: tab.id }, data: { status: "paid", paymentMethod: method, closedAt: new Date(), shiftId: tab.shiftId ?? shift?.id } }),
-    db.payment.create({
+  const settled = await db.$transaction(async (tx) => {
+    const fresh = await recomputeTab(tx, tab.id);
+    const claimed = await tx.tab.updateMany({
+      where: { id: tab.id, status: "open" },
+      data: { status: "paid", paymentMethod: method, closedAt: new Date(), shiftId: tab.shiftId ?? shift?.id },
+    });
+    if (!claimed.count || !fresh) return null;
+    await tx.payment.create({
       data: {
         source: "bar",
         refId: tab.id,
-        amount: tab.total,
+        amount: fresh.total,
         method,
         note: `${tab.table ? `${tab.table.label} tab` : "Counter tab"}${tab.member ? ` · ${tab.member.name}` : ""}`,
       },
-    }),
-  ]);
+    });
+    return fresh.total;
+  });
+  if (settled === null) return;
   refresh();
-  redirect(`/staff/bar?paid=${encodeURIComponent(`${tab.table?.label ?? "Counter"} paid ${inr(tab.total)} by ${method.toUpperCase()}`)}`);
+  redirect(`/staff/bar?paid=${encodeURIComponent(`${tab.table?.label ?? "Counter"} paid ${inr(settled)} by ${method.toUpperCase()}`)}`);
 }

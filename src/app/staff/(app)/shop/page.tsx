@@ -9,7 +9,7 @@ import { Inventory } from "./Inventory";
 import { ShippingForm } from "./ShippingForm";
 import { FULFILMENT_LABEL } from "@/lib/delivery";
 import { getShippingRule } from "@/lib/deliveryService";
-import { advanceOrder, cancelOrder, restock } from "./actions";
+import { advanceOrder, cancelOrder } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -68,15 +68,6 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
               Restock in Inventory
             </Link>
           )}
-          {low.slice(0, 3).map((p) => (
-            <form key={p.id} action={restock} className="flex items-center gap-1">
-              <input type="hidden" name="productId" value={p.id} />
-              <input type="hidden" name="qty" value={Math.max(5, p.lowStockAt * 2)} />
-              <button type="submit" className="border border-[#7a2f14]/40 px-2 py-1 text-[13px] font-semibold hover:bg-white/50">
-                +{Math.max(5, p.lowStockAt * 2)} {p.name.split(" ")[0]}
-              </button>
-            </form>
-          ))}
         </div>
       )}
 
