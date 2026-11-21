@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Staff {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String
+  createdAt    DateTime @default(now())
+  shifts       Shift[]
+}
+
+model Plan {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  monthlyFee   Int
+  courtRate    Int
+  shopDiscount Int
+  barDiscount  Int
+  durationDays Int      @default(30)
+  description  String
+  members      Member[]
+}
+
+model Member {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  name      String
+  phone     String    @unique
+  email     String?
+  birthDate DateTime?
+  planId    Int
+  plan      Plan      @relation(fields: [planId], references: [id])
+  startDate DateTime
+  endDate   DateTime
+  notes     String?
+  createdAt DateTime  @default(now())
+  bookings  Booking[]
+  players   SocialPlayer[]
+  orders    Order[]
+  tabs      Tab[]
+}
+
+model Court {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  sport      String
+  walkInRate Int
+  bookings   Booking[]
+}
+
+model Booking {
+  id         Int            @id @default(autoincrement())
+  courtId    Int
+  court      Court          @relation(fields: [courtId], references: [id])
+  memberId   Int?
+  member     Member?        @relation(fields: [memberId], references: [id])
+  guestName  String?
+  guestPhone String?
+  start      DateTime
+  end        DateTime
+  type       String         @default("regular")
+  capacity   Int            @default(1)
+  price      Int
+  status     String         @default("booked")
+  createdAt  DateTime       @default(now())
+  players    SocialPlayer[]
+
+  @@index([courtId, start])
+}
+
+model SocialPlayer {
+  id        Int      @id @default(autoincrement())
+  bookingId Int
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  memberId  Int?
+  member    Member?  @relation(fields: [memberId], references: [id])
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id         Int         @id @default(autoincrement())
+  sku        String      @unique
+  name       String
+  category   String
+  price      Int
+  stock      Int
+  lowStockAt Int         @default(5)
+  items      OrderItem[]
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  memberId      Int?
+  member        Member?     @relation(fields: [memberId], references: [id])
+  customerName  String
+  customerPhone String?
+  channel       String
+  fulfilment    String
+  address       String?
+  status        String      @default("pending")
+  subtotal      Int
+  discount      Int         @default(0)
+  total         Int
+  paymentMethod String?
+  createdAt     DateTime    @default(now())
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  unitPrice Int
+}
+
+model MenuItem {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  category String
+  price    Int
+  active   Boolean   @default(true)
+  items    TabItem[]
+}
+
+model BarTable {
+  id    Int    @id @default(autoincrement())
+  label String @unique
+  tabs  Tab[]
+}
+
+model Shift {
+  id      Int       @id @default(autoincrement())
+  staffId Int
+  staff   Staff     @relation(fields: [staffId], references: [id])
+  start   DateTime  @default(now())
+  end     DateTime?
+  tabs    Tab[]
+}
+
+model Tab {
+  id            Int       @id @default(autoincrement())
+  tableId       Int?
+  table         BarTable? @relation(fields: [tableId], references: [id])
+  memberId      Int?
+  member        Member?   @relation(fields: [memberId], references: [id])
+  guestName     String?
+  shiftId       Int?
+  shift         Shift?    @relation(fields: [shiftId], references: [id])
+  status        String    @default("open")
+  subtotal      Int       @default(0)
+  discount      Int       @default(0)
+  total         Int       @default(0)
+  paymentMethod String?
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+  items         TabItem[]
+}
+
+model TabItem {
+  id         Int      @id @default(autoincrement())
+  tabId      Int
+  tab        Tab      @relation(fields: [tabId], references: [id], onDelete: Cascade)
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  qty        Int
+  unitPrice  Int
+  createdAt  DateTime @default(now())
+}
+
+model Lead {
+  id          Int       @id @default(autoincrement())
+  name        String
+  phone       String
+  email       String?
+  interest    String
+  message     String?
+  preferredAt DateTime?
+  status      String    @default("new")
+  quoteAmount Int?
+  notes       String?
+  createdAt   DateTime  @default(now())
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  source    String
+  refId     Int?
+  amount    Int
+  method    String
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
