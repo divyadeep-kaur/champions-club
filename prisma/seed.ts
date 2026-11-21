@@ -166,6 +166,7 @@ async function main() {
           birthDate: plan.id === junior.id ? new Date(2010 + (i % 4), i % 12, 10) : new Date(1988 + (i % 12), i % 12, 15),
           startDate: new Date(endDate.getTime() - plan.durationDays * day),
           endDate,
+          createdAt: new Date(endDate.getTime() - plan.durationDays * day),
         },
       }),
     );
