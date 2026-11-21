@@ -16,6 +16,7 @@
 @theme inline {
   --font-sans: var(--font-body);
   --font-serif: var(--font-display);
+  --font-hand: var(--font-caveat);
 }
 
 body {
@@ -104,7 +105,7 @@ textarea {
     .cc-landing > section:not(:first-of-type) {
       animation: cc-rise linear both;
       animation-timeline: view();
-      animation-range: entry 0% cover 22%;
+      animation-range: entry 0% entry 75%;
     }
   }
 
