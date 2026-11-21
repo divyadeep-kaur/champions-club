@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: finance checks: books check page, daily cash close, refunds and write-offs on Income (`src/app/staff/(app)/money`, `src/lib/ledger.ts`, schema: CashClose)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Income: books check, daily cash close, money given away, owed ageing, owner check on every income page (Jashan)
 - Member court booking in steps with 30 min to 2 hour sessions (Jashan)
 - Café tabs: change the person, move to another table, clear a table without charging (Divyadeep)
 - Member app menu moved to a left olive sidebar on desktop, phones keep bottom tabs (Divyadeep)

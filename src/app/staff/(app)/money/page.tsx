@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/session";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { courtDues } from "@/lib/ledger";
@@ -11,6 +12,7 @@ const card = "border border-line bg-paper p-6";
 const short = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
 export default async function MoneyOverview({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
+  await requireStaff(["owner"]);
   const month = (await searchParams).month ?? monthKey();
   const { from, to } = monthRange(month);
   const prev = monthKey(new Date(from.getFullYear(), from.getMonth() - 1, 1));
@@ -55,6 +57,40 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
   ]);
   const invoiceDue = openInvoices.reduce((s, i) => s + invoiceTotals(i.lines).total, 0);
   const owedToUs = invoiceDue + court.total + (memberDues._sum.amount ?? 0);
+
+  const [barDisc, shopDisc, refundsMonth, voided, pendingChanges] = await Promise.all([
+    db.tab.aggregate({ where: { status: "paid", closedAt: { gte: from, lt: to } }, _sum: { discount: true } }),
+    db.order.aggregate({ where: { status: "completed", createdAt: { gte: from, lt: to } }, _sum: { discount: true } }),
+    db.payment.aggregate({ where: { createdAt: { gte: from, lt: to }, amount: { lt: 0 } }, _sum: { amount: true }, _count: true }),
+    db.tab.findMany({ where: { status: "void", closedAt: { gte: from, lt: to } }, include: { table: true, items: true }, orderBy: { closedAt: "desc" } }),
+    db.membershipChange.findMany({ where: { paymentStatus: "pending" }, select: { amount: true, createdAt: true } }),
+  ]);
+  const voidValue = voided.reduce((n, t) => n + t.total, 0);
+  const servedVoids = voided.filter((t) => t.items.some((i) => i.status !== "new"));
+  const givenAway = [
+    { label: "Member discounts at the café", amount: barDisc._sum.discount ?? 0, note: "already taken off the bills" },
+    { label: "Member discounts in the shop", amount: shopDisc._sum.discount ?? 0, note: "already taken off the bills" },
+    { label: `Refunds (${refundsMonth._count})`, amount: -(refundsMonth._sum.amount ?? 0), note: "already taken off income" },
+    {
+      label: `Café tabs cleared without payment (${voided.length})`,
+      amount: voidValue,
+      note: servedVoids.length ? `${servedVoids.length} after food was served` : "nothing was served",
+    },
+  ];
+
+  const nowMs = Date.now();
+  const ageOf = (d: Date) => Math.floor((nowMs - d.getTime()) / 86_400_000);
+  const owedItems = [
+    ...court.courts.map((b) => ({ amount: b.due, age: ageOf(b.start) })),
+    ...court.players.map((p) => ({ amount: p.price, age: ageOf(p.booking.start) })),
+    ...pendingChanges.map((c) => ({ amount: c.amount, age: ageOf(c.createdAt) })),
+    ...openInvoices.map((i) => ({ amount: invoiceTotals(i.lines).total, age: Math.max(0, ageOf(i.dueAt)) })),
+  ];
+  const buckets = [
+    { label: "Under a week", from: -9999, to: 7 },
+    { label: "1 to 4 weeks", from: 7, to: 30 },
+    { label: "Over a month", from: 30, to: 99999 },
+  ].map((b) => ({ ...b, amount: owedItems.filter((x) => x.age >= b.from && x.age < b.to).reduce((n, x) => n + x.amount, 0) }));
 
   return (
     <>
@@ -266,6 +302,63 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
             </Link>
           ))}
           {openInvoices.length === 0 && <p className="text-muted">No unpaid invoices.</p>}
+        </section>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className={card}>
+          <h2 className="mb-1 text-[18px] font-semibold">Money given away · {monthLabel(from)}</h2>
+          <p className="mb-2 text-[13.5px] text-muted">Not a cost line: these are already reflected in income. Watch them so they don’t grow unnoticed.</p>
+          {givenAway.map((g) => (
+            <div key={g.label} className="flex items-baseline justify-between gap-3 border-t border-line py-2.5 text-[14.5px]">
+              <span>
+                {g.label}
+                <span className="block text-[12.5px] text-muted">{g.note}</span>
+              </span>
+              <span className="font-semibold tabular-nums">{inr(g.amount)}</span>
+            </div>
+          ))}
+          {voided.length > 0 && (
+            <details className="mt-1 text-[13.5px]">
+              <summary className="cursor-pointer font-semibold text-forest">See cleared tabs</summary>
+              {voided.map((t) => (
+                <div key={t.id} className="flex justify-between gap-3 border-t border-line py-1.5">
+                  <span>
+                    {t.table?.label ?? "Counter"} ·{" "}
+                    {t.closedAt?.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                    {t.items.some((i) => i.status !== "new") ? " · served" : ""}
+                  </span>
+                  <span className="tabular-nums">{inr(t.total)}</span>
+                </div>
+              ))}
+            </details>
+          )}
+        </section>
+        <section className={card}>
+          <h2 className="mb-1 text-[18px] font-semibold">How long it has been owed</h2>
+          <p className="mb-3 text-[13.5px] text-muted">Unpaid courts, membership payments and invoices, by how old they are.</p>
+          <div className="grid gap-2.5">
+            {buckets.map((b) => (
+              <div key={b.label} className="grid grid-cols-[110px_minmax(0,1fr)_96px] items-center gap-3 text-[14.5px]">
+                <span>{b.label}</span>
+                <span className="h-3 bg-[#ece5d6]">
+                  <span
+                    className={`block h-3 ${b.from >= 30 ? "bg-clay" : b.from >= 7 ? "bg-[#c79a3a]" : "bg-forest"}`}
+                    style={{ width: `${owedToUs ? (b.amount / owedToUs) * 100 : 0}%` }}
+                  />
+                </span>
+                <span className="text-right font-semibold tabular-nums">{inr(b.amount)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3 text-[14px]">
+            <Link href="/staff/money/close" className="font-semibold text-forest underline underline-offset-4">
+              Daily cash close
+            </Link>
+            <Link href="/staff/money/checks" className="font-semibold text-forest underline underline-offset-4">
+              Books check
+            </Link>
+          </div>
         </section>
       </div>
     </>
