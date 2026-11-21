@@ -46,7 +46,12 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
   return (
     <div className="grid content-start gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Café &amp; bar</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Café &amp; bar</h1>
+          <Link href="/staff/bar/menu" className="min-h-10 border-[1.5px] border-forest px-3.5 py-2 text-[14px] font-semibold text-forest hover:bg-forest/5">
+            Manage menu
+          </Link>
+        </div>
         <div className="flex flex-wrap items-center gap-5 border border-line bg-paper px-4 py-2.5 text-[14.5px]">
           {shift ? (
             <>
@@ -151,10 +156,10 @@ export default async function BarPage({ searchParams }: { searchParams: Promise<
                     disabled={!label}
                     className="group w-full overflow-hidden border border-line bg-cream text-left hover:border-forest disabled:opacity-50"
                   >
-                    {menuPhoto(m.name) && (
+                    {menuPhoto(m) && (
                       <span className="relative block aspect-[4/3] overflow-hidden bg-forest-deep">
                         <Image
-                          src={menuPhoto(m.name)!}
+                          src={menuPhoto(m)!}
                           alt=""
                           fill
                           unoptimized

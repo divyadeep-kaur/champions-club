@@ -12,7 +12,9 @@ const photos: Record<string, string> = {
   "French Fries": "french-fries",
 };
 
-export function menuPhoto(name: string) {
-  const slug = photos[name];
+// An uploaded photo wins; otherwise the built-in photo for the original menu items.
+export function menuPhoto(item: { name: string; photo?: string | null }) {
+  if (item.photo) return item.photo;
+  const slug = photos[item.name];
   return slug ? `/images/menu/${slug}.jpg` : null;
 }

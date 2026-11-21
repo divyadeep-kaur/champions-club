@@ -213,12 +213,14 @@ model OrderItem {
 }
 
 model MenuItem {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  category String
-  price    Int
-  active   Boolean   @default(true)
-  items    TabItem[]
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  category  String
+  price     Int
+  active    Boolean   @default(true)
+  photo     String?
+  createdAt DateTime  @default(now())
+  items     TabItem[]
 }
 
 model BarTable {
