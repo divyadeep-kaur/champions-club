@@ -9,7 +9,7 @@ export const PERIODS: { key: Period; label: string; long: string }[] = [
   { key: "month", label: "This month", long: "this month" },
 ];
 
-export const SOURCE_LABEL: Record<string, string> = { court: "Courts", membership: "Memberships", shop: "Shop", bar: "Café & bar" };
+export const SOURCE_LABEL: Record<string, string> = { court: "Courts", membership: "Memberships", shop: "Shop", bar: "Café & bar", invoice: "Invoices" };
 export const METHOD_LABEL: Record<string, string> = { upi: "UPI", card: "Card", cash: "Cash", online: "Online" };
 
 export function periodRange(period: Period, now = new Date()) {
@@ -28,7 +28,7 @@ export async function incomeSummary(period: Period, now = new Date()) {
   ]);
   const total = bySource.reduce((s, r) => s + (r._sum.amount ?? 0), 0);
   const share = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
-  const sources = ["court", "membership", "shop", "bar"].map((key) => {
+  const sources = ["court", "membership", "shop", "bar", "invoice"].map((key) => {
     const amount = bySource.find((r) => r.source === key)?._sum.amount ?? 0;
     return { key, label: SOURCE_LABEL[key], amount, share: share(amount) };
   });

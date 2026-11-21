@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { monthKey, monthLabel, monthRange, nextInvoiceNumber } from "@/lib/money";
+import { invoiceTotals, monthKey, monthLabel, monthRange, nextInvoiceNumber } from "@/lib/money";
 import { payslip, statutoryDue } from "@/lib/payroll";
 import { issueStaffInvoice } from "@/lib/staffInvoices";
 import { requireStaff } from "@/lib/session";
@@ -215,11 +215,13 @@ export async function markInvoicePaid(formData: FormData) {
   const method = String(formData.get("method") ?? "upi");
   const invoice = await db.invoice.findUnique({ where: { id }, include: { lines: true } });
   if (!invoice || invoice.status === "paid") return;
-  const total = invoice.lines.reduce((s, l) => s + l.qty * l.unitPrice + Math.round((l.qty * l.unitPrice * l.gstRate) / 100), 0);
-  await db.$transaction([
-    db.invoice.update({ where: { id }, data: { status: "paid", paidAt: new Date() } }),
-    db.payment.create({ data: { source: "membership", amount: total, method, note: `Invoice ${invoice.number} · ${invoice.customerName}` } }),
-  ]);
+  if (!["cash", "card", "upi", "bank"].includes(method)) return;
+  const t = invoiceTotals(invoice.lines);
+  await db.$transaction(async (tx) => {
+    const claimed = await tx.invoice.updateMany({ where: { id, status: { not: "paid" } }, data: { status: "paid", paidAt: new Date() } });
+    if (!claimed.count) return;
+    await tx.payment.create({ data: { source: "invoice", refId: invoice.id, amount: t.total, gst: t.gst, method, note: `Invoice ${invoice.number} · ${invoice.customerName}` } });
+  });
   refresh();
   revalidatePath("/staff");
 }

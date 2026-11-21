@@ -11,7 +11,7 @@ export default async function GstPage({ searchParams }: { searchParams: Promise<
   const { from, to } = monthRange(month);
   const prev = monthKey(new Date(from.getFullYear(), from.getMonth() - 1, 1));
   const next = monthKey(new Date(from.getFullYear(), from.getMonth() + 1, 1));
-  const payments = await db.payment.findMany({ where: { createdAt: { gte: from, lt: to } }, select: { source: true, amount: true } });
+  const payments = await db.payment.findMany({ where: { createdAt: { gte: from, lt: to } }, select: { source: true, amount: true, gst: true } });
   const rows = gstSummary(payments);
   const totals = rows.reduce((t, r) => ({ gross: t.gross + r.gross, taxable: t.taxable + r.taxable, gst: t.gst + r.gst }), { gross: 0, taxable: 0, gst: 0 });
 
@@ -65,7 +65,7 @@ export default async function GstPage({ searchParams }: { searchParams: Promise<
             {rows.map((r) => (
               <tr key={r.source} className="border-t border-line">
                 <td className="px-3.5 py-3 font-semibold">{SOURCE_LABEL[r.source]}</td>
-                <td className="px-3.5 py-3">{r.rate}%</td>
+                <td className="px-3.5 py-3">{r.rate === null ? "As invoiced" : `${r.rate}%`}</td>
                 <td className="px-3.5 py-3 tabular-nums">{inr(r.gross)}</td>
                 <td className="px-3.5 py-3 tabular-nums">{inr(r.taxable)}</td>
                 <td className="px-3.5 py-3 tabular-nums">{inr(Math.floor(r.gst / 2))}</td>

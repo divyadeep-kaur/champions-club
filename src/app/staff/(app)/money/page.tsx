@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { courtDues } from "@/lib/ledger";
 import { inr } from "@/lib/constants";
-import { EXPENSE_CATEGORIES, invoiceTotals, monthKey, monthLabel, monthRange, profitAndLoss } from "@/lib/money";
+import { EXPENSE_CATEGORIES, invoiceTotals, monthKey, monthLabel, monthRange, profitAndLoss, INCOME_SOURCES } from "@/lib/money";
 import { METHOD_LABEL, SOURCE_LABEL } from "@/lib/reports";
 
 export const dynamic = "force-dynamic";
@@ -19,16 +20,16 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
 
   const trendFrom = new Date(from.getFullYear(), from.getMonth() - 5, 1);
   const [income, monthExpenses, unpaid, openInvoices, trendPay, trendExp, methods] = await Promise.all([
-    db.payment.groupBy({ by: ["source"], where: { createdAt: { gte: from, lt: to } }, _sum: { amount: true } }),
+    db.payment.groupBy({ by: ["source"], where: { createdAt: { gte: from, lt: to } }, _sum: { amount: true, gst: true } }),
     db.expense.findMany({ where: { dueDate: { gte: from, lt: to } } }),
     db.expense.findMany({ where: { paidAt: null }, orderBy: { dueDate: "asc" } }),
     db.invoice.findMany({ where: { status: { not: "paid" } }, include: { lines: true }, orderBy: { dueAt: "asc" } }),
-    db.payment.findMany({ where: { createdAt: { gte: trendFrom, lt: to } }, select: { amount: true, source: true, createdAt: true } }),
+    db.payment.findMany({ where: { createdAt: { gte: trendFrom, lt: to } }, select: { amount: true, source: true, gst: true, createdAt: true } }),
     db.expense.findMany({ where: { dueDate: { gte: trendFrom, lt: to } }, select: { amount: true, category: true, dueDate: true } }),
     db.payment.groupBy({ by: ["method"], where: { createdAt: { gte: from, lt: to } }, _sum: { amount: true } }),
   ]);
   const pnl = profitAndLoss(
-    income.map((r) => ({ source: r.source, amount: r._sum.amount ?? 0 })),
+    income.map((r) => ({ source: r.source, amount: r._sum.amount ?? 0, gst: r._sum.gst })),
     monthExpenses,
   );
   const trend = Array.from({ length: 6 }, (_, i) => {
@@ -48,7 +49,12 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
   const costs = byCat.reduce((s, c) => s + c.amount, 0);
   const owe = unpaid.reduce((s, e) => s + e.amount, 0);
   const overdue = unpaid.filter((e) => e.dueDate < today);
-  const owedToUs = openInvoices.reduce((s, i) => s + invoiceTotals(i.lines).total, 0);
+  const [court, memberDues] = await Promise.all([
+    courtDues(db, new Date()),
+    db.membershipChange.aggregate({ where: { paymentStatus: "pending" }, _sum: { amount: true }, _count: true }),
+  ]);
+  const invoiceDue = openInvoices.reduce((s, i) => s + invoiceTotals(i.lines).total, 0);
+  const owedToUs = invoiceDue + court.total + (memberDues._sum.amount ?? 0);
 
   return (
     <>
@@ -192,7 +198,7 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
         <section className={card}>
           <h2 className="mb-3 text-[18px] font-semibold">Where it came from</h2>
           {income.length === 0 && <p className="text-muted">No income this month.</p>}
-          {["court", "membership", "shop", "bar"].map((k) => {
+          {INCOME_SOURCES.filter((k) => k !== "invoice" || income.some((r) => r.source === "invoice")).map((k) => {
             const v = income.find((r) => r.source === k)?._sum.amount ?? 0;
             return (
               <div key={k} className="flex justify-between border-t border-line py-2.5 text-[14.5px]">
@@ -238,6 +244,15 @@ export default async function MoneyOverview({ searchParams }: { searchParams: Pr
         <section className={card}>
           <h2 className="mb-3 text-[18px] font-semibold">Owed to us</h2>
           <p className="font-serif text-[26px] text-forest tabular-nums">{inr(owedToUs)}</p>
+          <Link href="/staff/bookings" className="flex justify-between gap-3 border-t border-line py-2.5 text-[14.5px] hover:bg-cream">
+            <span>Court bookings played, not paid ({court.courts.length + court.players.length})</span>
+            <span className="tabular-nums">{inr(court.total)}</span>
+          </Link>
+          <Link href="/staff/members/dues" className="flex justify-between gap-3 border-t border-line py-2.5 text-[14.5px] hover:bg-cream">
+            <span>Membership payments pending ({memberDues._count})</span>
+            <span className="tabular-nums">{inr(memberDues._sum.amount ?? 0)}</span>
+          </Link>
+          <p className="border-t border-line pt-2.5 text-[13px] font-semibold text-muted">Invoices · {inr(invoiceDue)}</p>
           {openInvoices.slice(0, 5).map((i) => (
             <Link
               key={i.id}
