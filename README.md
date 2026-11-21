@@ -36,7 +36,11 @@ Next.js, TypeScript, Tailwind CSS, Prisma, SQLite.
 
 ```bash
 npm install
+cp .env.example .env
+npm run db:setup
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. Staff app: http://localhost:3000/staff (demo logins are in `prisma/seed.ts`).
+
+`npm run db:reset` wipes the local database and reseeds it. Stop `npm run dev` before running `npm run build`.
