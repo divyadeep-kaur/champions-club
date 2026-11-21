@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: run the server on India time so live court times and today match (src/instrumentation.ts)
 
 ## Next up
 
