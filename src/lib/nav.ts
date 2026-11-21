@@ -8,6 +8,8 @@ export const staffNav: { href: string; label: string; icon: string; roles: Role[
   { href: "/staff/bar", label: "Café & Bar", icon: "bar", roles: ["owner", "bar"] },
   { href: "/staff/kitchen", label: "Kitchen", icon: "kitchen", roles: ["owner", "bar"] },
   { href: "/staff/leads", label: "Leads", icon: "leads", roles: ["owner", "desk"] },
+  { href: "/staff/money", label: "Money", icon: "money", roles: ["owner"] },
+  { href: "/staff/leave", label: "Leave", icon: "leave", roles: ["owner", "desk", "bar"] },
 ];
 
 export const navFor = (role: Role) => staffNav.filter((item) => item.roles.includes(role));

@@ -6,6 +6,8 @@ import { useState } from "react";
 import {
   CalendarDays,
   ChefHat,
+  IndianRupee,
+  CalendarOff,
   Coffee,
   LayoutDashboard,
   LogOut,
@@ -25,6 +27,8 @@ const icons: Record<string, LucideIcon> = {
   shop: ShoppingBag,
   bar: Coffee,
   kitchen: ChefHat,
+  money: IndianRupee,
+  leave: CalendarOff,
   leads: UserPlus,
 };
 
@@ -87,7 +91,7 @@ export function StaffNav({ items, name, role, logout }: { items: Item[]; name: s
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col bg-forest px-4 py-6 lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col bg-forest px-4 py-6 lg:flex print:hidden">
         <Brand />
         <nav aria-label="Staff" className="mt-5 flex-1">
           <Links items={items} />
@@ -95,7 +99,7 @@ export function StaffNav({ items, name, role, logout }: { items: Item[]; name: s
         <User name={name} role={role} logout={logout} />
       </aside>
 
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-forest px-4 lg:hidden">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-forest px-4 lg:hidden print:hidden">
         <Brand />
         <button
           type="button"
