@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { placeBooking } from "@/lib/bookingService";
+import { DURATIONS, type Duration } from "@/lib/bookings";
 import { normalizePhone } from "@/lib/members";
 import { clearMemberSession, createMemberSession, requireMember } from "@/lib/memberSession";
 import { recomputeTab } from "@/lib/tabs";
@@ -49,6 +50,10 @@ const bookSchema = z.object({
   courtId: z.coerce.number().int().positive(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
+  minutes: z.coerce
+    .number()
+    .refine((m) => DURATIONS.includes(m as Duration), "Pick 30 minutes, 1 hour, 1½ hours or 2 hours")
+    .default(60),
 });
 
 export async function memberBook(_: MeState, formData: FormData): Promise<MeState> {
@@ -59,7 +64,9 @@ export async function memberBook(_: MeState, formData: FormData): Promise<MeStat
   if (start.getTime() - Date.now() > 7 * 86_400_000) return { error: "You can book up to 7 days ahead" };
 
   try {
-    await db.$transaction((tx) => placeBooking(tx, { courtId: parsed.data.courtId, start, member, type: "regular", method: "later" }));
+    await db.$transaction((tx) =>
+      placeBooking(tx, { courtId: parsed.data.courtId, start, member, type: "regular", method: "later", minutes: parsed.data.minutes }),
+    );
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not book that court" };
   }
@@ -76,7 +83,9 @@ export async function memberCancel(formData: FormData) {
     if (!claimed.count) return;
     const refund = refundable(await paidSoFar(tx, "court", booking.id));
     if (refund > 0)
-      await tx.payment.create({ data: { source: "court", refId: booking.id, amount: -refund, method: await refundMethod(tx, "court", booking.id), note: "Refund, cancelled by member" } });
+      await tx.payment.create({
+        data: { source: "court", refId: booking.id, amount: -refund, method: await refundMethod(tx, "court", booking.id), note: "Refund, cancelled by member" },
+      });
   });
   refreshCourts();
 }

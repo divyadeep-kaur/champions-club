@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: step-by-step member court booking: sport, court, then time (`src/app/me/(app)/book`)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Member court booking in steps with 30 min to 2 hour sessions (Jashan)
 - Café tabs: change the person, move to another table, clear a table without charging (Divyadeep)
 - Member app menu moved to a left olive sidebar on desktop, phones keep bottom tabs (Divyadeep)
 - Kitchen: cooking stage, prep list, today's numbers, sold out switches, café team on shift (Divyadeep)
