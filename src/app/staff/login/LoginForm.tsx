@@ -7,12 +7,13 @@ import { login, type LoginState } from "./actions";
 const input =
   "mt-1.5 w-full border border-line bg-paper px-4 py-3 text-[16px] text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
 
-export function LoginForm({ next }: { next?: string }) {
+export function LoginForm({ next, admin }: { next?: string; admin?: boolean }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
 
   return (
     <form action={action} className="mt-9 space-y-5" noValidate>
       <input type="hidden" name="next" value={next ?? ""} />
+      <input type="hidden" name="as" value={admin ? "admin" : "staff"} />
       <label className="block">
         <span className="text-[14px] font-semibold text-ink">Email</span>
         <input name="email" type="email" autoComplete="username" defaultValue={state.email} required className={input} />

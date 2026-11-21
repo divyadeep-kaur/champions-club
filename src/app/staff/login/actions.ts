@@ -11,6 +11,7 @@ const schema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
   password: z.string().min(1, "Enter your password"),
   next: z.string().optional(),
+  as: z.enum(["admin", "staff"]).optional(),
 });
 
 export type LoginState = { error?: string; email?: string };
@@ -23,6 +24,7 @@ export async function login(_: LoginState, formData: FormData): Promise<LoginSta
   const staff = await db.staff.findUnique({ where: { email: parsed.data.email } });
   const ok = staff && (await bcrypt.compare(parsed.data.password, staff.passwordHash));
   if (!ok) return { error: "Email or password is incorrect", email };
+  if (parsed.data.as === "admin" && staff.role !== "owner") return { error: "This account is not an admin. Use Staff sign in instead.", email };
 
   await createSession({ id: staff.id, name: staff.name, role: staff.role as Role });
   const next = parsed.data.next;
