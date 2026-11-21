@@ -162,9 +162,9 @@ export default async function KitchenPage({ searchParams }: { searchParams: Prom
                       {i.category === "drinks" && <span className="ml-1.5 text-[12px] font-semibold uppercase tracking-wide text-[#8a6d3b]">drink</span>}
                     </span>
                     <span className="flex shrink-0 gap-1.5">
+                      <Move ids={[i.id]} to={s.next} label={s.nextLabel} />
                       {stage === "new" && <Move ids={[i.id]} to="ready" label="Ready" />}
                       {stage === "ready" && <Move ids={[i.id]} to="back" label="Back" />}
-                      <Move ids={[i.id]} to={s.next} label={s.nextLabel} />
                     </span>
                   </li>
                 ))}
