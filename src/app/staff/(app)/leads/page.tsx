@@ -98,32 +98,50 @@ export default async function LeadsPage() {
       </div>
 
       <AutoRefresh seconds={8} />
+
+      <dl className="grid grid-cols-1 gap-px border border-line bg-line sm:grid-cols-3">
+        {[
+          ["Open enquiries", String(open.length)],
+          ["Quotes out", inr(quotesOut)],
+          ["Became members this month", String(joinedThisMonth)],
+        ].map(([l, v]) => (
+          <div key={l} className="bg-paper p-4">
+            <dt className="text-[13.5px] text-muted">{l}</dt>
+            <dd className="mt-1 font-serif text-[26px] leading-tight text-forest">{v}</dd>
+          </div>
+        ))}
+      </dl>
+
       <TrialRequests requests={requests} />
 
-      <div className="overflow-x-auto pb-2">
-        <div className="grid min-w-[1180px] grid-cols-5 items-start gap-4">
+      <section aria-labelledby="pipeline" className="grid gap-3">
+        <h2 id="pipeline" className="text-[19px] font-semibold">
+          Pipeline
+        </h2>
+        <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
           {STAGES.map((stage) => {
             const cards = leads.filter((l) => l.status === stage.key);
             return (
-              <section key={stage.key} className="grid gap-3 bg-[#ece5d6] p-3.5" aria-label={`${stage.label} leads`}>
-                <h2 className="flex justify-between text-[15px] font-semibold">
-                  <span>{stage.key === "won" ? "Joined this month" : stage.label}</span>
-                  <span className="text-muted">{cards.length}</span>
-                </h2>
-                {cards.length === 0 && <p className="text-[13.5px] text-muted">None right now.</p>}
+              <section key={stage.key} className="grid content-start gap-2.5 border border-line bg-[#efe9dc] p-2.5" aria-label={`${stage.label} leads`}>
+                <h3 className="flex items-center gap-2 px-1 pt-0.5 text-[14.5px] font-semibold">
+                  <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full" style={{ background: columnColor[stage.key] }} />
+                  <span className="min-w-0 flex-1 truncate">{stage.key === "won" ? "Joined this month" : stage.label}</span>
+                  <span className="min-w-6 rounded-full bg-paper px-2 py-0.5 text-center text-[12.5px] tabular-nums text-muted">{cards.length}</span>
+                </h3>
+                {cards.length === 0 && <p className="border border-dashed border-line px-3 py-4 text-center text-[13px] text-muted">None right now</p>}
                 {cards.map((c) => (
-                  <article
-                    key={c.id}
-                    className="grid gap-2 border border-line border-t-[3px] bg-paper p-3.5"
-                    style={{ borderTopColor: columnColor[stage.key] }}
-                  >
-                    <div className="flex justify-between gap-2">
-                      <strong className="leading-tight">{c.name}</strong>
-                      <span className="h-fit bg-cream px-2 py-0.5 text-[12.5px] font-bold capitalize">{c.interest}</span>
+                  <article key={c.id} className="grid min-h-[178px] grid-rows-[auto_auto_1fr_auto] gap-1.5 border border-line bg-paper p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <strong className="line-clamp-2 text-[15px] leading-snug">{c.name}</strong>
+                      <span className="mt-0.5 shrink-0 bg-cream px-1.5 py-0.5 text-[11.5px] font-semibold capitalize text-[#5b5346]">{c.interest}</span>
                     </div>
-                    <div className="line-clamp-2 text-[14px] leading-[1.45] text-[#3c4a43]">{c.activities[0]?.text ?? c.message ?? "No message"}</div>
-                    <div className="text-[13px] text-muted">{meta(c)}</div>
-                    {waiting.has(c.id) && <span className="w-fit bg-[#f6e3c4] px-2 py-0.5 text-[12px] font-bold text-[#7a4b0c]">Waiting for approval</span>}
+                    <p className="line-clamp-2 text-[13.5px] leading-[1.45] text-[#3c4a43]">{c.message ?? c.activities[0]?.text ?? "No message"}</p>
+                    <div className="grid content-start gap-1.5">
+                      <p className="text-[12.5px] leading-snug text-muted">{meta(c)}</p>
+                      {waiting.has(c.id) && (
+                        <span className="w-fit bg-[#f6e3c4] px-1.5 py-0.5 text-[11.5px] font-semibold text-[#7a4b0c]">Waiting for approval</span>
+                      )}
+                    </div>
                     <Link
                       href={
                         c.status === "won" && c.member
@@ -132,9 +150,10 @@ export default async function LeadsPage() {
                             ? `/staff/members/new?lead=${c.id}`
                             : `/staff/leads/${c.id}`
                       }
-                      className="block border-[1.5px] border-forest p-2.5 text-[14px] font-semibold text-forest hover:bg-forest/5"
+                      className="mt-1 flex min-h-9 items-center justify-between border border-forest/60 px-2.5 text-[13.5px] font-semibold text-forest hover:border-forest hover:bg-forest/5"
                     >
-                      {action[stage.key]} →
+                      {action[stage.key]}
+                      <span aria-hidden="true">→</span>
                     </Link>
                   </article>
                 ))}
@@ -142,10 +161,10 @@ export default async function LeadsPage() {
             );
           })}
         </div>
-      </div>
+      </section>
 
       {lost.length > 0 && (
-        <p className="text-[14.5px] text-muted">
+        <p className="border-t border-line pt-3 text-[14px] text-muted">
           <strong className="text-[#a8411f]">Lost ({lost.length}):</strong>{" "}
           {lost.map((l, i) => (
             <span key={l.id}>
@@ -159,19 +178,6 @@ export default async function LeadsPage() {
           ))}
         </p>
       )}
-
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-        {[
-          ["Open enquiries", String(open.length)],
-          ["Quotes out", inr(quotesOut)],
-          ["Became members this month", String(joinedThisMonth)],
-        ].map(([l, v]) => (
-          <div key={l} className="border border-line bg-paper p-[18px]">
-            <div className="text-[14px] text-muted">{l}</div>
-            <div className="font-serif text-[28px] text-forest">{v}</div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
