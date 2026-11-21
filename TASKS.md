@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: run the server on India time so live court times and today match (src/instrumentation.ts)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Server runs on India time so live court times, today and daily close match (Jashan)
 - Live on Vercel with Turso; animations and polish across landing, staff and member screens (Jashan)
 - Landing footer redesign (Jashan)
 - Income: books check, daily cash close, money given away, owed ageing, owner check on every income page (Jashan)
