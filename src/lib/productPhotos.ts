@@ -7,6 +7,10 @@ const photos: Record<string, ProductPhoto> = {
   "BAL-001": { src: "/images/products/tennis-balls.jpg", fit: "contain" },
   "BAL-002": { src: "/images/products/cricket-ball.jpg", fit: "contain" },
   "SHO-002": { src: "/images/products/court-shoes.jpg", fit: "contain" },
+  "SHO-001": { src: "/images/products/clay-court-shoes.jpg", fit: "contain" },
+  "APP-002": { src: "/images/products/performance-shorts.jpg", fit: "contain" },
+  "APP-003": { src: "/images/products/club-cap.jpg", fit: "contain" },
+  "ACC-003": { src: "/images/products/wristbands.jpg", fit: "contain" },
   "APP-001": {
     src: "/images/products/polo-navy.jpg",
     fit: "contain",
