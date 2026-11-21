@@ -4,6 +4,7 @@ const photos: Record<string, string> = {
   "Fresh Lime Soda": "fresh-lime-soda",
   "Electrolyte Cooler": "electrolyte-cooler",
   "Cold Coffee": "cold-coffee",
+  "Mango Smoothie": "mango-smoothie",
   "Craft Beer (pint)": "craft-beer",
   "Protein Bowl": "protein-bowl",
   "Chicken Club Sandwich": "chicken-club-sandwich",
