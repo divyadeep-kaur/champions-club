@@ -24,7 +24,7 @@ const ago = (d: Date) => {
 };
 
 export default async function LeadsPage() {
-  await requireStaff(["owner", "desk"]);
+  const session = await requireStaff(["owner", "desk"]);
   const monthStart = startOfMonth();
   const [leads, lost, joinedThisMonth] = await Promise.all([
     db.lead.findMany({
@@ -128,7 +128,7 @@ export default async function LeadsPage() {
                       href={
                         c.status === "won" && c.member
                           ? `/staff/members/${c.member.id}`
-                          : c.status === "quoted"
+                          : c.status === "quoted" && session.role === "owner"
                             ? `/staff/members/new?lead=${c.id}`
                             : `/staff/leads/${c.id}`
                       }

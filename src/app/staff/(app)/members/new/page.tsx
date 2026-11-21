@@ -8,7 +8,7 @@ import { NewMemberForm } from "./NewMemberForm";
 export const dynamic = "force-dynamic";
 
 export default async function NewMemberPage({ searchParams }: { searchParams: Promise<{ lead?: string }> }) {
-  await requireStaff(["owner", "desk"]);
+  await requireStaff(["owner"]);
   const { lead: leadId } = await searchParams;
   const lead = leadId ? await db.lead.findUnique({ where: { id: Number(leadId) || 0 } }) : null;
   const [plans, court, balls, drink] = await Promise.all([

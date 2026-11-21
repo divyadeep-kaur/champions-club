@@ -14,7 +14,8 @@ type Search = { q?: string; status?: string; plan?: string; selected?: string };
 const short = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
 export default async function MembersPage({ searchParams }: { searchParams: Promise<Search> }) {
-  await requireStaff(["owner", "desk"]);
+  const session = await requireStaff(["owner", "desk"]);
+  const canEdit = session.role === "owner";
   const { q = "", status = "all", plan = "all", selected } = await searchParams;
   const today = startOfDay();
   const weekOut = addDays(today, 8);
@@ -80,9 +81,13 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
       <div className="grid min-w-0 flex-[999_1_560px] content-start gap-[18px]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="font-serif text-[32px] font-semibold text-forest sm:text-[36px]">Members</h1>
-          <Link href="/staff/members/new" className={btnPrimary}>
-            Sign up a member
-          </Link>
+          {canEdit ? (
+            <Link href="/staff/members/new" className={btnPrimary}>
+              Sign up a member
+            </Link>
+          ) : (
+            <span className="border border-line bg-paper px-3 py-2 text-[14px] text-muted">View only · the owner adds and renews members</span>
+          )}
         </div>
 
         <form className="flex flex-wrap items-end gap-2.5">
@@ -159,9 +164,11 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
           {members.length === 0 && (
             <p className="px-4 py-10 text-center text-muted">
               No member matches.{" "}
-              <Link href="/staff/members/new" className="font-semibold text-forest underline underline-offset-4">
-                Sign them up
-              </Link>
+              {canEdit && (
+                <Link href="/staff/members/new" className="font-semibold text-forest underline underline-offset-4">
+                  Sign them up
+                </Link>
+              )}
             </p>
           )}
         </div>
@@ -188,8 +195,8 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Link href={`/staff/members/${picked.id}#renew`} className={btnOutline}>
-              Renew
+            <Link href={`/staff/members/${picked.id}${canEdit ? "#renew" : ""}`} className={btnOutline}>
+              {canEdit ? "Renew" : "Open profile"}
             </Link>
             <Link href={`/staff/bookings?member=${picked.id}`} className={btnOutline}>
               Book a court

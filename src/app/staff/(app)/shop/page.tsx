@@ -15,7 +15,7 @@ const statusText: Record<string, { label: string; cls: string }> = {
 };
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
-  await requireStaff(["owner", "desk"]);
+  await requireStaff(["owner", "desk", "shop"]);
   const view = (await searchParams).view === "online" ? "online" : "counter";
 
   const [products, held, members, orders] = await Promise.all([

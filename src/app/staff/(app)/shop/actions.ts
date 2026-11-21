@@ -25,7 +25,7 @@ const refresh = () => {
 };
 
 export async function counterSale(_: SaleState, formData: FormData): Promise<SaleState> {
-  await requireStaff(["owner", "desk"]);
+  await requireStaff(["owner", "desk", "shop"]);
   const parsed = saleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Pick how they paid" };
 
@@ -85,7 +85,7 @@ export async function counterSale(_: SaleState, formData: FormData): Promise<Sal
 const next: Record<string, string> = { pending: "ready", ready: "completed" };
 
 export async function advanceOrder(formData: FormData) {
-  await requireStaff(["owner", "desk"]);
+  await requireStaff(["owner", "desk", "shop"]);
   const order = await db.order.findUnique({ where: { id: Number(formData.get("orderId")) }, include: { items: { include: { product: true } } } });
   if (!order || !next[order.status]) return;
   const finishing = next[order.status] === "completed";
@@ -112,7 +112,7 @@ export async function advanceOrder(formData: FormData) {
 }
 
 export async function cancelOrder(formData: FormData) {
-  await requireStaff(["owner", "desk"]);
+  await requireStaff(["owner", "desk", "shop"]);
   const order = await db.order.findUnique({ where: { id: Number(formData.get("orderId")) }, include: { items: true } });
   if (!order || order.status === "completed" || order.status === "cancelled") return;
   const paid = await db.payment.aggregate({ where: { source: "shop", refId: order.id }, _sum: { amount: true } });
@@ -137,7 +137,7 @@ export async function cancelOrder(formData: FormData) {
 }
 
 export async function restock(formData: FormData) {
-  await requireStaff(["owner", "desk"]);
+  await requireStaff(["owner", "desk", "shop"]);
   const id = Number(formData.get("productId"));
   const qty = Math.min(200, Math.max(1, Number(formData.get("qty")) || 0));
   await db.product.update({ where: { id }, data: { stock: { increment: qty } } });

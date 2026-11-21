@@ -44,11 +44,13 @@ export function LeadActions({
   courts,
   plans,
   slots,
+  canConvert,
 }: {
   lead: { id: number; status: string; defaultDate: string; defaultTime: string; defaultCourtId?: number; plan?: string | null };
   courts: { id: number; name: string }[];
   plans: { name: string; monthlyFee: number }[];
   slots: string[];
+  canConvert: boolean;
 }) {
   const [noteState, noteAction, notePending] = useActionState<LeadState, FormData>(logContact, {});
   const [trialState, trialAction, trialPending] = useActionState<LeadState, FormData>(bookTrial, {});
@@ -63,12 +65,14 @@ export function LeadActions({
 
   return (
     <div className="space-y-4">
+      {canConvert && (
       <Link
         href={`/staff/members/new?lead=${lead.id}`}
         className="flex items-center justify-center gap-2 bg-forest px-4 py-3.5 text-[15.5px] font-semibold text-cream hover:bg-forest-deep"
       >
         <UserPlus className="size-[18px]" /> Convert to member
       </Link>
+      )}
 
       <Card title={lost ? "Reopen with a note" : "Log a call or note"}>
         <form action={noteAction} className="space-y-2">

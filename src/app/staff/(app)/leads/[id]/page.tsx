@@ -34,7 +34,7 @@ const dot = {
 } as const;
 
 export default async function LeadPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireStaff(["owner", "desk"]);
+  const session = await requireStaff(["owner", "desk"]);
   const { id } = await params;
   const lead = await db.lead.findUnique({
     where: { id: Number(id) || 0 },
@@ -192,6 +192,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
 
         <aside>
           <LeadActions
+            canConvert={session.role === "owner"}
             lead={{
               id: lead.id,
               status: lead.status,

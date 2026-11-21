@@ -35,7 +35,7 @@ function HistorySection({ title, rows }: { title: string; rows: Row[] }) {
 }
 
 export default async function MemberProfile({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ welcome?: string }> }) {
-  await requireStaff(["owner", "desk"]);
+  const session = await requireStaff(["owner", "desk"]);
   const { id } = await params;
   const { welcome } = await searchParams;
   const memberId = Number(id);
@@ -126,8 +126,12 @@ export default async function MemberProfile({ params, searchParams }: { params: 
       </div>
 
       <section id="renew" className="scroll-mt-6 border border-line bg-paper p-5">
-        <h2 className="mb-3 text-[18px] font-semibold">Renew</h2>
-        <RenewForm memberId={member.id} currentPlanId={member.planId} plans={plans} />
+        <h2 className="mb-3 text-[18px] font-semibold">Membership plan</h2>
+        {session.role === "owner" ? (
+          <RenewForm memberId={member.id} currentPlanId={member.planId} plans={plans} />
+        ) : (
+          <p className="border border-dashed border-line p-4 text-[14px] text-muted">Renewals and plan changes are done by the owner.</p>
+        )}
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">

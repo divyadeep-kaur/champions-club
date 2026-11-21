@@ -23,7 +23,7 @@ const newMemberSchema = z.object({
 });
 
 export async function createMember(_: FormState, formData: FormData): Promise<FormState> {
-  const staff = await requireStaff(["owner", "desk"]);
+  const staff = await requireStaff(["owner"]);
   const fields = Object.fromEntries(formData) as Record<string, string>;
   const parsed = newMemberSchema.safeParse(fields);
   if (!parsed.success) return { error: parsed.error.issues[0].message, fields };
@@ -80,7 +80,7 @@ export async function createMember(_: FormState, formData: FormData): Promise<Fo
 const renewSchema = z.object({ memberId: z.coerce.number().int().positive(), planId: z.coerce.number().int().positive(), method });
 
 export async function renewMember(_: FormState, formData: FormData): Promise<FormState> {
-  await requireStaff(["owner", "desk"]);
+  await requireStaff(["owner"]);
   const parsed = renewSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { memberId, planId, method: payMethod } = parsed.data;
