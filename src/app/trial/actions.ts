@@ -21,6 +21,7 @@ const schema = z.object({
   date: z.string().optional(),
   time: z.string().optional(),
   courtId: z.string().optional(),
+  sport: z.union([z.literal(""), z.enum(["tennis", "cricket"])]).optional(),
   plan: z.string().optional(),
   message: z.string().trim().max(500).optional(),
   website: z.string().max(0).optional(),
@@ -43,20 +44,23 @@ export async function submitTrial(_: TrialState, formData: FormData): Promise<Tr
   }
 
   const court = f.courtId ? await db.court.findUnique({ where: { id: Number(f.courtId) || 0 } }) : null;
-  const details = [court && `Court: ${court.name}`, f.plan && `Plan: ${f.plan}`, f.message].filter(Boolean).join(" · ");
+  const sport = f.interest === "trial" ? (court?.sport as "tennis" | "cricket" | undefined) || f.sport || null : null;
+  if (f.interest === "trial" && !sport) return { error: "Choose tennis or cricket for your trial", fields };
+  const sportName = sport === "cricket" ? "Cricket" : sport === "tennis" ? "Tennis" : null;
+  const details = [sportName && `Sport: ${sportName}`, court && `Court: ${court.name}`, f.plan && `Plan: ${f.plan}`, f.message].filter(Boolean).join(" · ");
 
   const when = preferredAt?.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
 
   const { leadId, heldCourt } = await db.$transaction(async (tx) => {
     const lead = await tx.lead.create({
-      data: { name: f.name, phone, email: f.email || null, interest: f.interest, preferredAt, message: details || null, plan: f.plan || null, status: "new" },
+      data: { name: f.name, phone, email: f.email || null, interest: f.interest, sport, preferredAt, message: details || null, plan: f.plan || null, status: "new" },
     });
-    await tx.leadActivity.create({ data: { leadId: lead.id, kind: "note", text: `Enquiry from the website${when ? ` for ${when}` : ""}` } });
+    await tx.leadActivity.create({ data: { leadId: lead.id, kind: "note", text: `${sportName ? `${sportName} trial request` : "Enquiry"} from the website${when ? ` for ${when}` : ""}` } });
     const start = f.interest === "trial" ? preferredAt : null;
     if (!start) return { leadId: lead.id, heldCourt: null };
 
     // Hold a court straight away so nobody else takes the slot while the desk decides.
-    const courts = await tx.court.findMany({ orderBy: [{ sport: "desc" }, { name: "asc" }] });
+    const courts = await tx.court.findMany({ where: sport ? { sport } : {}, orderBy: [{ sport: "desc" }, { name: "asc" }] });
     const order = court ? [court, ...courts.filter((c) => c.id !== court.id)] : courts;
     for (const c of order) {
       try {
@@ -76,7 +80,7 @@ export async function submitTrial(_: TrialState, formData: FormData): Promise<Tr
         continue;
       }
     }
-    await tx.leadActivity.create({ data: { leadId: lead.id, kind: "note", text: "No court was free at the requested time. Call to offer another slot." } });
+    await tx.leadActivity.create({ data: { leadId: lead.id, kind: "note", text: `No ${sportName?.toLowerCase() ?? ""} court was free at the requested time. Call to offer another slot.` } });
     return { leadId: lead.id, heldCourt: null };
   });
 

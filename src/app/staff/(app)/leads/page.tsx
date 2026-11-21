@@ -133,7 +133,9 @@ export default async function LeadsPage() {
                   <article key={c.id} className="grid min-h-[178px] grid-rows-[auto_auto_1fr_auto] gap-1.5 border border-line bg-paper p-3">
                     <div className="flex items-start justify-between gap-2">
                       <strong className="line-clamp-2 text-[15px] leading-snug">{c.name}</strong>
-                      <span className="mt-0.5 shrink-0 bg-cream px-1.5 py-0.5 text-[11.5px] font-semibold capitalize text-[#5b5346]">{c.interest}</span>
+                      <span className="mt-0.5 shrink-0 bg-cream px-1.5 py-0.5 text-[11.5px] font-semibold capitalize text-[#5b5346]">
+                        {c.interest === "trial" && c.sport ? `${c.sport} trial` : c.interest}
+                      </span>
                     </div>
                     <p className="line-clamp-2 text-[13.5px] leading-[1.45] text-[#3c4a43]">{c.message ?? c.activities[0]?.text ?? "No message"}</p>
                     <div className="grid content-start gap-1.5">

@@ -20,13 +20,14 @@ export function TrialForm({
   courtName,
   minDate,
 }: {
-  defaults: { interest: string; date?: string; time?: string; courtId?: string; plan?: string };
+  defaults: { interest: string; date?: string; time?: string; courtId?: string; plan?: string; sport?: string };
   courtName?: string;
   minDate: string;
 }) {
   const [state, action, pending] = useActionState<TrialState, FormData>(submitTrial, {});
   const f = state.fields ?? {};
   const [interest, setInterest] = useState(f.interest ?? defaults.interest);
+  const [sport, setSport] = useState(f.sport || defaults.sport || "tennis");
   const [again, setAgain] = useState(0);
 
   if (state.done && again === 0) {
@@ -64,6 +65,7 @@ export function TrialForm({
       <input type="hidden" name="courtId" value={defaults.courtId ?? ""} />
       <input type="hidden" name="plan" value={defaults.plan ?? ""} />
       <input type="hidden" name="interest" value={interest} />
+      <input type="hidden" name="sport" value={interest === "trial" ? sport : ""} />
       <label className="sr-only" aria-hidden="true">
         Website
         <input name="website" tabIndex={-1} autoComplete="off" />
@@ -98,6 +100,30 @@ export function TrialForm({
         Email (optional)
         <input name="email" type="email" defaultValue={f.email} autoComplete="email" placeholder="you@example.com" className={field} />
       </label>
+      {interest === "trial" && !defaults.courtId && (
+        <fieldset>
+          <legend className="mb-2 text-[14px] font-bold">Which sport?</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                ["tennis", "Tennis", "Clay and hard courts"],
+                ["cricket", "Cricket", "Practice nets"],
+              ] as const
+            ).map(([value, label, hint]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={sport === value}
+                onClick={() => setSport(value)}
+                className={`grid min-h-14 rounded-xl border-[1.5px] border-forest px-3 py-2.5 text-left ${sport === value ? "bg-forest text-cream" : "text-forest hover:bg-forest/5"}`}
+              >
+                <span className="font-bold">{label}</span>
+                <span className={`text-[12.5px] ${sport === value ? "text-cream/80" : "text-muted"}`}>{hint}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
       {interest === "trial" && (
         <div className="grid grid-cols-2 gap-3">
           <label className={label}>

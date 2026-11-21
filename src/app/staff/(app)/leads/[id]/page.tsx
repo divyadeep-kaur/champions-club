@@ -57,7 +57,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   const asked = requestDetails(lead.message);
   const heldActive = lead.booking?.status === "booked";
   const request: [string, string][] = [
-    ["Interested in", lead.interest === "trial" ? "Free trial" : lead.interest === "membership" ? "Membership" : "Other"],
+    ["Interested in", lead.interest === "trial" ? `Free ${lead.sport ? `${lead.sport} ` : ""}trial` : lead.interest === "membership" ? "Membership" : "Other"],
     ["Mobile", lead.phone],
     ["Email", lead.email ?? "Not given"],
     ["Preferred day and time", lead.preferredAt ? `${fmtDate(lead.preferredAt)}, ${fmtTime(lead.preferredAt)}` : "Any time"],
@@ -201,7 +201,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               defaultCourtId: courtFromMessage?.id,
               plan: lead.plan,
             }}
-            courts={courts.map((c) => ({ id: c.id, name: c.name }))}
+            courts={courts.filter((c) => !lead.sport || c.sport === lead.sport).map((c) => ({ id: c.id, name: c.name }))}
             plans={plans}
             slots={slotStarts(new Date()).map(hhmm)}
           />

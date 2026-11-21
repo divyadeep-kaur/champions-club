@@ -10,7 +10,7 @@ export const metadata = {
   description: "Try an hour on court free, or ask us about Gold, Silver and Junior memberships.",
 };
 
-type Search = { interest?: string; date?: string; time?: string; court?: string; plan?: string };
+type Search = { interest?: string; date?: string; time?: string; court?: string; plan?: string; sport?: string };
 
 export default async function TrialPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
@@ -58,7 +58,7 @@ export default async function TrialPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="grid content-start gap-[18px] rounded-3xl border border-line bg-paper p-6 sm:p-9">
           <TrialForm
-            defaults={{ interest, date: sp.date, time: sp.time, courtId: court ? String(court.id) : undefined, plan: sp.plan }}
+            defaults={{ interest, date: sp.date, time: sp.time, courtId: court ? String(court.id) : undefined, plan: sp.plan, sport: court?.sport ?? (sp.sport === "cricket" ? "cricket" : undefined) }}
             courtName={court?.name}
             minDate={isoDate(new Date())}
           />
