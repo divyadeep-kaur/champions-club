@@ -32,7 +32,7 @@ export default async function ChecksPage() {
         </div>
         <div className="border border-line bg-paper p-5">
           <p className="text-[14px] text-muted">Refunds in this period</p>
-          <p className="font-serif text-[28px] text-forest tabular-nums">{inr(-(refunds._sum.amount ?? 0))}</p>
+          <p className="font-serif text-[28px] text-forest tabular-nums">{inr(Math.abs(refunds._sum.amount ?? 0))}</p>
           <p className="text-[13px] text-muted">{refunds._count} refunds</p>
         </div>
       </div>
