@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: correct landing FAQ answers and add team emails to footer (src/app/page.tsx, src/components/landing/Footer.tsx)
 
 ## Next up
 
