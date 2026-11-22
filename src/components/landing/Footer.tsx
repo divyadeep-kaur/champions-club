@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUp, ArrowUpRight, Clock } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Clock, Mail } from "lucide-react";
 import { CLOSE_HOUR, OPEN_HOUR } from "@/lib/constants";
 
 const cols = [
@@ -32,6 +32,8 @@ const cols = [
   },
 ];
 
+const emails = ["jashanpreetsing78147@gmail.com", "officialdivyadeep@gmail.com"];
+
 export function Footer() {
   const hour = new Date().getHours();
   const open = hour >= OPEN_HOUR && hour < CLOSE_HOUR;
@@ -58,6 +60,14 @@ export function Footer() {
             <Clock className="size-4 text-cream/70" />
             {open ? "Open now" : "Closed now"} · daily {OPEN_HOUR} am – {CLOSE_HOUR - 12} pm
           </p>
+          <div className="grid gap-1.5">
+            {emails.map((e) => (
+              <a key={e} href={`mailto:${e}`} className="flex w-fit min-w-0 items-center gap-2 break-all text-[14.5px] text-cream/80 hover:text-cream">
+                <Mail className="size-4 shrink-0 text-ball" />
+                {e}
+              </a>
+            ))}
+          </div>
           <div className="flex flex-wrap gap-2.5 pt-1">
             <Link
               href="/trial"

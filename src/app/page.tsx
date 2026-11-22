@@ -75,15 +75,11 @@ export default async function Home() {
         items={[
           {
             q: "Do I need a membership to play?",
-            a: `No. Walk-ins can book any free slot at the walk-in rate (${inr(tennis?._min.walkInRate ?? 0)} an hour for tennis). Members pay their plan’s court rate.`,
+            a: `No. Walk-ins can book a free slot at the front desk at the walk-in rate (${inr(tennis?._min.walkInRate ?? 0)} an hour for tennis). Members book in the app and pay their plan’s court rate.`,
           },
           {
             q: "How many sessions can I book in a day?",
-            a: `Members can book up to ${MAX_BOOKINGS_PER_DAY} one-hour sessions a day, so everyone gets a fair turn.`,
-          },
-          {
-            q: "What is Friday social play?",
-            a: "On Friday evenings a court is opened for social play. Join on your own and get matched with other players. If it’s full, join the waitlist and you’re offered the next free place.",
+            a: `Members can book up to ${MAX_BOOKINGS_PER_DAY} sessions a day, each from 30 minutes to 2 hours, so everyone gets a fair turn.`,
           },
           {
             q: "How do member discounts work?",
@@ -93,7 +89,7 @@ export default async function Home() {
             q: "Can I book from my phone?",
             a: "Yes. Members sign in with their phone number and member code to book courts up to 7 days ahead and order café food to their table.",
           },
-          { q: "Do you offer corporate or family plans?", a: "Yes. Send us a message below and the desk will follow up with a quote." },
+          { q: "Do you offer corporate or family plans?", a: "We don’t have fixed group plans yet. Send us a message below with your group size and the desk will send you a custom quote." },
         ]}
       />
       <Contact />
