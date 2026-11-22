@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: landing numbers from the database (member count, courts, cafe discounts) (src/components/landing/Home.tsx, Athletes.tsx, src/app/page.tsx)
 
 ## Next up
 
