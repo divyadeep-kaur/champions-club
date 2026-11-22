@@ -2,6 +2,7 @@ import { PrismaClient, type Member } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PrismaLibSQL } from "@prisma/adapter-libsql";
 import { payslip, statutoryDue } from "../src/lib/payroll";
+import { TRIAL_DAYS, TRIAL_PLAN } from "../src/lib/constants";
 
 const db = process.env.TURSO_DATABASE_URL
   ? new PrismaClient({ adapter: new PrismaLibSQL({ url: process.env.TURSO_DATABASE_URL, authToken: process.env.TURSO_AUTH_TOKEN }) })
@@ -129,6 +130,18 @@ async function main() {
       description: "For players under 18, discounted courts and coaching days",
     },
   });
+  await db.plan.create({
+    data: {
+      name: TRIAL_PLAN,
+      monthlyFee: 0,
+      courtRate: 0,
+      shopDiscount: 0,
+      barDiscount: 0,
+      durationDays: TRIAL_DAYS,
+      active: false,
+      description: "Free trial week for people who sign up in the member app",
+    },
+  });
 
   const courts = await Promise.all(
     [
@@ -165,6 +178,7 @@ async function main() {
           name,
           phone,
           email: `${name.split(" ")[0].toLowerCase()}@example.com`,
+          passwordHash,
           planId: plan.id,
           birthDate: plan.id === junior.id ? new Date(2010 + (i % 4), i % 12, 10) : new Date(1988 + (i % 12), i % 12, 15),
           startDate: new Date(endDate.getTime() - plan.durationDays * day),

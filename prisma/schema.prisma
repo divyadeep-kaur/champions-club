@@ -123,6 +123,7 @@ model Member {
   photo         String?
   suspendedAt   DateTime?
   suspendReason String?
+  passwordHash  String?
   createdAt     DateTime           @default(now())
   bookings      Booking[]
   players       SocialPlayer[]

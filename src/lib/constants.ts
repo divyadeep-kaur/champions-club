@@ -22,4 +22,9 @@ export const SLOT_MINUTES = 30;
 export const SESSION_MINUTES = 60;
 export const MAX_BOOKINGS_PER_DAY = 2;
 
+export const TRIAL_PLAN = "Free trial";
+export const TRIAL_DAYS = 7;
+export const AWAITING_APPROVAL = "Waiting for approval";
+export const SIGNUP_DECLINED = "Sign-up declined";
+
 export const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
