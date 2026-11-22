@@ -28,7 +28,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 ## In progress
 
 - Divyadeep: member changes or renews own plan in the app (My plan); prorated refunds actually paid out (refund now or refund due on Payments due), early renewal onto another plan repriced, refunds capped at money received (src/app/me/(app)/plan, src/lib/membership.ts, src/lib/membershipService.ts, members/[id]/MembershipActions.tsx, SettlePayment.tsx, members/dues/page.tsx; one line each in MemberSidebar.tsx and MemberTabs.tsx)
-- Jashan: fix invisible Change Membership Plan button text (members/[id]/MembershipActions.tsx)
 
 ## Next up
 
@@ -36,6 +35,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Change Membership Plan button text visible again (Jashan)
 - Member café shows open or closed and only takes orders while a café shift is running (Jashan)
 - Member sign up with phone, password and instant member code; owner or desk approves on Member Management or Leads; free 7 day trial, no payment (Jashan)
 - Landing FAQ answers corrected, Friday social play question removed, team emails in footer (Jashan)

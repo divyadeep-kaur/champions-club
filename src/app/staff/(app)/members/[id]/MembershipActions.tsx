@@ -505,7 +505,11 @@ export function MembershipActions({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <button type="button" onClick={() => setOpen("change")} className={`${btn} bg-forest text-cream hover:bg-forest-deep`}>
+      <button
+        type="button"
+        onClick={() => setOpen("change")}
+        className="inline-flex min-h-11 items-center gap-2 border-[1.5px] border-forest bg-forest px-4 font-semibold text-cream hover:bg-forest-deep"
+      >
         <Repeat className="size-4" aria-hidden="true" /> Change Membership Plan
       </button>
       <button type="button" onClick={() => setOpen("renew")} className={btn} disabled={m.suspended} title={m.suspended ? "Reactivate first" : undefined}>
