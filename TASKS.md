@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: emails on trial approval and on new member sign-up with member code (src/lib/mail.ts, leads/actions.ts, members/actions.ts, package.json)
 
 ## Next up
 
