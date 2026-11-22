@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: member café open or closed follows the café shift (src/app/me/(app)/cafe, src/app/me/actions.ts, src/lib/cafe.ts)
 - Jashan: member self sign up with password and code, owner approves on Member Management (prisma/schema.prisma, prisma/seed.ts, src/app/me, members/page.tsx, members/actions.ts, src/app/page.tsx)
 
 ## Next up
