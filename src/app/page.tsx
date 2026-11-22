@@ -12,14 +12,16 @@ import { Contact, Faq, FeatureQuote, Features, HomeHero, OneClub, PerksStrip, Re
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [courts, week, plans, products, menu, rates] = await Promise.all([
+  const [courts, week, plans, products, menu, rates, memberCount] = await Promise.all([
     landingCourts(),
     weekGlance("tennis"),
     db.plan.findMany({ where: { monthlyFee: { gt: 0 } }, orderBy: { monthlyFee: "desc" } }),
     db.product.findMany({ where: { sku: { in: ["RKT-001", "BAL-001", "SHO-002", "APP-001"] } } }),
     db.menuItem.findMany({ where: { name: { in: ["Paneer Tikka Wrap", "Cold Coffee"] } } }),
     db.court.groupBy({ by: ["sport"], _min: { walkInRate: true }, _count: true }),
+    db.member.count({ where: { suspendedAt: null } }),
   ]);
+  const courtCount = rates.reduce((n, r) => n + r._count, 0);
 
   const gold = plans.find((p) => p.name === "Gold");
   const silver = plans.find((p) => p.name === "Silver") ?? null;
@@ -62,7 +64,7 @@ export default async function Home() {
           Juniors: `Under-18 plan at ${inr(junior?.monthlyFee ?? 0)} a month with discounted courts and coaching days.`,
         }}
       />
-      <OneClub />
+      <OneClub courts={courtCount} />
       <Coaches />
       <Features
         week={week}
@@ -93,7 +95,7 @@ export default async function Home() {
         ]}
       />
       <Contact />
-      <Athletes />
+      <Athletes members={memberCount} />
       <Footer />
     </main>
   );

@@ -29,7 +29,7 @@ const shapes = [
 
 const fill: Record<string, string> = { g: "bg-[#ebe6dc]", B: "bg-forest", L: "bg-ball", C: "bg-clay" };
 
-export function Athletes() {
+export function Athletes({ members }: { members: number }) {
   let photo = 0;
   return (
     <section aria-labelledby="athletes-title" className="relative overflow-hidden border-t border-line bg-paper">
@@ -95,7 +95,7 @@ export function Athletes() {
                 &amp; growing
               </span>
               <h2 id="athletes-title" className="font-hand text-[clamp(44px,7vw,82px)] font-bold leading-[0.95] text-forest-deep">
-                Join 100+ emerging athletes
+                Join {members >= 10 ? `${Math.floor(members / 10) * 10}+` : members} emerging athletes
               </h2>
               <p className="mt-3 text-[clamp(17px,2vw,22px)] text-ink">who train, play and grow at The Champions Club</p>
               <Link href="/trial" className="mt-6 inline-block rounded-full bg-forest px-7 py-3.5 text-[16px] font-bold text-cream hover:bg-forest-deep">

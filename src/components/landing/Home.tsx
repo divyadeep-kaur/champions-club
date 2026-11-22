@@ -182,7 +182,7 @@ export function Sports({ text }: { text: Record<string, string> }) {
   );
 }
 
-export function OneClub() {
+export function OneClub({ courts }: { courts: number }) {
   const panels = [
     {
       img: "/images/tennis-court.jpg",
@@ -191,7 +191,7 @@ export function OneClub() {
       tag: "Play",
       tagColor: "text-ball",
       title: "Courts, nets and social play",
-      text: "Six courts and nets, 1-hour sessions every 30 minutes, member rates and Friday social nights.",
+      text: `${courts} courts and nets, sessions from 30 minutes to 2 hours, member rates and Friday social nights.`,
       chips: ["Bookings", "Free slots", "Social play", "Coaching"],
     },
     {
@@ -267,7 +267,7 @@ export function Features({
           <Ticks
             items={[
               "Live free slots for the whole week",
-              "1-hour sessions starting every 30 minutes",
+              "Sessions from 30 minutes to 2 hours, starting every half hour",
               "Members pay member rates, walk-ins welcome",
               "Friday evening social play on a shared court",
             ]}
@@ -453,7 +453,10 @@ export function Features({
             items={[
               "Wraps, bowls, fresh lime soda and cold coffee",
               "Run a tab at your table, order from your phone",
-              "Gold saves 20%, Silver 10%, automatically",
+              plans
+                .filter((p) => p.barDiscount > 0)
+                .map((p) => `${p.name} saves ${p.barDiscount}%`)
+                .join(", ") + ", automatically",
             ]}
           />
           <Link href="/me/cafe" className="mt-6 inline-block font-bold text-forest">

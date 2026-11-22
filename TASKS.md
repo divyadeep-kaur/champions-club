@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: landing numbers from the database (member count, courts, cafe discounts) (src/components/landing/Home.tsx, Athletes.tsx, src/app/page.tsx)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Landing member count, court count and cafe discounts come from the database (Jashan)
 - Change Membership Plan button text visible again (Jashan)
 - Member café shows open or closed and only takes orders while a café shift is running (Jashan)
 - Member sign up with phone, password and instant member code; owner or desk approves on Member Management or Leads; free 7 day trial, no payment (Jashan)
