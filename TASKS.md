@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: fix invisible Change Membership Plan button text (members/[id]/MembershipActions.tsx)
 
 ## Next up
 
