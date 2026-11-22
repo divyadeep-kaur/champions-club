@@ -29,6 +29,7 @@ export function defaultWindow(now: Date, day: Date): GridWindow {
 }
 
 function tone(b: GridBooking) {
+  if (b.type === "blocked") return "bg-[#8a8f8c]";
   if (b.type === "social") return "bg-clay";
   if (b.type === "trial") return "bg-[#4d7a12]";
   if (b.plan) return "bg-forest";
@@ -119,7 +120,7 @@ export function BookingGrid({
             >
               <strong className="block truncate">{b.label}</strong>
               <span className="block truncate opacity-90">
-                {b.type === "social" ? `${b.players} of ${b.capacity} places` : b.type === "trial" ? "Trial" : (b.plan ?? "Walk-in")}
+                {b.type === "social" ? `${b.players} of ${b.capacity} places` : b.type === "trial" ? "Trial" : b.type === "blocked" ? "Blocked" : (b.plan ?? "Walk-in")}
               </span>
             </Link>
           );

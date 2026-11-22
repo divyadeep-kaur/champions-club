@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: court management for owner, add, edit, delete courts, block slots, day view (src/app/staff/(app)/courts, src/lib/nav.ts)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Courts page for the owner: add, edit, delete courts, day view of free and booked slots, block and unblock time (Jashan)
 - Landing member count, court count and cafe discounts come from the database (Jashan)
 - Change Membership Plan button text visible again (Jashan)
 - Member café shows open or closed and only takes orders while a café shift is running (Jashan)

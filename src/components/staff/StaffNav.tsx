@@ -22,12 +22,14 @@ import {
   Users,
   X,
   type LucideIcon,
+  LandPlot,
 } from "lucide-react";
 
 const icons: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
   members: Users,
   bookings: CalendarDays,
+  courts: LandPlot,
   shop: ShoppingBag,
   bar: Coffee,
   kitchen: ChefHat,
