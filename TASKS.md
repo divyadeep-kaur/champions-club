@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: court management for owner, add, edit, delete courts, block slots, day view (src/app/staff/(app)/courts, src/lib/nav.ts)
 
 ## Next up
 
