@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Jashan: trial status check on member sign in page (src/app/me/login, src/app/me/actions.ts)
 
 ## Next up
 
