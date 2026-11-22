@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Divyadeep: owner Court Management page: add, edit and delete courts, free/booked/blocked slots per day, block or unblock slots, cancel a booking from the slot board (src/app/staff/(app)/courts, src/lib/courtSlots.ts, src/lib/nav.ts, StaffNav.tsx; small edits in bookings/BookingGrid.tsx and bookings/page.tsx so blocked slots show as Blocked)
 - Jashan: member café open or closed follows the café shift (src/app/me/(app)/cafe, src/app/me/actions.ts, src/lib/cafe.ts)
 - Jashan: member self sign up with password and code, owner approves on Member Management (prisma/schema.prisma, prisma/seed.ts, src/app/me, members/page.tsx, members/actions.ts, src/app/page.tsx)
 

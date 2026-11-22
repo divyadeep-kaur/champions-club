@@ -4,6 +4,7 @@ export const staffNav: { href: string; label: string; icon: string; roles: Role[
   { href: "/staff", label: "Dashboard", icon: "dashboard", roles: ["owner", "desk", "bar"] },
   { href: "/staff/members", label: "Member Management", icon: "members", roles: ["owner", "desk"] },
   { href: "/staff/bookings", label: "Bookings", icon: "bookings", roles: ["owner", "desk"] },
+  { href: "/staff/courts", label: "Court Management", icon: "courts", roles: ["owner"] },
   { href: "/staff/shop", label: "Shop", icon: "shop", roles: ["owner", "desk", "shop"] },
   { href: "/staff/bar", label: "Café & Bar", icon: "bar", roles: ["owner", "bar"] },
   { href: "/staff/kitchen", label: "Kitchen", icon: "kitchen", roles: ["owner", "bar"] },

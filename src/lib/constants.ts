@@ -2,7 +2,7 @@ export const ROLES = ["owner", "desk", "bar", "shop", "coach", "staff"] as const
 export type Role = (typeof ROLES)[number];
 
 export const SPORTS = ["tennis", "cricket"] as const;
-export const BOOKING_TYPES = ["regular", "social", "trial"] as const;
+export const BOOKING_TYPES = ["regular", "social", "trial", "blocked"] as const;
 export const BOOKING_STATUS = ["booked", "cancelled"] as const;
 
 export const ORDER_CHANNELS = ["counter", "online"] as const;

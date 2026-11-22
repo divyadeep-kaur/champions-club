@@ -74,6 +74,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
         : defaultWindow(now, day);
   const closeHref = `/staff/bookings?date=${date}&w=${win}`;
   const revenue = bookings.reduce((s, b) => s + b.price, 0);
+  const sessions = bookings.filter((b) => b.type !== "blocked").length;
   const social = bookings.find((b) => b.type === "social");
   const nav = "grid size-11 place-items-center border-[1.5px] border-forest text-forest hover:bg-forest/5";
 
@@ -201,7 +202,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
             <div className="border border-line bg-paper p-[18px]">
               <div className="text-[14px] text-muted">Booked {now.toDateString() === day.toDateString() ? "today" : "this day"}</div>
               <div className="font-serif text-[28px] text-forest">
-                {bookings.length} {bookings.length === 1 ? "session" : "sessions"}
+                {sessions} {sessions === 1 ? "session" : "sessions"}
               </div>
             </div>
             <div className="border border-line bg-paper p-[18px]">
@@ -224,7 +225,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">
-                      {selectedBooking.type === "social" ? "Social play" : selectedBooking.type === "trial" ? "Trial session" : "Booking"} #{selectedBooking.id}
+                      {selectedBooking.type === "blocked" ? "Blocked slot" : selectedBooking.type === "social" ? "Social play" : selectedBooking.type === "trial" ? "Trial session" : "Booking"} #{selectedBooking.id}
                     </p>
                     <h2 className="mt-1 font-serif text-[24px] font-medium leading-tight text-forest">{selectedBooking.court.name}</h2>
                     <p className="text-[15px]">
@@ -236,7 +237,17 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
                   </Link>
                 </div>
 
-                {selectedBooking.type !== "social" && (
+                {selectedBooking.type === "blocked" && (
+                  <p className="border-t border-line pt-4 text-[15px]">
+                    {selectedBooking.guestName ?? "Blocked"}. Manage blocked slots in{" "}
+                    <Link href={`/staff/courts?date=${date}&court=${selectedBooking.courtId}`} className="font-semibold text-forest underline underline-offset-4">
+                      Court management
+                    </Link>
+                    .
+                  </p>
+                )}
+
+                {selectedBooking.type !== "social" && selectedBooking.type !== "blocked" && (
                   <dl className="space-y-2 border-t border-line pt-4 text-[15px]">
                     <div className="flex justify-between gap-4">
                       <dt className="text-muted">Player</dt>
@@ -279,7 +290,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
 
                 {selectedBooking.type === "social" && <SocialRoster booking={selectedBooking} members={memberOptions} />}
 
-                {selectedBooking.status === "booked" && selectedBooking.end > now && (
+                {selectedBooking.status === "booked" && selectedBooking.end > now && selectedBooking.type !== "blocked" && (
                   <form action={cancelBooking} className="border-t border-line pt-4">
                     <input type="hidden" name="bookingId" value={selectedBooking.id} />
                     <button type="submit" className="w-full border border-clay/50 px-4 py-2.5 text-[14.5px] font-semibold text-clay hover:bg-clay-soft">
