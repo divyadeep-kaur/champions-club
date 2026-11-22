@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { juniorAgeError, nextMemberCode, normalizePhone, renewalPeriod } from "@/lib/members";
 import { requireStaff } from "@/lib/session";
+import { AWAITING_APPROVAL, SIGNUP_DECLINED, TRIAL_DAYS } from "@/lib/constants";
 
 export type FormState = { error?: string; fields?: Record<string, string> };
 
@@ -92,4 +93,20 @@ export async function createMember(_: FormState, formData: FormData): Promise<Fo
 
   revalidatePath("/staff/members");
   redirect(`/staff/members/${member.id}?welcome=1`);
+}
+
+export async function decideSignup(formData: FormData) {
+  await requireStaff(["owner", "desk"]);
+  const id = Number(formData.get("memberId"));
+  const approve = formData.get("decision") === "approve";
+  const now = new Date();
+  await db.member.updateMany({
+    where: { id, suspendReason: AWAITING_APPROVAL },
+    data: approve
+      ? { suspendedAt: null, suspendReason: null, startDate: now, endDate: new Date(now.getTime() + TRIAL_DAYS * 86_400_000) }
+      : { suspendReason: SIGNUP_DECLINED },
+  });
+  revalidatePath("/staff/members");
+  revalidatePath(`/staff/members/${id}`);
+  revalidatePath("/staff", "layout");
 }

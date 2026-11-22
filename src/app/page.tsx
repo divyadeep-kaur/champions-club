@@ -15,7 +15,7 @@ export default async function Home() {
   const [courts, week, plans, products, menu, rates] = await Promise.all([
     landingCourts(),
     weekGlance("tennis"),
-    db.plan.findMany({ orderBy: { monthlyFee: "desc" } }),
+    db.plan.findMany({ where: { monthlyFee: { gt: 0 } }, orderBy: { monthlyFee: "desc" } }),
     db.product.findMany({ where: { sku: { in: ["RKT-001", "BAL-001", "SHO-002", "APP-001"] } } }),
     db.menuItem.findMany({ where: { name: { in: ["Paneer Tikka Wrap", "Cold Coffee"] } } }),
     db.court.groupBy({ by: ["sport"], _min: { walkInRate: true }, _count: true }),

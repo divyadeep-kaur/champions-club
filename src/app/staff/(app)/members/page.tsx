@@ -8,6 +8,8 @@ import { memberState, stateLabel } from "@/lib/membership";
 import { requireStaff } from "@/lib/session";
 import { btnOutline, fieldCls } from "@/components/staff/ui";
 import { StateBadge } from "./StateBadge";
+import { SignupRequests } from "./SignupRequests";
+import { AWAITING_APPROVAL } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -54,11 +56,12 @@ export default async function MembersDirectory({ searchParams }: { searchParams:
     ],
   };
 
-  const [all, members, plans, pending] = await Promise.all([
+  const [all, members, plans, pending, signups] = await Promise.all([
     db.member.findMany({ select: { endDate: true, suspendedAt: true, plan: { select: { name: true } } } }),
     db.member.findMany({ where, include: { plan: true }, orderBy: { name: "asc" } }),
     db.plan.findMany({ orderBy: { monthlyFee: "desc" } }),
     db.membershipChange.aggregate({ where: { paymentStatus: "pending" }, _count: true, _sum: { amount: true } }),
+    db.member.findMany({ where: { suspendReason: AWAITING_APPROVAL }, orderBy: { createdAt: "asc" } }),
   ]);
 
   const states = all.map((m) => ({ ...memberState(m, today), plan: m.plan.name }));
@@ -86,6 +89,7 @@ export default async function MembersDirectory({ searchParams }: { searchParams:
 
   return (
     <div className="grid content-start gap-5">
+      {signups.length > 0 && <SignupRequests signups={signups} />}
       <dl className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
         {stats.map(([label, value, hint, href]) => (
           <div key={label} className="bg-paper p-4">

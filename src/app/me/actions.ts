@@ -6,7 +6,9 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { placeBooking } from "@/lib/bookingService";
 import { DURATIONS, type Duration } from "@/lib/bookings";
-import { normalizePhone } from "@/lib/members";
+import bcrypt from "bcryptjs";
+import { nextMemberCode, normalizePhone } from "@/lib/members";
+import { AWAITING_APPROVAL, SIGNUP_DECLINED, TRIAL_PLAN } from "@/lib/constants";
 import { clearMemberSession, createMemberSession, requireMember } from "@/lib/memberSession";
 import { recomputeTab } from "@/lib/tabs";
 import { paidSoFar, refundMethod } from "@/lib/ledger";
@@ -19,8 +21,16 @@ function refreshCourts() {
   for (const p of ["/me", "/me/book", "/staff/bookings", "/staff", "/", "/courts"]) revalidatePath(p);
 }
 
+const cleanCode = (c: string) =>
+  c
+    .trim()
+    .toUpperCase()
+    .replace(/^CC-?/, "CC-")
+    .replace(/^(\d+)$/, "CC-$1");
+
 const loginSchema = z.object({
   phone: z.string().trim().min(1, "Enter your mobile number"),
+  password: z.string().min(1, "Enter your password"),
   code: z.string().trim().min(1, "Enter your member code"),
   next: z.string().optional(),
 });
@@ -29,16 +39,78 @@ export async function memberLogin(_: MeState, formData: FormData): Promise<MeSta
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const phone = normalizePhone(parsed.data.phone);
-  const code = parsed.data.code
-    .toUpperCase()
-    .replace(/^CC-?/, "CC-")
-    .replace(/^(\d+)$/, "CC-$1");
   const member = phone ? await db.member.findUnique({ where: { phone } }) : null;
-  if (!member || member.code !== code) return { error: "That phone number and member code don't match. Ask at the front desk if you've lost your code." };
+  const wrong = { error: "That phone number, password and member code don't match. Ask at the front desk if you're stuck." };
+  if (!member || member.code !== cleanCode(parsed.data.code)) return wrong;
+  if (!member.passwordHash) return { error: "You haven't set a password yet. Tap Create account below and enter your member code to set one." };
+  if (!(await bcrypt.compare(parsed.data.password, member.passwordHash))) return wrong;
+  if (member.suspendReason === AWAITING_APPROVAL)
+    return { error: `Hi ${member.name.split(" ")[0]}, your account is waiting for the front desk to approve it. Try again once it's approved.` };
+  if (member.suspendReason === SIGNUP_DECLINED) return { error: "Your sign-up wasn't approved. Please talk to the front desk." };
 
   await createMemberSession({ memberId: member.id, name: member.name });
   const next = parsed.data.next;
   redirect(next && next.startsWith("/me") && !next.startsWith("//") ? next : "/me");
+}
+
+export type SignupState = { error?: string; code?: string; name?: string; claimed?: boolean; fields?: Record<string, string> };
+
+const signupSchema = z.object({
+  name: z.string().trim().min(2, "Enter your full name").max(80),
+  phone: z.string().trim().min(1, "Enter your mobile number"),
+  email: z.union([z.literal(""), z.string().trim().email("Enter a valid email")]).optional(),
+  password: z.string().min(6, "Use at least 6 characters for your password").max(72),
+  confirm: z.string(),
+  code: z.string().optional(),
+});
+
+export async function memberSignup(_: SignupState, formData: FormData): Promise<SignupState> {
+  const fields = Object.fromEntries([...formData.entries()].filter(([k]) => k !== "password" && k !== "confirm")) as Record<string, string>;
+  const parsed = signupSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message, fields };
+  const f = parsed.data;
+  if (f.password !== f.confirm) return { error: "The two passwords don't match", fields };
+  const phone = normalizePhone(f.phone);
+  if (!phone) return { error: "Enter a 10-digit Indian mobile number", fields };
+  const passwordHash = await bcrypt.hash(f.password, 10);
+
+  const existing = await db.member.findUnique({ where: { phone } });
+  if (existing) {
+    if (existing.passwordHash) return { error: "This number already has an account. Sign in instead.", fields };
+    if (!f.code || cleanCode(f.code) !== existing.code)
+      return { error: "This number is already a member. Enter the member code the front desk gave you to set your password.", fields };
+    await db.member.update({ where: { id: existing.id }, data: { passwordHash } });
+    return { code: existing.code, name: existing.name.split(" ")[0], claimed: true };
+  }
+
+  const trial = await db.plan.findUnique({ where: { name: TRIAL_PLAN } });
+  if (!trial) return { error: "Sign-ups are closed right now. Please ask at the front desk.", fields };
+  const now = new Date();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const last = await db.member.findFirst({ orderBy: { id: "desc" }, select: { code: true } });
+    try {
+      const m = await db.member.create({
+        data: {
+          code: nextMemberCode(last?.code ?? null),
+          name: f.name,
+          phone,
+          email: f.email || null,
+          passwordHash,
+          planId: trial.id,
+          startDate: now,
+          endDate: now,
+          suspendedAt: now,
+          suspendReason: AWAITING_APPROVAL,
+          notes: "Signed up in the member app",
+        },
+      });
+      revalidatePath("/staff", "layout");
+      return { code: m.code, name: m.name.split(" ")[0] };
+    } catch {
+      if (await db.member.findUnique({ where: { phone } })) return { error: "This number already has an account. Sign in instead.", fields };
+    }
+  }
+  return { error: "Could not create your account, please try again", fields };
 }
 
 export async function memberLogout() {

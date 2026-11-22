@@ -7,6 +7,8 @@ import { requireStaff } from "@/lib/session";
 import { btnPrimary } from "@/components/staff/ui";
 import { AutoRefresh } from "../kitchen/AutoRefresh";
 import { TrialRequests, type TrialRequest } from "./TrialRequests";
+import { SignupRequests } from "../members/SignupRequests";
+import { AWAITING_APPROVAL } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,7 @@ const ago = (d: Date) => {
 export default async function LeadsPage() {
   const session = await requireStaff(["owner", "desk"]);
   const monthStart = startOfMonth();
+  const signups = await db.member.findMany({ where: { suspendReason: AWAITING_APPROVAL }, orderBy: { createdAt: "asc" } });
   const [leads, lost, joinedThisMonth] = await Promise.all([
     db.lead.findMany({
       where: { OR: [{ status: { notIn: ["won", "lost"] } }, { status: "won", createdAt: { gte: monthStart } }] },
@@ -98,6 +101,7 @@ export default async function LeadsPage() {
       </div>
 
       <AutoRefresh seconds={8} />
+      {signups.length > 0 && <SignupRequests signups={signups} />}
 
       <dl className="grid grid-cols-1 gap-px border border-line bg-line sm:grid-cols-3">
         {[

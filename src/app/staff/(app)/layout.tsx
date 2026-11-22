@@ -2,6 +2,7 @@ import { StaffNav } from "@/components/staff/StaffNav";
 import { db } from "@/lib/db";
 import { navFor } from "@/lib/nav";
 import { requireStaff } from "@/lib/session";
+import { AWAITING_APPROVAL } from "@/lib/constants";
 import { logout } from "../login/actions";
 
 export const metadata = { title: "Staff · The Champions Club" };
@@ -21,11 +22,12 @@ export default async function StaffLayout({ children }: { children: React.ReactN
       })
     : 0;
   const openQueries = session.role === "owner" ? await db.staffQuery.count({ where: { status: "open" } }) : 0;
+  const signups = nav.some((i) => i.href === "/staff/members") ? await db.member.count({ where: { suspendReason: AWAITING_APPROVAL } }) : 0;
   const items = nav.map(({ href, label, icon }) => ({
     href,
     label,
     icon,
-    badge: href === "/staff/leads" ? newLeads : href === "/staff/queries" ? openQueries : undefined,
+    badge: href === "/staff/leads" ? newLeads : href === "/staff/queries" ? openQueries : href === "/staff/members" ? signups : undefined,
   }));
 
   return (

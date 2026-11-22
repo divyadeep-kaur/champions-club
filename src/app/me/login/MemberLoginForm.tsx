@@ -21,6 +21,10 @@ export function MemberLoginForm({ next }: { next?: string }) {
         <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="98765 43210" className={field} />
       </label>
       <label className={label}>
+        Password
+        <input name="password" type="password" autoComplete="current-password" className={field} />
+      </label>
+      <label className={label}>
         Member code
         <input name="code" autoCapitalize="characters" placeholder="CC-0001" className={`${field} uppercase`} />
       </label>
@@ -38,10 +42,11 @@ export function MemberLoginForm({ next }: { next?: string }) {
         Sign in
       </button>
       <p className="text-center text-[13.5px] text-muted">
-        Lost your code? Ask at the front desk. Not a member?{" "}
-        <Link href="/trial" className="font-semibold text-forest underline underline-offset-4">
-          Book a free trial
-        </Link>
+        New here?{" "}
+        <Link href="/me/login?join=1" className="font-semibold text-forest underline underline-offset-4">
+          Create an account
+        </Link>{" "}
+        · Lost your code? Ask at the front desk.
       </p>
     </form>
   );

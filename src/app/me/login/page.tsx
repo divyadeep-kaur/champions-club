@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MemberLoginForm } from "./MemberLoginForm";
+import { MemberSignupForm } from "./MemberSignupForm";
 
 export const metadata = { title: "Member sign in · The Champions Club" };
 
-export default async function MemberLoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const { next } = await searchParams;
+export default async function MemberLoginPage({ searchParams }: { searchParams: Promise<{ next?: string; join?: string }> }) {
+  const { next, join } = await searchParams;
   return (
     <main className="relative min-h-[100svh] overflow-hidden bg-forest-deep">
       <Image
@@ -28,7 +29,7 @@ export default async function MemberLoginPage({ searchParams }: { searchParams: 
           <Image src="/brand/logo-mark.png" alt="" width={48} height={48} unoptimized />
           CHAMPI<span className="text-[#5f6b3a]">O</span>NS CLUB
         </Link>
-        <MemberLoginForm next={next} />
+        {join ? <MemberSignupForm key="join" /> : <MemberLoginForm key="login" next={next} />}
       </div>
     </main>
   );
