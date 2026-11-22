@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: fix invisible Change Membership Plan button text (members/[id]/MembershipActions.tsx)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Change Membership Plan button text visible again (Jashan)
 - Member café shows open or closed and only takes orders while a café shift is running (Jashan)
 - Member sign up with phone, password and instant member code; owner or desk approves on Member Management or Leads; free 7 day trial, no payment (Jashan)
 - Landing FAQ answers corrected, Friday social play question removed, team emails in footer (Jashan)
