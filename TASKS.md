@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Divyadeep: owner Court Management page: add, edit and delete courts, free/booked/blocked slots per day, block or unblock slots, cancel a booking from the slot board (src/app/staff/(app)/courts, src/lib/courtSlots.ts, src/lib/nav.ts, StaffNav.tsx; small edits in bookings/BookingGrid.tsx and bookings/page.tsx so blocked slots show as Blocked)
 
 ## Next up
 

@@ -46,7 +46,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     incomeSummary(period, now),
     db.product.findMany({ select: { name: true, stock: true, lowStockAt: true } }),
     db.member.findMany({ where: { endDate: { gte: today, lt: addDays(today, 8) } }, include: { plan: true }, orderBy: { endDate: "asc" }, take: 5 }),
-    db.booking.count({ where: { status: "booked", start: { lte: now }, end: { gt: now } } }),
+    db.booking.count({ where: { status: "booked", type: { not: "blocked" }, start: { lte: now }, end: { gt: now } } }),
     db.tab.count({ where: { status: "open" } }),
     db.order.count({ where: { channel: "online", status: { in: ["pending", "ready"] } } }),
     db.lead.count({ where: { status: "new" } }),
