@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { isoDate } from "@/lib/dates";
 import { ageOn } from "@/lib/members";
-import { CHANGE_KINDS, CHANGE_POLICIES, PAYMENT_STATES, benefitPlan, memberState, stateLabel } from "@/lib/membership";
+import { CHANGE_KINDS, CHANGE_POLICIES, PAYMENT_STATES, benefitPlan, changedBy, memberState, stateLabel } from "@/lib/membership";
 import { getDefaultPolicy } from "@/lib/membershipService";
 import { requireStaff } from "@/lib/session";
 import { btnOutline, btnPrimary } from "@/components/staff/ui";
@@ -212,7 +212,7 @@ export default async function MemberProfile({
                   <span className="text-[14.5px]">{c.toPlan.name}</span>
                 ) : null}
                 <span className="text-[13px] text-muted">
-                  {short(c.createdAt)}, {time(c.createdAt)} · by {c.staff.name}
+                  {short(c.createdAt)}, {time(c.createdAt)} · by {changedBy(c)}
                 </span>
               </div>
               <dl className="grid gap-x-6 gap-y-0.5 text-[13.5px] sm:grid-cols-2">
@@ -239,7 +239,7 @@ export default async function MemberProfile({
                 <div>
                   <dt className="inline text-muted">Amount: </dt>
                   <dd className="inline">
-                    {c.amount < 0 ? `${inr(-c.amount)} credit` : inr(c.amount)} · {PAYMENT_STATES[c.paymentStatus] ?? c.paymentStatus}
+                    {c.amount < 0 ? `${inr(-c.amount)} refund` : inr(c.amount)} · {PAYMENT_STATES[c.paymentStatus] ?? c.paymentStatus}
                     {c.payment && ` · ${c.payment.method.toUpperCase()} ref #${c.payment.id}`}
                   </dd>
                 </div>
@@ -254,7 +254,7 @@ export default async function MemberProfile({
                   <dd className="inline">{c.reason}</dd>
                 </div>
               </dl>
-              {owner && c.paymentStatus === "pending" && (
+              {owner && (c.paymentStatus === "pending" || c.paymentStatus === "credit") && (
                 <div className="mt-1">
                   <SettlePayment changeId={c.id} amount={c.amount} />
                 </div>

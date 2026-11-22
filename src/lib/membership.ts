@@ -41,7 +41,12 @@ export const CHANGE_KINDS: Record<string, string> = {
   reactivation: "Reactivated",
 };
 
-export const PAYMENT_STATES: Record<string, string> = { paid: "Paid", pending: "Payment pending", none: "No charge", credit: "Credit owed" };
+export const PAYMENT_STATES: Record<string, string> = { paid: "Paid", pending: "Payment pending", none: "No charge", credit: "Refund due", refunded: "Refunded" };
+
+// History rows saved from the member app start with this, because every row needs a staff
+// record; the staff screens show "member (app)" for them instead of the staff name.
+export const SELF_SERVICE = "In the member app: ";
+export const changedBy = (c: { reason: string; staff: { name: string } }) => (c.reason.startsWith(SELF_SERVICE) ? "member (app)" : c.staff.name);
 
 // Mid-cycle plan changes. The club has no fixed rule, so the owner picks one;
 // the default is a setting, and each change can override it.
@@ -95,10 +100,35 @@ export function planChangeQuote(input: {
 
 // Renewal follows the club's existing rule: the new period starts when the current one ends,
 // or on the renewal date if it has already ended, so no paid days are lost.
-export function renewalQuote(endDate: Date, renewalDate: Date, plan: PlanPrice) {
+// Renewing early onto a different plan switches the plan straight away, so the days still
+// left on the old plan are repriced at the new plan's daily rate (refund on a downgrade,
+// extra on an upgrade), exactly like a plan change that keeps the expiry.
+export function renewalQuote(endDate: Date, renewalDate: Date, plan: PlanPrice, current?: PlanPrice) {
   const { start, end } = renewalPeriod(endDate, renewalDate, plan.durationDays);
-  return { newStart: start, newEnd: end, amount: plan.monthlyFee, early: dayStart(endDate) > dayStart(renewalDate) };
+  const early = dayStart(endDate) > dayStart(renewalDate);
+  const remainingDays = early ? daysBetween(renewalDate, endDate) : 0;
+  const switching = !!current && (current.monthlyFee !== plan.monthlyFee || current.durationDays !== plan.durationDays);
+  const adjustment = early && switching ? Math.round((plan.monthlyFee / plan.durationDays - current!.monthlyFee / current!.durationDays) * remainingDays) : 0;
+  return { newStart: start, newEnd: end, amount: plan.monthlyFee + adjustment, fee: plan.monthlyFee, adjustment, remainingDays, early };
 }
+
+// The working behind a prorated change, in words the member and the desk can check.
+export function prorationBreakdown(current: PlanPrice & { name: string }, next: PlanPrice & { name: string }, remainingDays: number) {
+  const perDay = (p: PlanPrice) => p.monthlyFee / p.durationDays;
+  const unused = Math.round(perDay(current) * remainingDays);
+  const newCost = Math.round(perDay(next) * remainingDays);
+  return {
+    unused,
+    newCost,
+    lines: [
+      `${current.name}: ₹${perDay(current).toFixed(2)}/day × ${remainingDays} days not yet used = ₹${unused.toLocaleString("en-IN")} back`,
+      `${next.name}: ₹${perDay(next).toFixed(2)}/day × ${remainingDays} days = ₹${newCost.toLocaleString("en-IN")} to pay`,
+    ],
+  };
+}
+
+// Refunds never pay out more than the club actually received from the member.
+export const refundCap = (credit: number, netReceived: number) => Math.max(0, Math.min(credit, netReceived));
 
 // Extra days on top of the current expiry, or from today if it has already passed.
 export function extensionQuote(endDate: Date, days: number, today = new Date()) {
@@ -107,8 +137,9 @@ export function extensionQuote(endDate: Date, days: number, today = new Date()) 
 }
 
 // What a membership event means for money: something to collect, nothing, or a credit to the member.
+// For a credit, payNow means the refund is paid out now; otherwise it waits as a refund due.
 export function paymentStateFor(amount: number, payNow: boolean) {
-  if (amount < 0) return "credit";
+  if (amount < 0) return payNow ? "refunded" : "credit";
   if (amount === 0) return "none";
   return payNow ? "paid" : "pending";
 }

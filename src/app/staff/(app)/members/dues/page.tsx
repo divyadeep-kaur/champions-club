@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/constants";
 import { fmtDate } from "@/lib/dates";
-import { CHANGE_KINDS } from "@/lib/membership";
+import { CHANGE_KINDS, changedBy } from "@/lib/membership";
 import { requireStaff } from "@/lib/session";
 import { SettlePayment } from "../[id]/SettlePayment";
 
@@ -11,9 +11,9 @@ export const dynamic = "force-dynamic";
 export default async function DuesPage() {
   const session = await requireStaff(["owner", "desk"]);
   const owner = session.role === "owner";
-  const [pending, recent] = await Promise.all([
+  const [open, recent] = await Promise.all([
     db.membershipChange.findMany({
-      where: { paymentStatus: "pending" },
+      where: { paymentStatus: { in: ["pending", "credit"] } },
       include: { member: true, fromPlan: true, toPlan: true, staff: { select: { name: true } } },
       orderBy: { createdAt: "asc" },
     }),
@@ -24,7 +24,10 @@ export default async function DuesPage() {
       take: 8,
     }),
   ]);
+  const pending = open.filter((c) => c.paymentStatus === "pending");
+  const refunds = open.filter((c) => c.paymentStatus === "credit");
   const total = pending.reduce((s, c) => s + c.amount, 0);
+  const refundTotal = refunds.reduce((s, c) => s - c.amount, 0);
   const now = Date.now();
   const overdue = pending.filter((c) => now - c.createdAt.getTime() > 7 * 86_400_000);
 
@@ -77,7 +80,7 @@ export default async function DuesPage() {
                   <td className="px-3.5 py-3">
                     {fmtDate(c.createdAt)}
                     <span className={`block text-[12.5px] ${age > 7 ? "font-semibold text-clay" : "text-muted"}`}>
-                      {age === 0 ? "today" : `${age} day${age === 1 ? "" : "s"} ago`} · {c.staff.name}
+                      {age === 0 ? "today" : `${age} day${age === 1 ? "" : "s"} ago`} · {changedBy(c)}
                     </span>
                   </td>
                   <td className="px-3.5 py-3 font-semibold tabular-nums">{inr(c.amount)}</td>
@@ -89,6 +92,30 @@ export default async function DuesPage() {
         </table>
         {pending.length === 0 && <p className="px-4 py-10 text-center text-muted">Nothing is owed. Every plan change, renewal and extension is paid.</p>}
       </div>
+
+      {refunds.length > 0 && (
+        <section className="grid gap-3 border-[1.5px] border-clay/60 bg-paper p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-[17px] font-semibold">Refunds to pay out</h2>
+            <span className="font-serif text-[24px] tabular-nums text-clay">{inr(refundTotal)}</span>
+          </div>
+          <p className="text-[13.5px] text-muted">From plan downgrades and early renewals onto a cheaper plan: the unused days on the old plan, minus the same days on the new plan.</p>
+          {refunds.map((c) => (
+            <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3 text-[14px]">
+              <span>
+                <Link href={`/staff/members/${c.memberId}#history`} className="font-semibold text-forest hover:underline">
+                  {c.member.name}
+                </Link>{" "}
+                · {c.fromPlan?.name} → {c.toPlan?.name} · {fmtDate(c.createdAt)} · {changedBy(c)}
+              </span>
+              <span className="flex flex-wrap items-center gap-3">
+                <span className="font-semibold tabular-nums">{inr(-c.amount)}</span>
+                {owner ? <SettlePayment changeId={c.id} amount={c.amount} /> : <span className="text-[13px] text-muted">Owner pays refunds</span>}
+              </span>
+            </div>
+          ))}
+        </section>
+      )}
 
       {recent.length > 0 && (
         <section className="border border-line bg-paper p-5">

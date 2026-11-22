@@ -27,6 +27,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
+- Divyadeep: member changes or renews own plan in the app (My plan); prorated refunds actually paid out (refund now or refund due on Payments due), early renewal onto another plan repriced, refunds capped at money received (src/app/me/(app)/plan, src/lib/membership.ts, src/lib/membershipService.ts, members/[id]/MembershipActions.tsx, SettlePayment.tsx, members/dues/page.tsx; one line each in MemberSidebar.tsx and MemberTabs.tsx)
 - Jashan: fix invisible Change Membership Plan button text (members/[id]/MembershipActions.tsx)
 
 ## Next up

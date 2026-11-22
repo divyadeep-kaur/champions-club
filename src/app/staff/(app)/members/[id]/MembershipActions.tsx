@@ -4,7 +4,7 @@ import { useActionState, useCallback, useEffect, useMemo, useRef, useState } fro
 import { ArrowRight, CalendarPlus, PauseCircle, PlayCircle, RefreshCw, Repeat, X } from "lucide-react";
 import { inr } from "@/lib/constants";
 import { juniorAgeError } from "@/lib/members";
-import { CHANGE_POLICIES, extensionQuote, paymentStateFor, planChangeQuote, renewalQuote, type ChangePolicy, type ChangeTiming } from "@/lib/membership";
+import { CHANGE_POLICIES, extensionQuote, paymentStateFor, planChangeQuote, prorationBreakdown, renewalQuote, type ChangePolicy, type ChangeTiming } from "@/lib/membership";
 import { changePlan, extendMembership, renewMembership, setSuspension, type ActionState } from "../membershipActions";
 
 export type PlanOption = { id: number; name: string; monthlyFee: number; durationDays: number; courtRate: number; shopDiscount: number; barDiscount: number; active: boolean };
@@ -23,7 +23,7 @@ const toDate = (s: string) => new Date(`${s}T00:00:00`);
 const fmt = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 const input = "min-h-11 w-full border border-[#b5aa98] bg-white px-3 text-[15px] outline-none focus:border-forest focus:ring-2 focus:ring-forest/15";
 const lbl = "grid gap-1.5 text-[14px] font-semibold";
-const money = (n: number) => (n < 0 ? `${inr(-n)} credit to member` : inr(n));
+const money = (n: number) => (n < 0 ? `${inr(-n)} refund to member` : inr(n));
 
 function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -65,7 +65,31 @@ function Summary({ rows }: { rows: [string, React.ReactNode][] }) {
 }
 
 function PaymentFields({ amount, payNow, setPayNow }: { amount: number; payNow: boolean; setPayNow: (v: boolean) => void }) {
-  if (amount <= 0) return <input type="hidden" name="payNow" value="no" />;
+  if (amount === 0) return <input type="hidden" name="payNow" value="no" />;
+  if (amount < 0)
+    return (
+      <fieldset className="grid gap-2 border border-line p-3.5">
+        <legend className="px-1 text-[14px] font-semibold">Refund of {inr(-amount)} to the member</legend>
+        <label className="flex items-center gap-2 text-[14.5px]">
+          <input type="radio" name="payNow" value="yes" checked={payNow} onChange={() => setPayNow(true)} /> Refund now
+        </label>
+        <label className="flex items-center gap-2 text-[14.5px]">
+          <input type="radio" name="payNow" value="no" checked={!payNow} onChange={() => setPayNow(false)} /> Refund later. It waits under Payments due
+        </label>
+        {payNow && (
+          <label className={lbl}>
+            Refund by
+            <select name="method" defaultValue="" className={input}>
+              <option value="">The way they last paid</option>
+              <option value="upi">UPI</option>
+              <option value="card">Card</option>
+              <option value="cash">Cash</option>
+            </select>
+          </label>
+        )}
+        <p className="text-[13px] text-muted">Refunds never exceed what the club has received from this member.</p>
+      </fieldset>
+    );
   return (
     <fieldset className="grid gap-2 border border-line p-3.5">
       <legend className="px-1 text-[14px] font-semibold">Payment of {inr(amount)}</legend>
@@ -259,6 +283,9 @@ function ChangePlan({
               ["Days left on current plan", String(q.remainingDays)],
               ["Already paid this period", m.paidThisPeriod ? inr(m.paidThisPeriod) : "—"],
               ["Price adjustment", `${CHANGE_POLICIES.find((p) => p.key === policy)?.label}${policy === "prorated" ? ` (${money(q.prorated)})` : ""}`],
+              ...(policy === "prorated" && q.timing === "keep" && q.remainingDays > 0
+                ? ([["How it is worked out", <span key="w" className="grid font-normal">{prorationBreakdown(current, next, q.remainingDays).lines.map((l) => <span key={l}>{l}</span>)}</span>]] as [string, React.ReactNode][])
+                : []),
               ["Amount", money(q.amount)],
               [
                 "Payment",
@@ -267,8 +294,10 @@ function ChangePlan({
                   : ps === "pending"
                     ? "Pending, to collect later"
                     : ps === "credit"
-                      ? "Credit noted, not refunded automatically"
-                      : "Nothing to pay",
+                      ? "Refund due, to pay out from Payments due"
+                      : ps === "refunded"
+                        ? "Refunded now"
+                        : "Nothing to pay",
               ],
               ["Reason", reason],
             ]}
@@ -299,7 +328,8 @@ function Renew({ m, plans, today, onDone }: { m: MemberInfo; plans: PlanOption[]
     if (state.error) setReview(false);
   }, [state, onDone]);
   const plan = plans.find((p) => String(p.id) === planId)!;
-  const q = renewalQuote(toDate(m.end), toDate(date), plan);
+  const current = plans.find((p) => p.id === m.planId);
+  const q = renewalQuote(toDate(m.end), toDate(date), plan, current);
   const ineligible = juniorAgeError(plan.name, m.birth ? toDate(m.birth) : null, toDate(date));
 
   return (
@@ -328,6 +358,12 @@ function Renew({ m, plans, today, onDone }: { m: MemberInfo; plans: PlanOption[]
             ? `Renewing early: the new period starts when the current one ends (${fmt(toDate(m.end))}), so no days are lost.`
             : `The new period starts on the renewal date.`}{" "}
           New expiry <strong>{fmt(q.newEnd)}</strong>.
+          {q.adjustment !== 0 && (
+            <>
+              {" "}
+              The plan switches today, so the {q.remainingDays} days left are repriced: {q.adjustment > 0 ? `${inr(q.adjustment)} extra` : `${inr(-q.adjustment)} off`}.
+            </>
+          )}
         </p>
         <PaymentFields amount={q.amount} payNow={payNow} setPayNow={setPayNow} />
         <label className={lbl}>
@@ -350,8 +386,14 @@ function Renew({ m, plans, today, onDone }: { m: MemberInfo; plans: PlanOption[]
               ["Plan", plan.id === m.planId ? `${plan.name} (same plan)` : `${plans.find((p) => p.id === m.planId)?.name} → ${plan.name}`],
               ["Current expiry", fmt(toDate(m.end))],
               ["New period", `${fmt(q.newStart)} → ${fmt(q.newEnd)}`],
-              ["Amount", inr(q.amount)],
-              ["Payment", payNow ? "Paid now" : "Pending, to collect later"],
+              ...(q.adjustment !== 0 && current
+                ? ([
+                    ["New plan fee", inr(q.fee)],
+                    [`${q.remainingDays} days left switch to ${plan.name} now`, <span key="w" className="grid font-normal">{prorationBreakdown(current, plan, q.remainingDays).lines.map((l) => <span key={l}>{l}</span>)}</span>],
+                  ] as [string, React.ReactNode][])
+                : []),
+              ["Amount", money(q.amount)],
+              ["Payment", q.amount === 0 ? "Nothing to pay" : q.amount < 0 ? (payNow ? "Refunded now" : "Refund due, to pay out later") : payNow ? "Paid now" : "Pending, to collect later"],
             ]}
           />
           <div className="flex flex-wrap gap-2">

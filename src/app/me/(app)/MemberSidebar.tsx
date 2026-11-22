@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Coffee, Home, LogOut, ShoppingBag } from "lucide-react";
+import { CalendarDays, Coffee, Home, IdCard, LogOut, ShoppingBag } from "lucide-react";
 import { memberLogout } from "../actions";
 
 const links = [
   { href: "/me", label: "Home", Icon: Home },
   { href: "/me/book", label: "Book a court", Icon: CalendarDays },
+  { href: "/me/plan", label: "My plan", Icon: IdCard },
   { href: "/me/shop", label: "Shop", Icon: ShoppingBag },
   { href: "/me/cafe", label: "Café", Icon: Coffee },
 ];

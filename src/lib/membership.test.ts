@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { benefitPlan, extensionQuote, memberState, paymentStateFor, photoError, planChangeQuote, renewalQuote } from "./membership";
+import { benefitPlan, extensionQuote, memberState, paymentStateFor, photoError, planChangeQuote, prorationBreakdown, refundCap, renewalQuote } from "./membership";
 
 const d = (m: number, day: number) => new Date(2026, m - 1, day);
 const gold = { monthlyFee: 3999, durationDays: 30 };
@@ -77,10 +77,57 @@ describe("payments", () => {
     expect(paymentStateFor(500, false)).toBe("pending");
     expect(paymentStateFor(500, true)).toBe("paid");
     expect(paymentStateFor(0, true)).toBe("none");
-    expect(paymentStateFor(-200, true)).toBe("credit");
+    expect(paymentStateFor(-200, true)).toBe("refunded");
+    expect(paymentStateFor(-200, false)).toBe("credit");
   });
   it("checks photos", () => {
     expect(photoError({ type: "image/png", size: 10 })).toBeNull();
     expect(photoError({ type: "image/gif", size: 10 })).toMatch(/JPG/);
+  });
+});
+
+describe("prorated refunds and top-ups", () => {
+  const base = { startDate: d(11, 11), endDate: d(12, 11), effective: d(11, 21) };
+  const junior = { monthlyFee: 1499, durationDays: 30 };
+
+  it("downgrade Gold to Silver refunds only the days not yet used", () => {
+    // 10 days used on Gold, 20 left: (2499 - 3999) / 30 × 20 = -1000
+    const q = planChangeQuote({ ...base, current: gold, next: silver, timing: "keep", policy: "prorated" });
+    expect(q.remainingDays).toBe(20);
+    expect(q.amount).toBe(-1000);
+    expect(paymentStateFor(q.amount, false)).toBe("credit");
+  });
+
+  it("upgrade Junior to Silver charges the difference for the days left", () => {
+    // (2499 - 1499) / 30 × 20 = 666.67 → 667
+    const q = planChangeQuote({ ...base, current: junior, next: silver, timing: "keep", policy: "prorated" });
+    expect(q.amount).toBe(667);
+    expect(paymentStateFor(q.amount, false)).toBe("pending");
+  });
+
+  it("breakdown shows what comes back and what is charged", () => {
+    const b = prorationBreakdown({ ...gold, name: "Gold" }, { ...silver, name: "Silver" }, 20);
+    expect(b.unused).toBe(2666);
+    expect(b.newCost).toBe(1666);
+    expect(b.lines[0]).toContain("Gold");
+  });
+
+  it("early renewal onto a cheaper plan reprices the days left", () => {
+    const q = renewalQuote(d(12, 1), d(11, 21), silver, gold);
+    expect(q.remainingDays).toBe(10);
+    expect(q.adjustment).toBe(-500);
+    expect(q.amount).toBe(2499 - 500);
+    expect(q.newStart).toEqual(d(12, 1));
+  });
+
+  it("renewing on the same plan, or after expiry, has no adjustment", () => {
+    expect(renewalQuote(d(12, 1), d(11, 21), gold, gold).adjustment).toBe(0);
+    expect(renewalQuote(d(11, 1), d(11, 21), silver, gold).adjustment).toBe(0);
+  });
+
+  it("never refunds more than was received", () => {
+    expect(refundCap(1000, 4000)).toBe(1000);
+    expect(refundCap(1000, 600)).toBe(600);
+    expect(refundCap(1000, -50)).toBe(0);
   });
 });

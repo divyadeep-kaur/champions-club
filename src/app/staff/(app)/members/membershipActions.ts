@@ -114,7 +114,7 @@ export async function renewMembership(_: ActionState, formData: FormData): Promi
   const parsed = renewSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const f = parsed.data;
-  const [member, plan] = await Promise.all([db.member.findUnique({ where: { id: f.memberId } }), db.plan.findUnique({ where: { id: f.planId } })]);
+  const [member, plan] = await Promise.all([db.member.findUnique({ where: { id: f.memberId }, include: { plan: true } }), db.plan.findUnique({ where: { id: f.planId } })]);
   if (!member || !plan) return { error: "Member or plan not found" };
   const age = juniorAgeError(plan.name, member.birthDate);
   if (age) return { error: age };
@@ -123,7 +123,7 @@ export async function renewMembership(_: ActionState, formData: FormData): Promi
   const renewalDate = toDate(f.renewalDate);
   if (renewalDate > new Date(Date.now() + 31 * 86_400_000)) return { error: "The renewal date is too far ahead" };
 
-  const q = renewalQuote(member.endDate, renewalDate, plan);
+  const q = renewalQuote(member.endDate, renewalDate, plan, member.plan);
   return run(member.id, () =>
     db.$transaction((tx) =>
       applyMembershipEvent(tx, {
@@ -206,7 +206,7 @@ export async function setSuspension(_: ActionState, formData: FormData): Promise
   );
 }
 
-const settleSchema = z.object({ changeId: z.coerce.number().int().positive(), method: z.enum(["cash", "card", "upi"], { message: "Choose how they paid" }) });
+const settleSchema = z.object({ changeId: z.coerce.number().int().positive(), method: z.enum(["cash", "card", "upi"], { message: "Choose the payment method" }) });
 
 export async function settlePayment(_: ActionState, formData: FormData): Promise<ActionState> {
   await requireStaff(["owner"]);

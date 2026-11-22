@@ -1,10 +1,42 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "./db";
-import { CHANGE_KINDS, POLICY_SETTING, isPolicy, paymentStateFor, type ChangePolicy } from "./membership";
+import { CHANGE_KINDS, POLICY_SETTING, isPolicy, paymentStateFor, refundCap, type ChangePolicy } from "./membership";
+import { refundMethod } from "./ledger";
+import { inr } from "./constants";
 
 type Tx = Prisma.TransactionClient;
 
 export class MembershipError extends Error {}
+
+// All membership money received from a member, after any refunds already paid.
+export async function netReceived(tx: Tx, memberId: number) {
+  const r = await tx.payment.aggregate({ where: { source: "membership", refId: memberId }, _sum: { amount: true } });
+  return r._sum.amount ?? 0;
+}
+
+// Pays a membership refund out by the given method, or the way they last paid.
+// Never more than the club has received from them.
+async function payRefund(tx: Tx, memberId: number, credit: number, method: string | null | undefined, note: string) {
+  const received = await netReceived(tx, memberId);
+  const amount = refundCap(credit, received);
+  if (amount < credit)
+    throw new MembershipError(
+      received > 0
+        ? `Only ${inr(received)} has been received from this member, so that is the most that can be refunded. Save it as a refund due, or use a custom amount.`
+        : "Nothing has been received from this member yet, so there is nothing to refund. Save it as a refund due, or use No adjustment.",
+    );
+  const how = method || (await refundMethod(tx, "membership", memberId));
+  return tx.payment.create({ data: { source: "membership", refId: memberId, amount: -amount, method: how, note } });
+}
+
+// What a member still owes the club, and what the club still owes them.
+export async function openMembershipItems(tx: Tx, memberId: number) {
+  const rows = await tx.membershipChange.findMany({ where: { memberId, paymentStatus: { in: ["pending", "credit"] } }, select: { amount: true, paymentStatus: true } });
+  return {
+    due: rows.filter((r) => r.paymentStatus === "pending").reduce((t, r) => t + r.amount, 0),
+    refundDue: rows.filter((r) => r.paymentStatus === "credit").reduce((t, r) => t - r.amount, 0),
+  };
+}
 
 export async function getDefaultPolicy(): Promise<ChangePolicy | null> {
   const s = await db.clubSetting.findUnique({ where: { key: POLICY_SETTING } });
@@ -41,8 +73,11 @@ export async function applyMembershipEvent(
   if (paymentStatus === "paid" && !e.method) throw new MembershipError("Choose how they paid");
 
   const label = CHANGE_KINDS[e.kind];
+  const what = e.kind === "change" ? `plan change ${member.plan.name} → ${toPlan.name}` : e.kind === "renewal" ? `early renewal ${member.plan.name} → ${toPlan.name}` : label.toLowerCase();
   const payment =
-    paymentStatus === "paid"
+    paymentStatus === "refunded"
+      ? await payRefund(tx, member.id, -e.amount, e.method, `Refund for ${what}`)
+      : paymentStatus === "paid"
       ? await tx.payment.create({
           data: {
             source: "membership",
@@ -74,7 +109,7 @@ export async function applyMembershipEvent(
       amount: e.amount,
       paymentStatus,
       paymentId: payment?.id ?? null,
-      method: payment ? e.method : null,
+      method: payment ? payment.method : null,
       reason: e.reason,
       staffId: e.staffId,
     },
@@ -97,6 +132,16 @@ export async function applyMembershipEvent(
 export async function settlePendingPayment(tx: Tx, input: { changeId: number; method: string }) {
   const change = await tx.membershipChange.findUnique({ where: { id: input.changeId }, include: { toPlan: true, fromPlan: true } });
   if (!change) throw new MembershipError("Record not found");
+  if (change.paymentStatus === "credit") {
+    const what = change.kind === "change" && change.fromPlan && change.toPlan ? `plan change ${change.fromPlan.name} → ${change.toPlan.name}` : (CHANGE_KINDS[change.kind] ?? "membership").toLowerCase();
+    const refund = await payRefund(tx, change.memberId, -change.amount, input.method, `Refund for ${what}`);
+    const { count } = await tx.membershipChange.updateMany({
+      where: { id: change.id, paymentStatus: "credit" },
+      data: { paymentStatus: "refunded", paymentId: refund.id, method: refund.method },
+    });
+    if (!count) throw new MembershipError("This refund has already been paid");
+    return refund;
+  }
   if (change.paymentStatus !== "pending") throw new MembershipError("This has already been paid");
   const payment = await tx.payment.create({
     data: {
