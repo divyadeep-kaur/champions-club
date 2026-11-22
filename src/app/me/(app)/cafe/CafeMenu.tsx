@@ -15,12 +15,14 @@ export function CafeMenu({
   defaultTable,
   discount,
   openTab,
+  open,
 }: {
   menu: Item[];
   tables: { id: number; label: string }[];
   defaultTable?: number;
   discount: number;
   openTab: { subtotal: number } | null;
+  open: boolean;
 }) {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [table, setTable] = useState(defaultTable ? String(defaultTable) : "");
@@ -161,11 +163,11 @@ export function CafeMenu({
         )}
         <button
           type="submit"
-          disabled={pending || lines.length === 0}
+          disabled={pending || lines.length === 0 || !open}
           className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ball p-[13px] font-extrabold text-forest-deep disabled:opacity-60"
         >
           {pending && <Loader2 className="size-4 animate-spin" />}
-          Send to kitchen · tab {inr(after)}
+          {open ? `Send to kitchen · tab ${inr(after)}` : "Café is closed"}
         </button>
       </div>
     </form>

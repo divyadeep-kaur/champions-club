@@ -27,7 +27,6 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## In progress
 
-- Jashan: member café open or closed follows the café shift (src/app/me/(app)/cafe, src/app/me/actions.ts, src/lib/cafe.ts)
 
 ## Next up
 
@@ -35,6 +34,7 @@ Read this before starting anything. Pull first: `git pull --rebase origin main`.
 
 ## Done
 
+- Member café shows open or closed and only takes orders while a café shift is running (Jashan)
 - Member sign up with phone, password and instant member code; owner or desk approves on Member Management or Leads; free 7 day trial, no payment (Jashan)
 - Landing FAQ answers corrected, Friday social play question removed, team emails in footer (Jashan)
 - Server runs on India time so live court times, today and daily close match (Jashan)

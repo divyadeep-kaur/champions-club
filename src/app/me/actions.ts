@@ -11,6 +11,7 @@ import { nextMemberCode, normalizePhone } from "@/lib/members";
 import { AWAITING_APPROVAL, SIGNUP_DECLINED, TRIAL_PLAN } from "@/lib/constants";
 import { clearMemberSession, createMemberSession, requireMember } from "@/lib/memberSession";
 import { recomputeTab } from "@/lib/tabs";
+import { cafeShift } from "@/lib/cafe";
 import { paidSoFar, refundMethod } from "@/lib/ledger";
 import { refundable } from "@/lib/money";
 import { answerOffer, joinSession, leaveSession } from "@/lib/socialService";
@@ -182,13 +183,14 @@ export async function orderFood(_: MeState, formData: FormData): Promise<MeState
     return { error: "Add something to your order first" };
   }
 
+  const shift = await cafeShift();
+  if (!shift) return { error: "The café is closed right now. You can order once the café team starts their shift." };
   const menu = await db.menuItem.findMany({ where: { id: { in: lines.map((l) => l.id) }, active: true } });
   if (menu.length !== lines.length) return { error: "Some items are no longer available" };
   const tab = await db.$transaction(async (tx) => {
     let open = await tx.tab.findFirst({ where: { memberId: member.id, status: "open" } });
     if (!open) {
-      const shift = await tx.shift.findFirst({ where: { end: null }, orderBy: { start: "desc" } });
-      open = await tx.tab.create({ data: { memberId: member.id, tableId: parsed.data.tableId, shiftId: shift?.id } });
+      open = await tx.tab.create({ data: { memberId: member.id, tableId: parsed.data.tableId, shiftId: shift.id } });
     } else if (parsed.data.tableId && open.tableId !== parsed.data.tableId) {
       await tx.tab.update({ where: { id: open.id }, data: { tableId: parsed.data.tableId } });
     }

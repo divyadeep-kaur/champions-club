@@ -7,6 +7,7 @@ import { requireMember } from "@/lib/memberSession";
 import { memberCancel, memberLogout } from "../actions";
 import { addDays, startOfDay } from "@/lib/dates";
 import { AttendanceCalendar } from "./AttendanceCalendar";
+import { cafeShift } from "@/lib/cafe";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
   const { booked } = await searchParams;
   const now = new Date();
 
-  const [upcoming, socials, tab, orders] = await Promise.all([
+  const [upcoming, socials, tab, orders, cafeOpen] = await Promise.all([
     db.booking.findMany({ where: { memberId: member.id, status: "booked", end: { gt: now } }, include: { court: true }, orderBy: { start: "asc" }, take: 6 }),
     db.socialPlayer.findMany({
       where: { memberId: member.id, booking: { status: "booked", end: { gt: now } } },
@@ -39,6 +40,7 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
       include: { items: { include: { product: true } } },
       orderBy: { createdAt: "desc" },
     }),
+    cafeShift().then(Boolean),
   ]);
 
   const since = addDays(startOfDay(now), -16 * 7);
@@ -203,7 +205,13 @@ export default async function MemberHome({ searchParams }: { searchParams: Promi
         )}
 
         <section className="grid gap-2.5">
-          <h2 className="text-[20px] font-bold text-forest">Your café tab</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[20px] font-bold text-forest">Your café tab</h2>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-bold ${cafeOpen ? "bg-[#e3efc7] text-[#2f4a0a]" : "bg-clay-soft text-[#7a2f14]"}`}>
+              <span className={`size-2 rounded-full ${cafeOpen ? "bg-[#4d7a12]" : "bg-clay"}`} />
+              {cafeOpen ? "Café open" : "Café closed"}
+            </span>
+          </div>
           {tab ? (
             <div className="grid gap-1.5 rounded-2xl border border-line bg-paper p-3.5 text-[14.5px]">
               <div className="flex justify-between">
